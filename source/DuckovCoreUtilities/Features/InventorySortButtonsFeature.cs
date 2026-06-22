@@ -57,11 +57,13 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private static bool ShouldAddButtons(InventoryDisplay inventoryDisplay)
         {
             var playerInventory = LevelManager.Instance?.MainCharacter?.CharacterItem?.Inventory;
+            var storageInventory = PlayerStorage.Inventory;
             return inventoryDisplay != null &&
                 inventoryDisplay.Target != null &&
-                inventoryDisplay.Target == playerInventory &&
                 inventoryDisplay.Editable &&
-                inventoryDisplay.ShowSortButton;
+                (inventoryDisplay.ShowSortButton ||
+                    inventoryDisplay.Target == playerInventory ||
+                    inventoryDisplay.Target == storageInventory);
         }
 
         private static void SetCompactButtonLayout(GameObject gameObject)
