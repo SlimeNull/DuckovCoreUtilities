@@ -24,6 +24,7 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(new DisplayStorageCount());
             _features.Register(new DisplayQualityFeature());
             _features.Register(new LootboxOutlineFeature());
+            _features.Register(new InventorySortButtonsFeature());
             _features.Register(new AutoCloseBackpackFeature());
             _features.Register(new AutoFadeHudWhenAimingFeature());
             _features.Register(new BulletCountCrosshairColorFeature());
