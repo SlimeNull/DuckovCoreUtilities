@@ -15,8 +15,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         public override string Name => "Low health inner shadow";
 
         public Color ShadowColor { get; set; } = new Color(1f, 0f, 0f, 0.5f);
-        public float ShadowDistance { get; set; } = 50f;
-        public float HealthThreshold { get; set; } = 0.5f;
+        public float ShadowDistance { get; set; } = 150f;
+        public float HealthThresholdUpper { get; set; } = 0.6f;
+        public float HealthThresholdLower { get; set; } = 0.2f;
 
         protected override void OnEnable()
         {
@@ -62,8 +63,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private float GetShadowAlpha()
         {
-            var threshold = Mathf.Clamp01(HealthThreshold);
-            if (threshold <= 0f)
+            var thresholdUpper = Mathf.Clamp01(HealthThresholdUpper);
+            var thresholdLower = Mathf.Clamp01(HealthThresholdLower);
+            if (thresholdUpper <= 0f)
             {
                 return 0f;
             }
@@ -76,20 +78,21 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
 
             var healthRatio = Mathf.Clamp01(health.CurrentHealth / health.MaxHealth);
-            if (healthRatio >= threshold)
+            if (healthRatio >= thresholdUpper)
             {
                 return 0f;
             }
 
-            return ShadowColor.a * (1f - healthRatio / threshold);
+            var danger = Mathf.InverseLerp(thresholdUpper, thresholdLower, healthRatio);
+            return ShadowColor.a * danger;
         }
 
         private void EnsureTextures()
         {
             _leftGradient ??= CreateHorizontalGradient(reverse: false);
             _rightGradient ??= CreateHorizontalGradient(reverse: true);
-            _topGradient ??= CreateVerticalGradient(reverse: false);
-            _bottomGradient ??= CreateVerticalGradient(reverse: true);
+            _topGradient ??= CreateVerticalGradient(reverse: true);
+            _bottomGradient ??= CreateVerticalGradient(reverse: false);
         }
 
         private static Texture2D CreateHorizontalGradient(bool reverse)
