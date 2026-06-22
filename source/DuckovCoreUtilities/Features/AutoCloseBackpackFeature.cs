@@ -1,36 +1,21 @@
 ﻿using Duckov.UI;
-using HarmonyLib;
-using SlimeNull.DuckovCoreUtilities.Collections;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using UnityEngine.InputSystem;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal class AutoCloseBackpackFeature : FeatureBase
     {
-        private static WeakReference<AutoCloseBackpackFeature>? _instance;
-
-        private const string PatchCatagory = nameof(AutoCloseBackpackFeature);
-
         private CharacterMainControl? _attachedCharacter;
 
         public override string Name => "Auto close backpack";
 
-        public bool WhenMove { get; set; }
-        public bool WhenHurt { get; set; }
-
-        public AutoCloseBackpackFeature()
-        {
-            _instance = new WeakReference<AutoCloseBackpackFeature>(this);
-        }
+        public bool WhenMove { get; set; } = true;
+        public bool WhenHurt { get; set; } = true;
 
         protected override void OnEnable()
         {
             LevelManager.OnControllingCharacterChanged += OnControllingCharacterChanged;
-            Context.Harmony.PatchCategory(PatchCatagory);
 
             var levelManager = LevelManager.Instance;
             if (levelManager != null &&
@@ -43,8 +28,17 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         protected override void OnDisable()
         {
             DetachFromCharacter();
-            Context.Harmony.UnpatchCategory(PatchCatagory);
             LevelManager.OnControllingCharacterChanged -= OnControllingCharacterChanged;
+        }
+
+        public override void Tick()
+        {
+            if (WhenMove &&
+                View.ActiveView != null &&
+                IsMoveKeyPressedThisFrame())
+            {
+                CloseLootView();
+            }
         }
 
         private void OnControllingCharacterChanged(CharacterMainControl control)
@@ -85,22 +79,18 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             View.ActiveView?.Close();
         }
 
-        [HarmonyPatchCategory(PatchCatagory)]
-        [HarmonyPatch(typeof(CharacterInputControl), nameof(CharacterInputControl.OnPlayerMoveInput))]
-        private class CharacterInputControlPatch
+        private static bool IsMoveKeyPressedThisFrame()
         {
-            private static void Prefix(InputAction.CallbackContext context)
+            var keyboard = Keyboard.current;
+            if (keyboard is null)
             {
-                if (context.performed &&
-                    _instance is not null &&
-                    _instance.TryGetTarget(out var target))
-                {
-                    if (target.WhenMove)
-                    {
-                        CloseLootView();
-                    }
-                }
+                return false;
             }
+
+            return keyboard.wKey.wasPressedThisFrame ||
+                keyboard.aKey.wasPressedThisFrame ||
+                keyboard.sKey.wasPressedThisFrame ||
+                keyboard.dKey.wasPressedThisFrame;
         }
     }
 }
