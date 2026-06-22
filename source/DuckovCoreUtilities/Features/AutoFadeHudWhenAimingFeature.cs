@@ -26,26 +26,27 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private void LevelManager_OnAfterLevelInitialized()
         {
-            var allCanvas = GameObject.FindObjectsOfType<Canvas>();
-            foreach (var canvas in allCanvas)
+            var hudCanvasObject = GameObject.Find("HUDCanvas");
+            var hudCanvas = hudCanvasObject.GetComponent<Canvas>();
+
+            List<CanvasGroup> groups = new();
+
+            for (var i = 0; i < hudCanvas.transform.childCount; i++)
             {
-                List<CanvasGroup> groups = new();
-
-                for (var i = 0; i < canvas.transform.childCount; i++)
+                var child = hudCanvas.transform.GetChild(i);
+                if (child.GetComponentInChildren<AimMarker>(true) != null ||
+                    child.GetComponentInChildren<ADSAimMarker>(true) != null ||
+                    child.GetComponentInChildren<EvacuationCountdownUI>(true) != null ||
+                    child.GetComponentInChildren<EvacuationCountdownUIProxy>(true) != null)
                 {
-                    var child = canvas.transform.GetChild(i);
-                    if (child.GetComponentInChildren<AimMarker>(true) != null ||
-                        child.GetComponentInChildren<ADSAimMarker>(true) != null)
-                    {
-                        continue;
-                    }
-
-                    var canvasGroup = child.gameObject.GetOrAddComponent<CanvasGroup>();
-                    groups.Add(canvasGroup);
+                    continue;
                 }
 
-                canvas.gameObject.GetOrAddComponent<AutoFadeWhenAiming>().Initialize(this, groups);
+                var canvasGroup = child.gameObject.GetOrAddComponent<CanvasGroup>();
+                groups.Add(canvasGroup);
             }
+
+            hudCanvas.gameObject.GetOrAddComponent<AutoFadeWhenAiming>().Initialize(this, groups);
         }
 
         private class AutoFadeWhenAiming : MonoBehaviour
@@ -59,11 +60,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             public void Initialize(AutoFadeHudWhenAimingFeature ownerFeature, List<CanvasGroup> canvasGroups)
             {
                 _ownerFeature = ownerFeature;
-            }
-
-            void Start()
-            {
-
+                _canvasGroups = canvasGroups;
             }
 
             void Update()
@@ -74,12 +71,17 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     return;
                 }
 
-                var targetAlpha = IsAiming() ? _ownerFeature.TargetAlpha : 1f;
+                var isAiming = IsAiming();
+                var targetAlpha = isAiming ? _ownerFeature.TargetAlpha : 1f;
                 var smoothAlpha = UnityEngine.Mathf.SmoothDamp(_currentAlpha, targetAlpha, ref _currentVelocity, _ownerFeature.SmoothTime);
+                _currentAlpha = smoothAlpha;
 
                 foreach (var canvasGroup in _canvasGroups)
                 {
-                    canvasGroup.alpha = smoothAlpha;
+                    if (canvasGroup != null)
+                    {
+                        canvasGroup.alpha = smoothAlpha;
+                    }
                 }
             }
 
