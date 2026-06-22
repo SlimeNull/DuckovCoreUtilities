@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using VLB;
-using static EPOOutline.BlitUtility;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {

@@ -24,6 +24,8 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(new DisplayStorageCount());
             _features.Register(new DisplayQualityFeature());
             _features.Register(new LootboxOutlineFeature());
+            _features.Register(new AutoCloseBackpackFeature());
+            _features.Register(new AutoFadeHudWhenAiming());
             _features.EnableAll();
 
             Debug.Log("loaded DCU");

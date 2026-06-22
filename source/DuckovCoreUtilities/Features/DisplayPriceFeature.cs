@@ -5,12 +5,14 @@ using SlimeNull.DuckovCoreUtilities.Features.Abstraction;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Text;
 using TMPro;
 using UnityEngine;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {
+    [Description("Display item price in item hovering UI.")]
     internal sealed class DisplayPriceFeature : ItemInfoDisplayFeature
     {
         public enum DisplayMode
