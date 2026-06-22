@@ -61,6 +61,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             private Color _originColorOfBackgroundRing;
             private Item? _lastItem;
+            private bool? _lastInspected;
 
             public DecorateMode Mode { get; set; }
 
@@ -79,7 +80,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             void LateUpdate()
             {
                 if (_target is not null &&
-                    _target.Target != _lastItem)
+                    (_target.Target != _lastItem || _target.Target?.Inspected != _lastInspected))
                 {
                     if (_target.Target is { } item &&
                         item.StackCount > 0 &&
@@ -93,6 +94,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     }
 
                     _lastItem = _target.Target;
+                    _lastInspected = _target.Target?.Inspected;
                     Debug.Log($"Quality display updated for {_lastItem?.DisplayName}, quality: {_lastItem?.Quality}");
                 }
             }
