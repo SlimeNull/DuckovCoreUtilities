@@ -72,7 +72,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 {
                     return false;
                 }
-                return mainCharacter.IsAiming();
+                return mainCharacter.IsInAdsInput;
             }
         }
     }
