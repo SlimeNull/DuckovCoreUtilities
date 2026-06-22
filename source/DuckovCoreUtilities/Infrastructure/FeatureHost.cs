@@ -8,12 +8,8 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
     internal sealed class FeatureHost
     {
         private readonly FeatureContext _context;
-        private readonly Dictionary<FeatureBase, FeatureStatus> _features = new Dictionary<FeatureBase, FeatureStatus>();
+        private readonly List<FeatureBase> _features = new List<FeatureBase>();
 
-        private record class FeatureStatus
-        {
-            public bool IsEnabled { get; set; }
-        }
 
         public FeatureHost(GameObject hostObject)
         {
@@ -22,49 +18,47 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
 
         public void Register(FeatureBase feature)
         {
-            _features.Add(feature, new FeatureStatus());
+            if (feature is null)
+            {
+                throw new ArgumentNullException(nameof(feature));
+            }
+
+            _features.Add(feature);
         }
 
         public void EnableAll()
         {
-            foreach (var featureKV in _features)
+            foreach (var feature in _features)
             {
-                if (featureKV.Value.IsEnabled)
+                if (feature.IsEnabled)
                 {
                     continue;
                 }
 
                 try
                 {
-                    featureKV.Key.Enable(_context);
-                    featureKV.Value.IsEnabled = true;
-                    Debug.Log($"enabled {featureKV.Key.Name}");
+                    feature.Enable(_context);
+                    Debug.Log($"enabled {feature.Name}");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"failed to enable {featureKV.Key.Name}, {ex}");
+                    Debug.LogError($"failed to enable {feature.Name}, {ex}");
                 }
             }
         }
 
         public void DisableAll()
         {
-            foreach (var featureKV in _features)
+            foreach (var feature in _features)
             {
-                if (!featureKV.Value.IsEnabled)
-                {
-                    continue;
-                }
-
                 try
                 {
-                    featureKV.Key.Disable();
-                    featureKV.Value.IsEnabled = false;
-                    Debug.Log($"disabled {featureKV.Key.Name}");
+                    feature.Disable();
+                    Debug.Log($"disabled {feature.Name}");
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"failed to disable {featureKV.Key.Name}, {ex}");
+                    Debug.LogError($"failed to disable {feature.Name}, {ex}");
                 }
             }
         }
@@ -75,11 +69,14 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
             {
                 try
                 {
-                    featureKV.Key.Tick();
+                    if (featureKV.IsEnabled)
+                    {
+                        featureKV.Tick();
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"tick failed in {featureKV.Key.Name}, {ex}");
+                    Debug.LogError($"tick failed in {featureKV.Name}, {ex}");
                 }
             }
         }
@@ -90,11 +87,14 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
             {
                 try
                 {
-                    featureKV.Key.OnGUI();
+                    if (featureKV.IsEnabled)
+                    {
+                        featureKV.OnGUI();
+                    }
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"OnGUI failed in {featureKV.Key.Name}, {ex}");
+                    Debug.LogError($"OnGUI failed in {featureKV.Name}, {ex}");
                 }
             }
         }
