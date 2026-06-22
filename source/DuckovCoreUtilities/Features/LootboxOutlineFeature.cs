@@ -73,7 +73,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 outlinable = gameObject.AddComponent<Outlinable>();
                 Debug.Log($"[LootboxOutlineFeature] Added outline to {gameObject.name}");
 
-                outlinable.AddAllChildRenderersToRenderingList();
+                AddLootboxRenderers(outlinable);
                 outlinable.OutlineParameters.Enabled = true;
                 outlinable.OutlineParameters.Color = Color.white;
 
@@ -96,6 +96,50 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
 
                 outlinable.enabled = false;
+            }
+
+            private void AddLootboxRenderers(Outlinable outlinable)
+            {
+                var renderers = GetComponentsInChildren<Renderer>(false);
+                foreach (var renderer in renderers)
+                {
+                    if (ShouldOutlineRenderer(renderer))
+                    {
+                        outlinable.AddRenderer(renderer);
+                        Debug.Log($"[LootboxOutlineFeature] Added renderer {renderer.GetType().Name} to outline of {gameObject.name}");
+                    }
+                }
+            }
+
+            private static bool ShouldOutlineRenderer(Renderer renderer)
+            {
+                if (renderer == null ||
+                    !renderer.enabled ||
+                    renderer.GetComponentInParent<InteractMarker>() != null ||
+                    renderer.GetComponentInParent<Canvas>() != null)
+                {
+                    return false;
+                }
+
+                if (renderer is LineRenderer ||
+                    renderer is TrailRenderer ||
+                    renderer is ParticleSystemRenderer)
+                {
+                    return false;
+                }
+
+                if (renderer is MeshRenderer)
+                {
+                    var meshFilter = renderer.GetComponent<MeshFilter>();
+                    return meshFilter != null && meshFilter.sharedMesh != null;
+                }
+
+                if (renderer is SkinnedMeshRenderer skinnedMeshRenderer)
+                {
+                    return skinnedMeshRenderer.sharedMesh != null;
+                }
+
+                return false;
             }
 
             private static bool ShouldApplyOutline(InteractableLootbox lootbox)

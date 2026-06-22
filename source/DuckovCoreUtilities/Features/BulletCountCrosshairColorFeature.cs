@@ -16,17 +16,17 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         protected override void OnEnable()
         {
-            LevelManager.OnControllingCharacterChanged += OnControllingCharacterChanged;
+            LevelManager.OnAfterLevelInitialized += OnAfterLevelInitialized;
             AttachToCrosshairs();
         }
 
         protected override void OnDisable()
         {
-            LevelManager.OnControllingCharacterChanged -= OnControllingCharacterChanged;
+            LevelManager.OnAfterLevelInitialized -= OnAfterLevelInitialized;
             DetachControllers();
         }
 
-        private void OnControllingCharacterChanged(CharacterMainControl control)
+        private void OnAfterLevelInitialized()
         {
             AttachToCrosshairs();
         }
