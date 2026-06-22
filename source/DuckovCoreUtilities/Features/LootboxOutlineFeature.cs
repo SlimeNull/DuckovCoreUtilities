@@ -16,14 +16,22 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         private const string HarmonyCatagory = nameof(LootboxOutlineFeature);
         private static readonly List<SpriteRenderer> PickupSpriteRenderers = new List<SpriteRenderer>();
+        private static LootboxOutlineFeature? ActiveFeature;
 
         public override string Name => "Loot outline";
 
         public int ActivationDistance { get; set; } = 10;
+        public bool EnableLootboxOutline { get; set; } = true;
+        public bool EnableGroundItemOutline { get; set; } = true;
         public bool UseQualityColor { get; set; } = true;
+        public bool LootboxBreathingEffect { get; set; } = true;
+        public bool GroundItemBreathingEffect { get; set; } = true;
+        public float BreathingPeriod { get; set; } = 1.5f;
+        public float BreathingMinAlpha { get; set; } = 0.35f;
 
         protected override void OnEnable()
         {
+            ActiveFeature = this;
             Context.Harmony.PatchCategory(HarmonyCatagory);
             RenderPipelineManager.endCameraRendering += ResetPickupBillboards;
         }
@@ -33,16 +41,29 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             RenderPipelineManager.endCameraRendering -= ResetPickupBillboards;
             Context.Harmony.UnpatchCategory(HarmonyCatagory);
             PickupSpriteRenderers.Clear();
+            ActiveFeature = null;
         }
 
         private static void EnsureOutlineAttached(InteractableLootbox instance)
         {
-            var outline = instance.GetOrAddComponent<LootOutlinable>();
+            if (ActiveFeature is null ||
+                !ActiveFeature.EnableLootboxOutline)
+            {
+                return;
+            }
+
+            instance.GetOrAddComponent<LootOutlinable>().Initialize(ActiveFeature);
         }
 
         private static void EnsureOutlineAttached(InteractablePickup instance)
         {
-            var outline = instance.GetOrAddComponent<GroundItemOutlinable>();
+            if (ActiveFeature is null ||
+                !ActiveFeature.EnableGroundItemOutline)
+            {
+                return;
+            }
+
+            instance.GetOrAddComponent<GroundItemOutlinable>().Initialize(ActiveFeature);
         }
 
         private static void RegisterPickupSpriteRenderer(SpriteRenderer spriteRenderer)
@@ -86,10 +107,17 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private abstract class OutlinableBehaviourBase : MonoBehaviour
         {
             protected Outlinable? Outlinable { get; set; }
+            protected LootboxOutlineFeature? OwnerFeature { get; private set; }
 
             private CharacterMainControl? _player;
 
             public int ActivationDistance { get; set; } = 10;
+
+            protected void InitializeOwner(LootboxOutlineFeature ownerFeature)
+            {
+                OwnerFeature = ownerFeature;
+                ActivationDistance = ownerFeature.ActivationDistance;
+            }
 
             protected virtual void Update()
             {
@@ -105,6 +133,11 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
 
                 Outlinable.enabled = Vector3.Distance(transform.position, _player.transform.position) < ActivationDistance;
+
+                if (Outlinable.enabled)
+                {
+                    Outlinable.OutlineParameters.Color = ApplyBreathing(GetOutlineColor(), UseBreathingEffect());
+                }
             }
 
             protected static void ConfigureOutline(Outlinable outlinable, Color color)
@@ -113,6 +146,30 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 outlinable.OutlineParameters.Color = color;
                 outlinable.OutlineParameters.DilateShift = 3f;
                 outlinable.enabled = false;
+            }
+
+            protected virtual Color GetOutlineColor()
+            {
+                return Color.white;
+            }
+
+            protected virtual bool UseBreathingEffect()
+            {
+                return false;
+            }
+
+            protected Color ApplyBreathing(Color color, bool enabled)
+            {
+                if (!enabled || OwnerFeature is null)
+                {
+                    return color;
+                }
+
+                var period = Mathf.Max(0.01f, OwnerFeature.BreathingPeriod);
+                var normalized = (Mathf.Sin(Time.time / period * Mathf.PI * 2f) + 1f) * 0.5f;
+                var minAlpha = Mathf.Clamp01(OwnerFeature.BreathingMinAlpha);
+                color.a *= Mathf.Lerp(minAlpha, 1f, normalized);
+                return color;
             }
 
             protected static bool ShouldOutlineRenderer(Renderer renderer)
@@ -154,14 +211,26 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             private InteractableLootbox? lootBox;
             private Outlinable? outlinable;
             private CharacterMainControl? _player;
+            private LootboxOutlineFeature? _ownerFeature;
+            private Color _outlineColor = Color.white;
 
             public int ActivationDistance { get; set; } = 10;
             public bool UseQualityColor { get; set; } = true;
 
+            public LootOutlinable Initialize(LootboxOutlineFeature ownerFeature)
+            {
+                _ownerFeature = ownerFeature;
+                ActivationDistance = ownerFeature.ActivationDistance;
+                UseQualityColor = ownerFeature.UseQualityColor;
+                return this;
+            }
+
             void Start()
             {
                 lootBox = GetComponent<InteractableLootbox>();
-                if (ShouldApplyOutline(lootBox))
+                if (_ownerFeature is not null &&
+                    _ownerFeature.EnableLootboxOutline &&
+                    ShouldApplyOutline(lootBox))
                 {
                     AttachOutline();
                 }
@@ -181,6 +250,10 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
 
                 outlinable.enabled = Vector3.Distance(transform.position, _player.transform.position) < ActivationDistance;
+                if (outlinable.enabled)
+                {
+                    outlinable.OutlineParameters.Color = ApplyBreathing(_outlineColor);
+                }
             }
 
             private void AttachOutline()
@@ -190,7 +263,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                 AddLootboxRenderers(outlinable);
                 outlinable.OutlineParameters.Enabled = true;
-                outlinable.OutlineParameters.Color = Color.white;
+                _outlineColor = Color.white;
+                outlinable.OutlineParameters.Color = _outlineColor;
                 outlinable.OutlineParameters.DilateShift = 3f;
 
                 if (UseQualityColor && lootBox is not null)
@@ -208,10 +282,25 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                     var color = QualityColor.Get(maxQuality);
                     color.a = 1;
-                    outlinable.OutlineParameters.Color = color;
+                    _outlineColor = color;
+                    outlinable.OutlineParameters.Color = _outlineColor;
                 }
 
                 outlinable.enabled = false;
+            }
+
+            private Color ApplyBreathing(Color color)
+            {
+                if (_ownerFeature is null ||
+                    !_ownerFeature.LootboxBreathingEffect)
+                {
+                    return color;
+                }
+
+                var period = Mathf.Max(0.01f, _ownerFeature.BreathingPeriod);
+                var normalized = (Mathf.Sin(Time.time / period * Mathf.PI * 2f) + 1f) * 0.5f;
+                color.a *= Mathf.Lerp(Mathf.Clamp01(_ownerFeature.BreathingMinAlpha), 1f, normalized);
+                return color;
             }
 
             private void AddLootboxRenderers(Outlinable outlinable)
@@ -294,10 +383,18 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             private InteractablePickup? _pickup;
 
+            public GroundItemOutlinable Initialize(LootboxOutlineFeature ownerFeature)
+            {
+                InitializeOwner(ownerFeature);
+                return this;
+            }
+
             private void Start()
             {
                 _pickup = GetComponent<InteractablePickup>();
-                if (ShouldApplyOutline(_pickup))
+                if (OwnerFeature is not null &&
+                    OwnerFeature.EnableGroundItemOutline &&
+                    ShouldApplyOutline(_pickup))
                 {
                     AttachOutline();
                 }
@@ -317,7 +414,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                         spriteRenderer.gameObject.AddComponent<Outlinable>();
                     RegisterPickupSpriteRenderer(spriteRenderer);
                     Outlinable.AddRenderer(spriteRenderer);
-                    ConfigureOutline(Outlinable, Color.white);
+                    ConfigureOutline(Outlinable, GetOutlineColor());
                     return;
                 }
 
@@ -333,7 +430,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                 if (Outlinable.OutlineTargetsCount > 0)
                 {
-                    ConfigureOutline(Outlinable, Color.white);
+                    ConfigureOutline(Outlinable, GetOutlineColor());
                 }
                 else
                 {
@@ -348,6 +445,25 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     pickup.isActiveAndEnabled &&
                     pickup.ItemAgent != null &&
                     pickup.ItemAgent.Item != null;
+            }
+
+            protected override Color GetOutlineColor()
+            {
+                if (OwnerFeature is null ||
+                    !OwnerFeature.UseQualityColor ||
+                    _pickup?.ItemAgent?.Item is null)
+                {
+                    return Color.white;
+                }
+
+                var color = QualityColor.Get(_pickup.ItemAgent.Item.Quality);
+                color.a = 1f;
+                return color;
+            }
+
+            protected override bool UseBreathingEffect()
+            {
+                return OwnerFeature?.GroundItemBreathingEffect == true;
             }
         }
 
