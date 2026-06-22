@@ -18,6 +18,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         private const string HarmonyCategory = nameof(InventorySortButtonsFeature);
         private const string ButtonPrefix = "DCU_InventorySort_";
+        private const float CompactButtonWidth = 40f;
         private static readonly FieldInfo OnInventorySortedField = AccessTools.Field(typeof(Inventory), "onInventorySorted");
 
         public override string Name => "Inventory sort buttons";
@@ -47,7 +48,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
 
             ModifyText(sortButton.gameObject, "↕");
-            ClearMinWidth(sortButton.gameObject);
+            SetCompactButtonLayout(sortButton.gameObject);
             AddSortButton(inventoryDisplay, sortButton, SortMode.Value, "＄", 1);
             AddSortButton(inventoryDisplay, sortButton, SortMode.Weight, "W", 2);
             AddSortButton(inventoryDisplay, sortButton, SortMode.ValuePerWeight, "R", 3);
@@ -63,12 +64,27 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 inventoryDisplay.ShowSortButton;
         }
 
-        private static void ClearMinWidth(GameObject gameObject)
+        private static void SetCompactButtonLayout(GameObject gameObject)
         {
-            var layoutElement = gameObject.GetComponent<LayoutElement>();
+            var contentSizeFitter = gameObject.GetComponent<ContentSizeFitter>();
+            if (contentSizeFitter != null)
+            {
+                contentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+            }
+
+            var layoutElement = gameObject.GetComponent<LayoutElement>() ?? gameObject.AddComponent<LayoutElement>();
             if (layoutElement != null)
             {
-                layoutElement.minWidth = 0f;
+                layoutElement.ignoreLayout = false;
+                layoutElement.minWidth = CompactButtonWidth;
+                layoutElement.preferredWidth = CompactButtonWidth;
+                layoutElement.flexibleWidth = 0f;
+            }
+
+            if (gameObject.transform is RectTransform rectTransform)
+            {
+                rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, CompactButtonWidth);
+                rectTransform.sizeDelta = new Vector2(CompactButtonWidth, rectTransform.sizeDelta.y);
             }
         }
 
@@ -81,6 +97,24 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 labelText.enableAutoSizing = true;
                 labelText.fontSizeMin = 12f;
                 labelText.fontSizeMax = Mathf.Max(labelText.fontSize, 12f);
+                labelText.enableWordWrapping = false;
+                labelText.overflowMode = TextOverflowModes.Overflow;
+                labelText.alignment = TextAlignmentOptions.Center;
+                labelText.margin = Vector4.zero;
+
+                var labelContentSizeFitter = labelText.GetComponent<ContentSizeFitter>();
+                if (labelContentSizeFitter != null)
+                {
+                    labelContentSizeFitter.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
+                }
+
+                var labelLayoutElement = labelText.GetComponent<LayoutElement>();
+                if (labelLayoutElement != null)
+                {
+                    labelLayoutElement.minWidth = 0f;
+                    labelLayoutElement.preferredWidth = CompactButtonWidth;
+                    labelLayoutElement.flexibleWidth = 0f;
+                }
             }
         }
 
@@ -103,7 +137,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             button.gameObject.SetActive(sortButton.gameObject.activeSelf);
 
             ModifyText(button.gameObject, label);
-            ClearMinWidth(button.gameObject);
+            SetCompactButtonLayout(button.gameObject);
 
             button.onClick.RemoveAllListeners();
             button.onClick.AddListener(() => Sort(inventoryDisplay, sortMode));
