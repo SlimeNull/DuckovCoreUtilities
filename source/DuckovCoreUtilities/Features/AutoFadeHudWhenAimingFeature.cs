@@ -7,7 +7,7 @@ using VLB;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {
-    internal class AutoFadeHudWhenAiming : FeatureBase
+    internal class AutoFadeHudWhenAimingFeature : FeatureBase
     {
         public override string Name => "Fade HUD when aiming";
 
@@ -29,6 +29,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             var allCanvas = GameObject.FindObjectsOfType<Canvas>();
             foreach (var canvas in allCanvas)
             {
+                if (canvas.GetComponentInChildren<AimMarker>(true) != null ||
+                    canvas.GetComponentInChildren<ADSAimMarker>(true) != null)
+                {
+                    continue;
+                }
+
                 canvas.gameObject.GetOrAddComponent<AutoFadeWhenAiming>().Initialize(this);
             }
         }
@@ -36,12 +42,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         [RequireComponent(typeof(CanvasGroup))]
         private class AutoFadeWhenAiming : MonoBehaviour
         {
-            private AutoFadeHudWhenAiming? _ownerFeature;
+            private AutoFadeHudWhenAimingFeature? _ownerFeature;
             private CanvasGroup? _canvasGroup;
 
             private float _currentVelocity;
 
-            public void Initialize(AutoFadeHudWhenAiming ownerFeature)
+            public void Initialize(AutoFadeHudWhenAimingFeature ownerFeature)
             {
                 _ownerFeature = ownerFeature;
             }
