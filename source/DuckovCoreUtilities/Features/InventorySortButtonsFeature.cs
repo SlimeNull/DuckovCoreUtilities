@@ -1,7 +1,12 @@
 using Duckov.UI;
+using Duckov.Utilities;
 using HarmonyLib;
 using ItemStatsSystem;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using TMPro;
 using UnityEngine;
@@ -13,6 +18,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         private const string HarmonyCategory = nameof(InventorySortButtonsFeature);
         private const string ButtonPrefix = "DCU_InventorySort_";
+        private static readonly FieldInfo OnInventorySortedField = AccessTools.Field(typeof(Inventory), "onInventorySorted");
 
         public override string Name => "Inventory sort buttons";
 
@@ -84,7 +90,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             var parent = sortButton.transform.parent;
             var existingTransform = parent.Find(buttonName);
             var button = existingTransform == null
-                ? Object.Instantiate(sortButton, parent)
+                ? UnityEngine.Object.Instantiate(sortButton, parent)
                 : existingTransform.GetComponent<Button>();
 
             if (button == null)
@@ -113,7 +119,134 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return;
             }
 
-            inventoryDisplay.Target.Sort((left, right) => CompareItems(left, right, sortMode));
+            SortInventory(inventoryDisplay.Target, (left, right) => CompareItems(left, right, sortMode));
+        }
+
+        private static void SortInventory(Inventory inventory, Comparison<Item> comparison)
+        {
+            if (inventory.Loading)
+            {
+                return;
+            }
+
+            inventory.Loading = true;
+
+            var items = new List<Item>();
+            for (var i = 0; i < inventory.Content.Count; i++)
+            {
+                if (inventory.IsIndexLocked(i))
+                {
+                    continue;
+                }
+
+                var item = inventory.Content[i];
+                if (item == null)
+                {
+                    continue;
+                }
+
+                item.Detach();
+                items.Add(item);
+            }
+
+            var sortedItems = new List<Item>();
+            foreach (var itemsOfSameType in items.Where(static item => item != null).GroupBy(static item => item.TypeID))
+            {
+                if (itemsOfSameType.First().Stackable &&
+                    TryMerge(itemsOfSameType, out var mergedItems))
+                {
+                    sortedItems.AddRange(mergedItems);
+                }
+                else
+                {
+                    sortedItems.AddRange(itemsOfSameType);
+                }
+            }
+
+            sortedItems.Sort(comparison);
+
+            foreach (var item in sortedItems)
+            {
+                inventory.AddItem(item);
+            }
+
+            inventory.Loading = false;
+            InvokeInventorySorted(inventory);
+        }
+
+        private static bool TryMerge(IEnumerable<Item> itemsOfSameTypeID, out List<Item> result)
+        {
+            result = null!;
+
+            var items = itemsOfSameTypeID.Where(static item => item != null).ToList();
+            if (items.Count <= 0)
+            {
+                return false;
+            }
+
+            var typeID = items[0].TypeID;
+            foreach (var item in items)
+            {
+                if (typeID != item.TypeID)
+                {
+                    Debug.LogError("尝试融合的Item具有不同的TypeID,已取消");
+                    return false;
+                }
+            }
+
+            if (!items[0].Stackable)
+            {
+                Debug.LogError("此类物品不可堆叠，已取消");
+                return false;
+            }
+
+            result = new List<Item>();
+            var stack = new Stack<Item>(items);
+            Item? currentItem = null;
+
+            while (stack.Count > 0)
+            {
+                currentItem ??= stack.Pop();
+
+                if (stack.Count <= 0)
+                {
+                    result.Add(currentItem);
+                    break;
+                }
+
+                currentItem.Detach();
+                Item? incomingItem = null;
+                while (currentItem.StackCount < currentItem.MaxStackCount && stack.Count > 0)
+                {
+                    incomingItem = stack.Pop();
+                    incomingItem.Detach();
+                    currentItem.Combine(incomingItem);
+                }
+
+                result.Add(currentItem);
+                if (incomingItem != null && incomingItem.StackCount > 0)
+                {
+                    if (stack.Count <= 0)
+                    {
+                        result.Add(incomingItem);
+                        break;
+                    }
+
+                    currentItem = incomingItem;
+                }
+                else
+                {
+                    currentItem = null;
+                }
+            }
+
+            return true;
+        }
+
+        private static void InvokeInventorySorted(Inventory inventory)
+        {
+            var handler = OnInventorySortedField?.GetValue(inventory) as Action<Inventory>;
+            handler?.Invoke(inventory);
         }
 
         private static int CompareItems(Item? left, Item? right, SortMode sortMode)
