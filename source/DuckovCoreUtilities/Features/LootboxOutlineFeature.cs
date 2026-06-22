@@ -76,6 +76,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 AddLootboxRenderers(outlinable);
                 outlinable.OutlineParameters.Enabled = true;
                 outlinable.OutlineParameters.Color = Color.white;
+                outlinable.OutlineParameters.DilateShift = 3f;
 
                 if (UseQualityColor && lootBox is not null)
                 {
@@ -116,7 +117,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 if (renderer == null ||
                     !renderer.enabled ||
                     renderer.GetComponentInParent<InteractMarker>() != null ||
-                    renderer.GetComponentInParent<Canvas>() != null)
+                    renderer.GetComponentInParent<Canvas>() != null ||
+                    renderer.GetComponent<SodaPointLight>() != null ||
+                    renderer.name == "SodaPointLight")
                 {
                     return false;
                 }
