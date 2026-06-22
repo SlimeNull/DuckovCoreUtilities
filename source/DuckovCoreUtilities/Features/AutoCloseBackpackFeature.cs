@@ -68,10 +68,25 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private void OnHurt(DamageInfo arg0)
         {
-            if (WhenHurt)
+            if (WhenHurt &&
+                IsEnemyAttack(arg0))
             {
                 CloseLootView();
             }
+        }
+
+        private bool IsEnemyAttack(DamageInfo damageInfo)
+        {
+            var attacker = damageInfo.fromCharacter;
+            if (attacker == null ||
+                _attachedCharacter == null ||
+                damageInfo.isFromBuffOrEffect)
+            {
+                return false;
+            }
+
+            return attacker != _attachedCharacter &&
+                attacker.Team != _attachedCharacter.Team;
         }
 
         private static void CloseLootView()
