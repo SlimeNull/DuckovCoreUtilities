@@ -3,9 +3,9 @@ using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Reflection;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 #if NET6_0_OR_GREATER
 using System.Threading.Tasks.Dataflow;
