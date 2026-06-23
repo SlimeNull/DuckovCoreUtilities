@@ -7,8 +7,9 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.IO.Pipes;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -22,12 +23,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal sealed class HierarchyInspectorMcpFeature : FeatureBase, IHierarchyInspectorRpc
     {
-        private const string PipeName = "SlimeNull.DuckovCoreUtilities.HierachyInspector";
-
         private readonly MainThreadDispatcher _dispatcher = new MainThreadDispatcher();
         private readonly ObjectRegistry _registry = new ObjectRegistry();
         private volatile bool _stopping;
-        private NamedPipeServerStream? _currentPipe;
+        private readonly List<TcpClient> _clients = new List<TcpClient>();
+        private readonly object _clientsLock = new object();
+        private TcpListener? _listener;
         private Thread? _serverTask;
 
         public override string Name => "Hierarchy inspector MCP";
@@ -59,10 +60,26 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _stopping = true;
             try
             {
-                _currentPipe?.Dispose();
+                _listener?.Stop();
             }
             catch
             {
+            }
+
+            lock (_clientsLock)
+            {
+                foreach (var client in _clients.ToArray())
+                {
+                    try
+                    {
+                        client.Close();
+                    }
+                    catch
+                    {
+                    }
+                }
+
+                _clients.Clear();
             }
 
             if (_serverTask != null && !_serverTask.Join(1000))
@@ -82,38 +99,81 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             Debug.Log($"[HierarchyInspectorMcpFeature] Enter Server Loop");
 
-            while (!_stopping)
+            try
             {
-                try
+                _listener = new TcpListener(IPAddress.Parse(HierarchyInspectorRpcEndpoint.Host), HierarchyInspectorRpcEndpoint.Port);
+                _listener.Start();
+                Debug.Log($"[HierarchyInspectorMcpFeature] RPC TCP listener started at {HierarchyInspectorRpcEndpoint.Host}:{HierarchyInspectorRpcEndpoint.Port}");
+
+                while (!_stopping)
                 {
-                    Debug.Log($"[HierarchyInspectorMcpFeature] Start pipe stream");
-                    using var pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-
-                    _currentPipe = pipe;
-                    Debug.Log($"[HierarchyInspectorMcpFeature] RPC server started");
-
-                    pipe.WaitForConnection();
-
+                    var client = _listener.AcceptTcpClient();
+                    TrackClient(client);
                     Debug.Log($"[HierarchyInspectorMcpFeature] RPC client connected");
 
-                    using var server = new RpcServer<IHierarchyInspectorRpc>(pipe, this);
+                    var thread = new Thread(() => RunClient(client))
+                    {
+                        IsBackground = true
+                    };
 
+                    thread.Start();
+                }
+            }
+            catch (SocketException) when (_stopping)
+            {
+            }
+            catch (ObjectDisposedException) when (_stopping)
+            {
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[HierarchyInspectorMcpFeature] RPC listener error: {ex}");
+            }
+            finally
+            {
+                _listener = null;
+                Debug.Log($"[HierarchyInspectorMcpFeature] RPC listener stopped");
+            }
+        }
+
+        private void RunClient(TcpClient client)
+        {
+            try
+            {
+                using (client)
+                using (var stream = client.GetStream())
+                using (var server = new RpcServer<IHierarchyInspectorRpc>(stream, this))
+                {
                     server.Run();
                 }
-                catch (OperationCanceledException)
+            }
+            catch (Exception ex)
+            {
+                if (!_stopping)
                 {
-                    return;
+                    Debug.LogError($"[HierarchyInspectorMcpFeature] RPC client error: {ex}");
                 }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"[HierarchyInspectorMcpFeature] RPC server error: {ex}");
-                }
-                finally
-                {
-                    _currentPipe = null;
-                }
+            }
+            finally
+            {
+                UntrackClient(client);
+                Debug.Log($"[HierarchyInspectorMcpFeature] RPC client disconnected");
+            }
+        }
 
-                Debug.Log($"[HierarchyInspectorMcpFeature] RPC server stopped");
+        private void TrackClient(TcpClient client)
+        {
+            lock (_clientsLock)
+            {
+                _clients.Add(client);
+            }
+        }
+
+        private void UntrackClient(TcpClient client)
+        {
+            lock (_clientsLock)
+            {
+                _clients.Remove(client);
             }
         }
 
