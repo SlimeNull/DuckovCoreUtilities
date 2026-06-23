@@ -33,6 +33,7 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(new AutoFadeHudWhenAimingFeature());
             _features.Register(new BulletCountCrosshairColorFeature());
             _features.Register(new LowHealthInnerShadowFeature());
+            _features.Register(new KillRecordFeature());
             _features.Register(new HierarchyInspectorMcpFeature());
             _features.EnableAll();
 
