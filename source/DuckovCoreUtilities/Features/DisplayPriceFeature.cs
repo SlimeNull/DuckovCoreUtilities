@@ -1,14 +1,8 @@
 ﻿using Duckov.UI;
-using Duckov.Utilities;
 using ItemStatsSystem;
 using SlimeNull.DuckovCoreUtilities.Features.Abstraction;
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Text;
-using TMPro;
-using UnityEngine;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {
