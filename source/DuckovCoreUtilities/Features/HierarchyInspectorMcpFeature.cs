@@ -1,5 +1,5 @@
-using ModelContextProtocol.Protocol;
-using ModelContextProtocol.Server;
+using EleCho.JsonRpc;
+using SlimeNull.DuckovCoreUtilities.HierarchyInspector;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using System;
 using System.Collections;
@@ -18,31 +18,47 @@ using UnityEngine.SceneManagement;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {
-    internal sealed class HierarchyInspectorMcpFeature : FeatureBase
+    internal sealed class HierarchyInspectorMcpFeature : FeatureBase, IHierarchyInspectorRpc
     {
         private const string PipeName = "SlimeNull.DuckovCoreUtilities.HierachyInspector";
 
         private readonly MainThreadDispatcher _dispatcher = new MainThreadDispatcher();
         private readonly ObjectRegistry _registry = new ObjectRegistry();
+        private volatile bool _stopping;
+        private NamedPipeServerStream? _currentPipe;
         private Thread? _serverTask;
 
         public override string Name => "Hierarchy inspector MCP";
 
         protected override void OnEnable()
         {
-            Debug.LogError($"[HierarchyInspectorMcpFeature] Task run start");
+            _stopping = false;
+            Debug.Log($"[HierarchyInspectorMcpFeature] RPC server thread start");
             _serverTask = new Thread(RunServerLoop)
             {
                 IsBackground = true
             };
 
             _serverTask.Start();
-            Debug.LogError($"[HierarchyInspectorMcpFeature] Task run end");
+            Debug.Log($"[HierarchyInspectorMcpFeature] RPC server thread started");
         }
 
         protected override void OnDisable()
         {
-            _serverTask?.Abort();
+            _stopping = true;
+            try
+            {
+                _currentPipe?.Dispose();
+            }
+            catch
+            {
+            }
+
+            if (_serverTask != null && !_serverTask.Join(1000))
+            {
+                _serverTask.Abort();
+            }
+
             _serverTask = null;
         }
 
@@ -53,23 +69,29 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private void RunServerLoop()
         {
-            Debug.LogError($"[HierarchyInspectorMcpFeature] Enter Server Loop");
+            Debug.Log($"[HierarchyInspectorMcpFeature] Enter Server Loop");
 
-            while (true)
+            while (!_stopping)
             {
                 try
                 {
-                    Debug.LogError($"[HierarchyInspectorMcpFeature] Start pipe stream");
+                    Debug.Log($"[HierarchyInspectorMcpFeature] Start pipe stream");
                     using (var pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
                     {
-                        Debug.LogError($"[HierarchyInspectorMcpFeature] MCP server Started");
+                        _currentPipe = pipe;
+                        Debug.Log($"[HierarchyInspectorMcpFeature] RPC server started");
 
                         pipe.WaitForConnection();
-                        Debug.LogError($"[HierarchyInspectorMcpFeature] MCP client connected");
+                        Debug.Log($"[HierarchyInspectorMcpFeature] RPC client connected");
 
-                        var transport = new StreamServerTransport(pipe, pipe, PipeName);
-                        var server = McpServer.Create(transport, CreateServerOptions());
-                        server.RunAsync().Wait();
+                        using (var server = new RpcServer<IHierarchyInspectorRpc>(pipe, this))
+                        {
+                            server.DisposeBaseStream = false;
+                            while (!_stopping && pipe.IsConnected)
+                            {
+                                Thread.Sleep(100);
+                            }
+                        }
                     }
                 }
                 catch (OperationCanceledException)
@@ -78,55 +100,15 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"[HierarchyInspectorMcpFeature] MCP server error: {ex}");
+                    Debug.LogError($"[HierarchyInspectorMcpFeature] RPC server error: {ex}");
+                }
+                finally
+                {
+                    _currentPipe = null;
                 }
 
-                Debug.LogError($"[HierarchyInspectorMcpFeature] MCP server stopped");
+                Debug.Log($"[HierarchyInspectorMcpFeature] RPC server stopped");
             }
-        }
-
-        private McpServerOptions CreateServerOptions()
-        {
-            var tools = new McpServerPrimitiveCollection<McpServerTool>();
-            tools.Add(CreateTool(nameof(GetHierarchy), "get_hierarchy", "Return loaded Unity scene hierarchy trees with GameObject and component instance IDs.", readOnly: true));
-            tools.Add(CreateTool(nameof(FindByName), "find_by_name", "Find scene GameObjects by name.", readOnly: true));
-            tools.Add(CreateTool(nameof(FindByType), "find_by_type", "Find scene GameObjects or Components by type full name.", readOnly: true));
-            tools.Add(CreateTool(nameof(GetValue), "get_value", "Get a field/property/path value from a Unity instance ID or stored GUID.", readOnly: true));
-            tools.Add(CreateTool(nameof(SetValue), "set_value", "Set a primitive field/property/path value on a Unity instance ID or stored GUID.", readOnly: false));
-            tools.Add(CreateTool(nameof(CallMethod), "call_method", "Call an instance or static method. Pass arguments as JSON array.", readOnly: false));
-
-            return new McpServerOptions
-            {
-                ServerInfo = new Implementation
-                {
-                    Name = "SlimeNull.DuckovCoreUtilities.HierachyInspector",
-                    Title = "Duckov Hierarchy Inspector",
-                    Version = "1.0.0"
-                },
-                ToolCollection = tools,
-                ServerInstructions = "Inspect and manipulate Unity hierarchy objects through instance IDs and stored object GUIDs."
-            };
-        }
-
-        private McpServerTool CreateTool(string methodName, string toolName, string description, bool readOnly)
-        {
-            var method = GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
-            if (method == null)
-            {
-                throw new MissingMethodException(GetType().FullName, methodName);
-            }
-
-            return McpServerTool.Create(method, this, Tool(toolName, description, readOnly));
-        }
-
-        private static McpServerToolCreateOptions Tool(string name, string description, bool readOnly)
-        {
-            return new McpServerToolCreateOptions
-            {
-                Name = name,
-                Description = description,
-                ReadOnly = readOnly
-            };
         }
 
         public string GetHierarchy()
@@ -483,6 +465,11 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
 
             return true;
+        }
+
+        public string Test(string input)
+        {
+            return input;
         }
 
         private sealed class MainThreadDispatcher

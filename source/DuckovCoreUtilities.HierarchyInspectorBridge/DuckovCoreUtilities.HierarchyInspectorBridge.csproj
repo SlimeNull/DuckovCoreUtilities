@@ -8,4 +8,11 @@
     <AssemblyName>SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge</AssemblyName>
     <RootNamespace>SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="EleCho.JsonRpc" Version="2.0.1" />
+    <PackageReference Include="ModelContextProtocol.Core" Version="1.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DuckovCoreUtilities.HierarchyInspector.Abstractions\DuckovCoreUtilities.HierarchyInspector.Abstractions.csproj" />
+  </ItemGroup>
 </Project>

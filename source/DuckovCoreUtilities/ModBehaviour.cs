@@ -1,5 +1,6 @@
 using SlimeNull.DuckovCoreUtilities.Features;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace SlimeNull.DuckovCoreUtilities
@@ -14,6 +15,11 @@ namespace SlimeNull.DuckovCoreUtilities
             {
                 return;
             }
+
+            Task.Run(() =>
+            {
+                Debug.Log("In task action");
+            });
 
             Debug.Log("loading DCU");
 
