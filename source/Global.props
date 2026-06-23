@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <DuckovPath>D:\Program Files (x86)\Steam\steamapps\common\Escape from Duckov</DuckovPath>
+    <ManagedPath>$(DuckovPath)\Duckov_Data\Managed</ManagedPath>
+  </PropertyGroup>
+</Project>

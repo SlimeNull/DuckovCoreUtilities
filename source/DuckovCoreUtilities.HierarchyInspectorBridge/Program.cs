@@ -20,22 +20,18 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
 
         private static async Task MainAsync()
         {
-            using (var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous))
-            {
-                await pipe.ConnectAsync().ConfigureAwait(false);
+            using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+            await pipe.ConnectAsync().ConfigureAwait(false);
 
-                using (var rpcClient = new RpcClient<IHierarchyInspectorRpc>(pipe))
-                {
-                    rpcClient.DisposeBaseStream = false;
+            using var rpcClient = new RpcClient<IHierarchyInspectorRpc>(pipe);
+            rpcClient.Start();
 
-                    var hier = rpcClient.Remote.Test("abaaba");
+            var hier = rpcClient.Remote.Test("abaaba");
 
-                    var tools = new HierarchyInspectorMcpTools(rpcClient.Remote);
-                    var transport = new StdioServerTransport(PipeName);
-                    var server = McpServer.Create(transport, CreateServerOptions(tools));
-                    await server.RunAsync().ConfigureAwait(false);
-                }
-            }
+            var tools = new HierarchyInspectorMcpTools(rpcClient.Remote);
+            var transport = new StdioServerTransport(PipeName);
+            var server = McpServer.Create(transport, CreateServerOptions(tools));
+            await server.RunAsync().ConfigureAwait(false);
         }
 
         private static McpServerOptions CreateServerOptions(HierarchyInspectorMcpTools tools)
