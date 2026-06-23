@@ -3,7 +3,7 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using SlimeNull.DuckovCoreUtilities.HierarchyInspector;
 using System;
-using System.IO.Pipes;
+using System.Net.Sockets;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -11,8 +11,6 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
 {
     internal sealed class Program
     {
-        private const string PipeName = "SlimeNull.DuckovCoreUtilities.HierachyInspector";
-
         private static void Main(string[] args)
         {
             MainAsync().GetAwaiter().GetResult();
@@ -20,14 +18,15 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
 
         private static async Task MainAsync()
         {
-            using var pipe = new NamedPipeClientStream(".", PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
-            await pipe.ConnectAsync().ConfigureAwait(false);
+            using var client = new TcpClient();
+            await client.ConnectAsync(HierarchyInspectorRpcEndpoint.Host, HierarchyInspectorRpcEndpoint.Port).ConfigureAwait(false);
+            using var stream = client.GetStream();
 
-            using var rpcClient = new RpcClient<IHierarchyInspectorRpc>(pipe);
+            using var rpcClient = new RpcClient<IHierarchyInspectorRpc>(stream);
             rpcClient.Start();
 
             var tools = new HierarchyInspectorMcpTools(rpcClient.Remote);
-            var transport = new StdioServerTransport(PipeName);
+            var transport = new StdioServerTransport(HierarchyInspectorRpcEndpoint.ServerName);
             var server = McpServer.Create(transport, CreateServerOptions(tools));
             await server.RunAsync().ConfigureAwait(false);
         }
@@ -48,7 +47,7 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
             {
                 ServerInfo = new Implementation
                 {
-                    Name = PipeName,
+                    Name = HierarchyInspectorRpcEndpoint.ServerName,
                     Title = "Duckov Hierarchy Inspector",
                     Version = "1.0.0"
                 },
