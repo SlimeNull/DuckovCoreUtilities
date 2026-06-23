@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
@@ -30,8 +31,17 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         public override string Name => "Hierarchy inspector MCP";
 
+        async Task SomeAsyncMethod()
+        {
+            Debug.Log("Action in async method 1");
+            await Task.Delay(10);
+            Debug.Log("Action in async method 2");
+        }
+
         protected override void OnEnable()
         {
+            var t = SomeAsyncMethod();
+
             _stopping = false;
             Debug.Log($"[HierarchyInspectorMcpFeature] RPC server thread start");
             _serverTask = new Thread(RunServerLoop)
@@ -76,23 +86,18 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 try
                 {
                     Debug.Log($"[HierarchyInspectorMcpFeature] Start pipe stream");
-                    using (var pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous))
-                    {
-                        _currentPipe = pipe;
-                        Debug.Log($"[HierarchyInspectorMcpFeature] RPC server started");
+                    using var pipe = new NamedPipeServerStream(PipeName, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
 
-                        pipe.WaitForConnection();
-                        Debug.Log($"[HierarchyInspectorMcpFeature] RPC client connected");
+                    _currentPipe = pipe;
+                    Debug.Log($"[HierarchyInspectorMcpFeature] RPC server started");
 
-                        using (var server = new RpcServer<IHierarchyInspectorRpc>(pipe, this))
-                        {
-                            server.DisposeBaseStream = false;
-                            while (!_stopping && pipe.IsConnected)
-                            {
-                                Thread.Sleep(100);
-                            }
-                        }
-                    }
+                    pipe.WaitForConnection();
+
+                    Debug.Log($"[HierarchyInspectorMcpFeature] RPC client connected");
+
+                    using var server = new RpcServer<IHierarchyInspectorRpc>(pipe, this);
+
+                    server.Run();
                 }
                 catch (OperationCanceledException)
                 {

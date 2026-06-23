@@ -1,4 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../Global.props" />
+  
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
@@ -6,16 +8,14 @@
     <ImplicitUsings>disable</ImplicitUsings>
     <AssemblyName>SlimeNull.DuckovCoreUtilities</AssemblyName>
     <RootNamespace>SlimeNull.DuckovCoreUtilities</RootNamespace>
-    <DuckovPath>D:\Program Files (x86)\Steam\steamapps\common\Escape from Duckov</DuckovPath>
-    <ManagedPath>$(DuckovPath)\Duckov_Data\Managed</ManagedPath>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
-    <PackageReference Include="EleCho.JsonRpc" Version="2.0.1" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DuckovCoreUtilities.HierarchyInspector.Abstractions\DuckovCoreUtilities.HierarchyInspector.Abstractions.csproj" />
+    <ProjectReference Include="..\JsonRpc\JsonRpc.csproj" />
   </ItemGroup>
 
   <ItemGroup>
