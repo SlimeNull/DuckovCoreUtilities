@@ -1,15 +1,15 @@
-﻿using System;
-using System.Text.Json.Serialization;
+using System;
+using Newtonsoft.Json;
 
 namespace EleCho.JsonRpc
 {
     internal abstract record class RpcPackage
     {
-        [JsonInclude]
-        [JsonPropertyName("jsonrpc")]
+        [JsonProperty("jsonrpc")]
         public string JsonRpc => "2.0";
     }
 
+    [JsonConverter(typeof(Utils.JsonUtils.RpcPackageIdConverter))]
     internal record struct RpcPackageId
     {
         private RpcPackageId(object value)
@@ -33,6 +33,8 @@ namespace EleCho.JsonRpc
                 return Create(strId);
             else if (id is int intId)
                 return Create(intId);
+            else if (id is long longId)
+                return Create(checked((int)longId));
             else
                 throw new ArgumentException("Invalid type of id", nameof(id));
         }
@@ -62,16 +64,16 @@ namespace EleCho.JsonRpc
             Id = id;
         }
 
-        [JsonPropertyName("method")]
+        [JsonProperty("method")]
         public string Method { get; }
 
-        [JsonPropertyName("params")]
+        [JsonProperty("params")]
         public object?[]? Args { get; }
 
-        [JsonPropertyName("signature")]
+        [JsonProperty("signature")]
         public string? Signature { get; }
 
-        [JsonPropertyName("id")]
+        [JsonProperty("id")]
         public RpcPackageId? Id { get; }
     }
 
@@ -85,14 +87,13 @@ namespace EleCho.JsonRpc
             Id = id;
         }
 
-        [JsonPropertyName("result")]
+        [JsonProperty("result")]
         public object? Result { get; }
 
-        [JsonPropertyName("ref_results")]
+        [JsonProperty("ref_results")]
         public object?[]? RefResults { get; }
 
-
-        [JsonPropertyName("id")]
+        [JsonProperty("id")]
         public RpcPackageId Id { get; }
     }
 
@@ -105,11 +106,10 @@ namespace EleCho.JsonRpc
             Id = id;
         }
 
-        [JsonPropertyName("error")]
+        [JsonProperty("error")]
         public RpcError Error { get; }
 
-
-        [JsonPropertyName("id")]
+        [JsonProperty("id")]
         public RpcPackageId Id { get; }
     }
 
@@ -120,7 +120,6 @@ namespace EleCho.JsonRpc
         {
             Code = code;
             Message = message;
-
             Data = data;
         }
 
@@ -128,16 +127,14 @@ namespace EleCho.JsonRpc
             this((int)code, message, data)
         { }
 
-
-        [JsonPropertyName("code")]
+        [JsonProperty("code")]
         public int Code { get; }
 
-        [JsonPropertyName("message")]
+        [JsonProperty("message")]
         public string Message { get; }
 
-        [JsonPropertyName("data")]
+        [JsonProperty("data")]
         public object? Data { get; }
-
 
         [JsonIgnore]
         public bool IsParseError =>

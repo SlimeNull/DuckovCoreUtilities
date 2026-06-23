@@ -26,8 +26,6 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
             using var rpcClient = new RpcClient<IHierarchyInspectorRpc>(pipe);
             rpcClient.Start();
 
-            var hier = rpcClient.Remote.Test("abaaba");
-
             var tools = new HierarchyInspectorMcpTools(rpcClient.Remote);
             var transport = new StdioServerTransport(PipeName);
             var server = McpServer.Create(transport, CreateServerOptions(tools));

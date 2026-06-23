@@ -14,6 +14,12 @@
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ManagedPath)\Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\DuckovCoreUtilities.HierarchyInspector.Abstractions\DuckovCoreUtilities.HierarchyInspector.Abstractions.csproj" />
     <ProjectReference Include="..\JsonRpc\JsonRpc.csproj" />
   </ItemGroup>

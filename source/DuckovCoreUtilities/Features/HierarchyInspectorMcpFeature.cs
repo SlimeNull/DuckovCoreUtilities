@@ -10,10 +10,11 @@ using System.IO;
 using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -350,9 +351,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             return -1;
         }
 
-        private static bool TryParseArguments(string argumentsJson, out JsonElement[] arguments, out string error)
+        private static bool TryParseArguments(string argumentsJson, out JToken[] arguments, out string error)
         {
-            arguments = Array.Empty<JsonElement>();
+            arguments = Array.Empty<JToken>();
             error = string.Empty;
 
             if (string.IsNullOrWhiteSpace(argumentsJson))
@@ -362,17 +363,15 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             try
             {
-                using (var doc = JsonDocument.Parse(argumentsJson))
+                var token = JToken.Parse(argumentsJson);
+                if (token is not JArray array)
                 {
-                    if (doc.RootElement.ValueKind != JsonValueKind.Array)
-                    {
-                        error = "argumentsJson must be a JSON array.";
-                        return false;
-                    }
-
-                    arguments = doc.RootElement.EnumerateArray().Select(e => e.Clone()).ToArray();
-                    return true;
+                    error = "argumentsJson must be a JSON array.";
+                    return false;
                 }
+
+                arguments = array.ToArray();
+                return true;
             }
             catch (Exception ex)
             {
@@ -553,16 +552,19 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private static class Json
         {
-            private static readonly JsonSerializerOptions Options = new JsonSerializerOptions { WriteIndented = false };
+            private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            };
 
             public static string Ok(object? data)
             {
-                return JsonSerializer.Serialize(new { ok = true, data }, Options);
+                return JsonConvert.SerializeObject(new { ok = true, data }, Settings);
             }
 
             public static string Error(string message)
             {
-                return JsonSerializer.Serialize(new { ok = false, error = message }, Options);
+                return JsonConvert.SerializeObject(new { ok = false, error = message }, Settings);
             }
         }
 
@@ -793,7 +795,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             private static readonly Regex GenericRegex = new Regex(@"^(?<name>[^<]+)<(?<types>.+)>$", RegexOptions.Compiled);
 
-            public static InvokeResult Invoke(object? target, Type? staticType, string methodPath, JsonElement[] arguments, ObjectRegistry registry)
+            public static InvokeResult Invoke(object? target, Type? staticType, string methodPath, JToken[] arguments, ObjectRegistry registry)
             {
                 var targetType = staticType ?? target?.GetType();
                 if (targetType == null)
@@ -875,7 +877,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 yield return value.Substring(start);
             }
 
-            private static bool TryBuildArguments(ParameterInfo[] parameters, JsonElement[] arguments, ObjectRegistry registry, out object?[] converted)
+            private static bool TryBuildArguments(ParameterInfo[] parameters, JToken[] arguments, ObjectRegistry registry, out object?[] converted)
             {
                 converted = new object?[parameters.Length];
                 for (var i = 0; i < parameters.Length; i++)
@@ -930,10 +932,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                 try
                 {
-                    using (var doc = JsonDocument.Parse(valueJson))
-                    {
-                        return TryConvertJson(doc.RootElement, targetType, null, out value, out error);
-                    }
+                    var token = JToken.Parse(valueJson);
+                    return TryConvertJson(token, targetType, null, out value, out error);
                 }
                 catch (Exception ex)
                 {
@@ -942,12 +942,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
             }
 
-            public static bool TryConvertArgument(JsonElement element, Type targetType, ObjectRegistry registry, out object? value)
+            public static bool TryConvertArgument(JToken element, Type targetType, ObjectRegistry registry, out object? value)
             {
                 return TryConvertJson(element, targetType, registry, out value, out _);
             }
 
-            private static bool TryConvertJson(JsonElement element, Type targetType, ObjectRegistry? registry, out object? value, out string error)
+            private static bool TryConvertJson(JToken element, Type targetType, ObjectRegistry? registry, out object? value, out string error)
             {
                 value = null;
                 error = string.Empty;
@@ -955,7 +955,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 var nullable = Nullable.GetUnderlyingType(targetType);
                 if (nullable != null)
                 {
-                    if (element.ValueKind == JsonValueKind.Null)
+                    if (element.Type == JTokenType.Null)
                     {
                         return true;
                     }
@@ -966,49 +966,49 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 {
                     if (targetType == typeof(string))
                     {
-                        value = element.ValueKind == JsonValueKind.String ? element.GetString() : element.GetRawText();
+                        value = element.Type == JTokenType.String ? element.Value<string>() : element.ToString(Formatting.None);
                     }
                     else if (targetType == typeof(int))
                     {
-                        value = element.GetInt32();
+                        value = element.Value<int>();
                     }
                     else if (targetType == typeof(long))
                     {
-                        value = element.GetInt64();
+                        value = element.Value<long>();
                     }
                     else if (targetType == typeof(float))
                     {
-                        value = element.GetSingle();
+                        value = element.Value<float>();
                     }
                     else if (targetType == typeof(double))
                     {
-                        value = element.GetDouble();
+                        value = element.Value<double>();
                     }
                     else if (targetType == typeof(bool))
                     {
-                        value = element.GetBoolean();
+                        value = element.Value<bool>();
                     }
                     else if (targetType.IsEnum)
                     {
-                        value = element.ValueKind == JsonValueKind.String
-                            ? Enum.Parse(targetType, element.GetString(), ignoreCase: true)
-                            : Enum.ToObject(targetType, element.GetInt32());
+                        value = element.Type == JTokenType.String
+                            ? Enum.Parse(targetType, element.Value<string>(), ignoreCase: true)
+                            : Enum.ToObject(targetType, element.Value<int>());
                     }
                     else if (targetType == typeof(DateTime))
                     {
-                        value = element.GetDateTime();
+                        value = element.Value<DateTime>();
                     }
                     else if (targetType == typeof(decimal))
                     {
-                        value = element.GetDecimal();
+                        value = element.Value<decimal>();
                     }
                     else if (targetType == typeof(Guid))
                     {
-                        value = Guid.Parse(element.GetString() ?? element.GetRawText());
+                        value = Guid.Parse(element.Value<string>() ?? element.ToString(Formatting.None));
                     }
                     else if (targetType == typeof(Type))
                     {
-                        var typeName = element.ValueKind == JsonValueKind.String ? element.GetString() : element.GetRawText();
+                        var typeName = element.Type == JTokenType.String ? element.Value<string>() : element.ToString(Formatting.None);
                         value = TypeResolver.Resolve(typeName ?? string.Empty);
                         if (value == null)
                         {
@@ -1034,23 +1034,23 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     }
                     else if (targetType == typeof(Color))
                     {
-                        value = new Color(GetSingle(element, "r"), GetSingle(element, "g"), GetSingle(element, "b"), element.TryGetProperty("a", out var alpha) ? alpha.GetSingle() : 1f);
+                        value = new Color(GetSingle(element, "r"), GetSingle(element, "g"), GetSingle(element, "b"), element["a"]?.Value<float>() ?? 1f);
                     }
                     else if (registry != null && typeof(UnityEngine.Object).IsAssignableFrom(targetType))
                     {
-                        var id = element.ValueKind == JsonValueKind.String ? element.GetString() : element.GetRawText();
+                        var id = element.Type == JTokenType.String ? element.Value<string>() : element.ToString(Formatting.None);
                         if (string.IsNullOrEmpty(id) || !registry.TryResolve(id, out value, out _) || value == null || !targetType.IsInstanceOfType(value))
                         {
                             return false;
                         }
                     }
-                    else if (registry != null && element.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(element.GetString()) && registry.TryResolve(element.GetString()!, out value, out _))
+                    else if (registry != null && element.Type == JTokenType.String && !string.IsNullOrEmpty(element.Value<string>()) && registry.TryResolve(element.Value<string>()!, out value, out _))
                     {
                         return value == null || targetType.IsInstanceOfType(value);
                     }
                     else
                     {
-                        value = JsonSerializer.Deserialize(element.GetRawText(), targetType);
+                        value = element.ToObject(targetType);
                     }
 
                     return true;
@@ -1062,9 +1062,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
             }
 
-            private static float GetSingle(JsonElement element, string propertyName)
+            private static float GetSingle(JToken element, string propertyName)
             {
-                return element.GetProperty(propertyName).GetSingle();
+                return element[propertyName]!.Value<float>();
             }
         }
     }
