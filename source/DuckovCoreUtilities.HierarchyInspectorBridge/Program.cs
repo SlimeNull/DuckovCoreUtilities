@@ -3,29 +3,22 @@ using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using SlimeNull.DuckovCoreUtilities.HierarchyInspector;
 using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
 {
     internal sealed class Program
     {
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
-            MainAsync().GetAwaiter().GetResult();
-        }
-
-        private static async Task MainAsync()
-        {
-            using var client = new TcpClient();
-            await client.ConnectAsync(HierarchyInspectorRpcEndpoint.Host, HierarchyInspectorRpcEndpoint.Port).ConfigureAwait(false);
-            using var stream = client.GetStream();
-
-            using var rpcClient = new RpcClient<IHierarchyInspectorRpc>(stream);
-            rpcClient.Start();
-
-            var tools = new HierarchyInspectorMcpTools(rpcClient.Remote);
+            var apiClient = new DuckovApiClient();
+            var tools = new HierarchyInspectorMcpTools(apiClient);
             var transport = new StdioServerTransport(HierarchyInspectorRpcEndpoint.ServerName);
             var server = McpServer.Create(transport, CreateServerOptions(tools));
             await server.RunAsync().ConfigureAwait(false);
@@ -33,16 +26,6 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
 
         private static McpServerOptions CreateServerOptions(HierarchyInspectorMcpTools tools)
         {
-            var toolCollection = new McpServerPrimitiveCollection<McpServerTool>
-            {
-                CreateTool(tools, nameof(HierarchyInspectorMcpTools.GetHierarchy), "get_hierarchy", "Return loaded Unity scene hierarchy trees with GameObject and component instance IDs.", true),
-                CreateTool(tools, nameof(HierarchyInspectorMcpTools.FindByName), "find_by_name", "Find scene GameObjects by name.", true),
-                CreateTool(tools, nameof(HierarchyInspectorMcpTools.FindByType), "find_by_type", "Find scene GameObjects or Components by type full name.", true),
-                CreateTool(tools, nameof(HierarchyInspectorMcpTools.GetValue), "get_value", "Get a field/property/path value from a Unity instance ID or stored GUID.", true),
-                CreateTool(tools, nameof(HierarchyInspectorMcpTools.SetValue), "set_value", "Set a primitive field/property/path value on a Unity instance ID or stored GUID.", false),
-                CreateTool(tools, nameof(HierarchyInspectorMcpTools.CallMethod), "call_method", "Call an instance or static method. Pass arguments as JSON array.", false)
-            };
-
             return new McpServerOptions
             {
                 ServerInfo = new Implementation
@@ -51,65 +34,207 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
                     Title = "Duckov Hierarchy Inspector",
                     Version = "1.0.0"
                 },
-                ToolCollection = toolCollection,
+                ToolCollection = DiscoverTools(tools),
                 ServerInstructions = "Inspect and manipulate Unity hierarchy objects through instance IDs and stored object GUIDs."
             };
         }
 
-        private static McpServerTool CreateTool(object target, string methodName, string toolName, string description, bool readOnly)
+        private static McpServerPrimitiveCollection<McpServerTool> DiscoverTools(object target)
         {
-            var method = target.GetType().GetMethod(methodName, BindingFlags.Public | BindingFlags.Instance);
-            if (method == null)
+            var collection = new McpServerPrimitiveCollection<McpServerTool>();
+            var targetType = target.GetType();
+            if (!targetType.IsDefined(typeof(McpServerToolTypeAttribute), inherit: true))
             {
-                throw new MissingMethodException(target.GetType().FullName, methodName);
+                return collection;
             }
 
-            return McpServerTool.Create(method, target, new McpServerToolCreateOptions
+            foreach (var method in targetType.GetMethods(BindingFlags.Public | BindingFlags.Instance)
+                .Where(method => method.IsDefined(typeof(McpServerToolAttribute), inherit: true)))
             {
-                Name = toolName,
-                Description = description,
-                ReadOnly = readOnly
-            });
+                collection.Add(McpServerTool.Create(method, target));
+            }
+
+            return collection;
         }
     }
 
+    public sealed class DuckovApiClient : IDisposable
+    {
+        private const string ConnectionError = "无法连接到 Duckov Api Host, 游戏是否在运行且启用了 Mod?";
+
+        private readonly object _sync = new object();
+        private TcpClient? _tcpClient;
+        private RpcClient<IHierarchyInspectorRpc>? _rpcClient;
+
+        public ApiResult<T> Invoke<T>(Func<IHierarchyInspectorRpc, ApiResult<T>> action)
+        {
+            IHierarchyInspectorRpc remote;
+            try
+            {
+                remote = EnsureConnected();
+            }
+            catch
+            {
+                return ApiResult<T>.Failure(ConnectionError);
+            }
+
+            try
+            {
+                return action(remote);
+            }
+            catch
+            {
+                ResetConnection();
+                try
+                {
+                    remote = EnsureConnected();
+                    return action(remote);
+                }
+                catch
+                {
+                    return ApiResult<T>.Failure(ConnectionError);
+                }
+            }
+        }
+
+        private IHierarchyInspectorRpc EnsureConnected()
+        {
+            lock (_sync)
+            {
+                if (_rpcClient != null && _tcpClient != null && IsConnected(_tcpClient))
+                {
+                    return _rpcClient.Remote;
+                }
+
+                ResetConnection();
+
+                var tcpClient = new TcpClient();
+                tcpClient.Connect(HierarchyInspectorRpcEndpoint.Host, HierarchyInspectorRpcEndpoint.Port);
+
+                var rpcClient = new RpcClient<IHierarchyInspectorRpc>(tcpClient.GetStream());
+                rpcClient.Start();
+
+                _tcpClient = tcpClient;
+                _rpcClient = rpcClient;
+                return rpcClient.Remote;
+            }
+        }
+
+        private static bool IsConnected(TcpClient client)
+        {
+            try
+            {
+                return client.Client != null && client.Connected && !(client.Client.Poll(0, SelectMode.SelectRead) && client.Client.Available == 0);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private void ResetConnection()
+        {
+            lock (_sync)
+            {
+                try
+                {
+                    _rpcClient?.Dispose();
+                }
+                catch
+                {
+                }
+
+                try
+                {
+                    _tcpClient?.Close();
+                }
+                catch
+                {
+                }
+
+                _rpcClient = null;
+                _tcpClient = null;
+            }
+        }
+
+        public void Dispose()
+        {
+            ResetConnection();
+        }
+    }
+
+    [McpServerToolType]
     public sealed class HierarchyInspectorMcpTools
     {
-        private readonly IHierarchyInspectorRpc _rpc;
+        private readonly DuckovApiClient _apiClient;
 
-        public HierarchyInspectorMcpTools(IHierarchyInspectorRpc rpc)
+        public HierarchyInspectorMcpTools(DuckovApiClient apiClient)
         {
-            _rpc = rpc;
+            _apiClient = apiClient;
         }
 
-        public string GetHierarchy()
+        [McpServerTool(Name = "get_hierarchy", ReadOnly = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<HierarchyResponse>))]
+        [Description("Return loaded Unity scene hierarchy trees with GameObject and component instance IDs.")]
+        public ApiResult<HierarchyResponse> GetHierarchy()
         {
-            return _rpc.GetHierarchy();
+            return _apiClient.Invoke(api => api.GetHierarchy());
         }
 
-        public string FindByName(string name, bool includeInactive)
+        [McpServerTool(Name = "get_components", ReadOnly = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<List<ComponentInfo>>))]
+        [Description("Return all components attached to a GameObject by GameObject instance ID.")]
+        public ApiResult<List<ComponentInfo>> GetComponents([Description("GameObject instance ID.")] string gameObjectId)
         {
-            return _rpc.FindByName(name, includeInactive);
+            return _apiClient.Invoke(api => api.GetComponents(gameObjectId));
         }
 
-        public string FindByType(string typeName, bool includeInactive)
+        [McpServerTool(Name = "find_by_name", ReadOnly = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<List<ObjectSearchResult>>))]
+        [Description("Find scene GameObjects by name.")]
+        public ApiResult<List<ObjectSearchResult>> FindByName(
+            [Description("Full or partial GameObject name, case-insensitive.")] string name,
+            [Description("Whether inactive GameObjects should be included.")] bool includeInactive)
         {
-            return _rpc.FindByType(typeName, includeInactive);
+            return _apiClient.Invoke(api => api.FindByName(name, includeInactive));
         }
 
-        public string GetValue(string objectId, string path, bool storeResult)
+        [McpServerTool(Name = "find_by_type", ReadOnly = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<List<ObjectSearchResult>>))]
+        [Description("Find scene GameObjects or Components by type full name.")]
+        public ApiResult<List<ObjectSearchResult>> FindByType(
+            [Description("Type full name or simple type name.")] string typeName,
+            [Description("Whether inactive GameObjects/components should be included.")] bool includeInactive)
         {
-            return _rpc.GetValue(objectId, path, storeResult);
+            return _apiClient.Invoke(api => api.FindByType(typeName, includeInactive));
         }
 
-        public string SetValue(string objectId, string path, string valueJson, bool storeResult)
+        [McpServerTool(Name = "get_value", ReadOnly = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<ValueInfo>))]
+        [Description("Get a field/property/path value from a Unity instance ID or stored GUID.")]
+        public ApiResult<ValueInfo> GetValue(
+            [Description("Unity instance ID or stored object GUID.")] string objectId,
+            [Description("Reflection path, such as Text or A.B[3].C.")] string path,
+            [Description("Whether non-primitive results should be stored and returned with a GUID.")] bool storeResult)
         {
-            return _rpc.SetValue(objectId, path, valueJson, storeResult);
+            return _apiClient.Invoke(api => api.GetValue(objectId, path, storeResult));
         }
 
-        public string CallMethod(string objectId, string path, string argumentsJson, bool storeResult)
+        [McpServerTool(Name = "set_value", ReadOnly = false, Destructive = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<ValueInfo>))]
+        [Description("Set a primitive field/property/path value on a Unity instance ID or stored GUID.")]
+        public ApiResult<ValueInfo> SetValue(
+            [Description("Unity instance ID or stored object GUID.")] string objectId,
+            [Description("Reflection path, such as Text or A.B[3].C.")] string path,
+            [Description("JSON encoded primitive value.")] string valueJson,
+            [Description("Whether the assigned value should be stored and returned with a GUID when applicable.")] bool storeResult)
         {
-            return _rpc.CallMethod(objectId, path, argumentsJson, storeResult);
+            return _apiClient.Invoke(api => api.SetValue(objectId, path, valueJson, storeResult));
+        }
+
+        [McpServerTool(Name = "call_method", ReadOnly = false, Destructive = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<ValueInfo>))]
+        [Description("Call an instance or static method. Pass arguments as a JSON array.")]
+        public ApiResult<ValueInfo> CallMethod(
+            [Description("Unity instance ID or stored object GUID. Use empty string for static method calls.")] string objectId,
+            [Description("Method path, such as AddComponent<UnityEngine.MeshRenderer> or UnityEngine.Object.Destroy.")] string path,
+            [Description("JSON encoded argument array.")] string argumentsJson,
+            [Description("Whether non-primitive return values should be stored and returned with a GUID.")] bool storeResult)
+        {
+            return _apiClient.Invoke(api => api.CallMethod(objectId, path, argumentsJson, storeResult));
         }
     }
 }

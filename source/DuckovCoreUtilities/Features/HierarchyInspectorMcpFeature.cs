@@ -177,24 +177,42 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
         }
 
-        public string GetHierarchy()
+        public ApiResult<HierarchyResponse> GetHierarchy()
         {
             return _dispatcher.Invoke(() =>
             {
                 var scenes = Enumerable.Range(0, SceneManager.sceneCount)
                     .Select(SceneManager.GetSceneAt)
                     .Where(scene => scene.IsValid() && scene.isLoaded)
-                    .Select(scene => new
+                    .Select(scene => new SceneNode
                     {
-                        scene.name,
-                        roots = scene.GetRootGameObjects().Select(CreateGameObjectNode).ToList()
+                        Name = scene.name,
+                        Roots = scene.GetRootGameObjects().Select(CreateGameObjectNode).ToList()
                     })
                     .ToList();
-                return Json.Ok(new { scenes });
+                return ApiResult<HierarchyResponse>.Success(new HierarchyResponse { Scenes = scenes });
             });
         }
 
-        public string FindByName(string name, bool includeInactive)
+        public ApiResult<List<ComponentInfo>> GetComponents(string gameObjectId)
+        {
+            return _dispatcher.Invoke(() =>
+            {
+                if (!_registry.TryResolve(gameObjectId, out var root, out var error))
+                {
+                    return ApiResult<List<ComponentInfo>>.Failure(error);
+                }
+
+                if (root is not GameObject gameObject)
+                {
+                    return ApiResult<List<ComponentInfo>>.Failure($"Object '{gameObjectId}' is not a GameObject.");
+                }
+
+                return ApiResult<List<ComponentInfo>>.Success(GetComponentInfos(gameObject));
+            });
+        }
+
+        public ApiResult<List<ObjectSearchResult>> FindByName(string name, bool includeInactive)
         {
             return _dispatcher.Invoke(() =>
             {
@@ -202,20 +220,20 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     .Where(IsSceneObject)
                     .Where(go => includeInactive || go.activeInHierarchy)
                     .Where(go => string.Equals(go.name, name, StringComparison.OrdinalIgnoreCase) || go.name.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0)
-                    .Select(go => new { kind = "GameObject", go.name, instanceID = go.GetInstanceID() })
+                    .Select(go => new ObjectSearchResult { Kind = "GameObject", Name = go.name, InstanceID = go.GetInstanceID() })
                     .ToList();
-                return Json.Ok(matches);
+                return ApiResult<List<ObjectSearchResult>>.Success(matches);
             });
         }
 
-        public string FindByType(string typeName, bool includeInactive)
+        public ApiResult<List<ObjectSearchResult>> FindByType(string typeName, bool includeInactive)
         {
             return _dispatcher.Invoke(() =>
             {
                 var type = TypeResolver.Resolve(typeName);
                 if (type == null)
                 {
-                    return Json.Error($"Type '{typeName}' was not found.");
+                    return ApiResult<List<ObjectSearchResult>>.Failure($"Type '{typeName}' was not found.");
                 }
 
                 if (typeof(GameObject).IsAssignableFrom(type))
@@ -223,86 +241,86 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     var gameObjects = Resources.FindObjectsOfTypeAll<GameObject>()
                         .Where(IsSceneObject)
                         .Where(go => includeInactive || go.activeInHierarchy)
-                        .Select(go => new { kind = "GameObject", go.name, instanceID = go.GetInstanceID() })
+                        .Select(go => new ObjectSearchResult { Kind = "GameObject", Name = go.name, InstanceID = go.GetInstanceID() })
                         .ToList();
-                    return Json.Ok(gameObjects);
+                    return ApiResult<List<ObjectSearchResult>>.Success(gameObjects);
                 }
 
                 if (!typeof(UnityEngine.Object).IsAssignableFrom(type))
                 {
-                    return Json.Error($"Type '{type.FullName}' is not a UnityEngine.Object type.");
+                    return ApiResult<List<ObjectSearchResult>>.Failure($"Type '{type.FullName}' is not a UnityEngine.Object type.");
                 }
 
                 var components = Resources.FindObjectsOfTypeAll(type)
                     .OfType<UnityEngine.Object>()
                     .Where(IsSceneObject)
                     .Where(obj => includeInactive || !IsInactive(obj))
-                    .Select(obj => new
+                    .Select(obj => new ObjectSearchResult
                     {
-                        kind = obj is Component ? "Component" : "Object",
-                        type = obj.GetType().FullName,
-                        instanceID = obj.GetInstanceID(),
-                        gameObject = obj is Component component ? new { component.gameObject.name, instanceID = component.gameObject.GetInstanceID() } : null
+                        Kind = obj is Component ? "Component" : "Object",
+                        Type = obj.GetType().FullName,
+                        InstanceID = obj.GetInstanceID(),
+                        GameObject = obj is Component component ? new GameObjectRef { Name = component.gameObject.name, InstanceID = component.gameObject.GetInstanceID() } : null
                     })
                     .ToList();
-                return Json.Ok(components);
+                return ApiResult<List<ObjectSearchResult>>.Success(components);
             });
         }
 
-        public string GetValue(string objectId, string path, bool storeResult)
+        public ApiResult<ValueInfo> GetValue(string objectId, string path, bool storeResult)
         {
             return _dispatcher.Invoke(() =>
             {
                 if (!_registry.TryResolve(objectId, out var root, out var error))
                 {
-                    return Json.Error(error);
+                    return ApiResult<ValueInfo>.Failure(error);
                 }
 
                 var access = ReflectionPath.Resolve(root, path, requireAssignableTarget: false);
                 if (!access.Success)
                 {
-                    return Json.Error(access.Error);
+                    return ApiResult<ValueInfo>.Failure(access.Error);
                 }
 
-                return Json.Ok(SerializeValue(access.Value, storeResult));
+                return ApiResult<ValueInfo>.Success(SerializeValue(access.Value, storeResult));
             });
         }
 
-        public string SetValue(string objectId, string path, string valueJson, bool storeResult)
+        public ApiResult<ValueInfo> SetValue(string objectId, string path, string valueJson, bool storeResult)
         {
             return _dispatcher.Invoke(() =>
             {
                 if (!_registry.TryResolve(objectId, out var root, out var error))
                 {
-                    return Json.Error(error);
+                    return ApiResult<ValueInfo>.Failure(error);
                 }
 
                 var access = ReflectionPath.Resolve(root, path, requireAssignableTarget: true);
                 if (!access.Success)
                 {
-                    return Json.Error(access.Error);
+                    return ApiResult<ValueInfo>.Failure(access.Error);
                 }
 
                 if (access.MemberType == null || !ValueConverter.IsSettableSimple(access.MemberType))
                 {
-                    return Json.Error("Only primitive, string, enum, DateTime, decimal, Guid and Unity primitive structs can be set.");
+                    return ApiResult<ValueInfo>.Failure("Only primitive, string, enum, DateTime, decimal, Guid and Unity primitive structs can be set.");
                 }
 
                 if (!ValueConverter.TryConvert(valueJson, access.MemberType, out var converted, out var convertError))
                 {
-                    return Json.Error(convertError);
+                    return ApiResult<ValueInfo>.Failure(convertError);
                 }
 
                 if (!access.SetValue(converted))
                 {
-                    return Json.Error("The target path is not assignable.");
+                    return ApiResult<ValueInfo>.Failure("The target path is not assignable.");
                 }
 
-                return Json.Ok(SerializeValue(converted, storeResult));
+                return ApiResult<ValueInfo>.Success(SerializeValue(converted, storeResult));
             });
         }
 
-        public string CallMethod(string objectId, string path, string argumentsJson, bool storeResult)
+        public ApiResult<ValueInfo> CallMethod(string objectId, string path, string argumentsJson, bool storeResult)
         {
             return _dispatcher.Invoke(() =>
             {
@@ -314,7 +332,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 {
                     if (!_registry.TryResolve(objectId, out target, out var error))
                     {
-                        return Json.Error(error);
+                        return ApiResult<ValueInfo>.Failure(error);
                     }
 
                     var instanceSplit = SplitInstanceMethodPath(path);
@@ -323,12 +341,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                         var targetAccess = ReflectionPath.Resolve(target, instanceSplit.targetPath, requireAssignableTarget: false);
                         if (!targetAccess.Success)
                         {
-                            return Json.Error(targetAccess.Error);
+                            return ApiResult<ValueInfo>.Failure(targetAccess.Error);
                         }
 
                         if (targetAccess.Value == null)
                         {
-                            return Json.Error($"Method target path '{instanceSplit.targetPath}' evaluated to null.");
+                            return ApiResult<ValueInfo>.Failure($"Method target path '{instanceSplit.targetPath}' evaluated to null.");
                         }
 
                         target = targetAccess.Value;
@@ -340,7 +358,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     var split = SplitStaticPath(path);
                     if (split.type == null)
                     {
-                        return Json.Error($"Static type '{split.typeName}' was not found.");
+                        return ApiResult<ValueInfo>.Failure($"Static type '{split.typeName}' was not found.");
                     }
                     staticType = split.type;
                     methodPath = split.methodName;
@@ -348,16 +366,16 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                 if (!TryParseArguments(argumentsJson, out var arguments, out var argumentError))
                 {
-                    return Json.Error(argumentError);
+                    return ApiResult<ValueInfo>.Failure(argumentError);
                 }
 
                 var result = MethodInvoker.Invoke(target, staticType, methodPath, arguments, _registry);
                 if (!result.Success)
                 {
-                    return Json.Error(result.Error);
+                    return ApiResult<ValueInfo>.Failure(result.Error);
                 }
 
-                return Json.Ok(SerializeValue(result.Value, storeResult));
+                return ApiResult<ValueInfo>.Success(SerializeValue(result.Value, storeResult));
             });
         }
 
@@ -440,65 +458,102 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
         }
 
-        private object? SerializeValue(object? value, bool storeResult)
+        private ValueInfo SerializeValue(object? value, bool storeResult)
         {
             if (value == null)
             {
-                return null;
+                return new ValueInfo { Kind = "Null", Value = null };
             }
 
             var valueType = value.GetType();
             if (ValueConverter.IsSimpleReadable(valueType))
             {
-                return value;
+                return new ValueInfo { Kind = "Primitive", Type = valueType.FullName, Value = SerializeSimpleValue(value) };
             }
 
             if (value is UnityEngine.Object unityObject)
             {
-                var summary = new Dictionary<string, object?>
+                var summary = new ValueInfo
                 {
-                    ["type"] = unityObject.GetType().FullName,
-                    ["instanceID"] = unityObject.GetInstanceID()
+                    Kind = unityObject is Component ? "Component" : unityObject is GameObject ? "GameObject" : "UnityObject",
+                    Type = unityObject.GetType().FullName,
+                    InstanceID = unityObject.GetInstanceID()
                 };
                 if (unityObject is GameObject go)
                 {
-                    summary["name"] = go.name;
+                    summary.Name = go.name;
                 }
                 else if (unityObject is Component component)
                 {
-                    summary["gameObject"] = new { component.gameObject.name, instanceID = component.gameObject.GetInstanceID() };
+                    summary.GameObject = new GameObjectRef { Name = component.gameObject.name, InstanceID = component.gameObject.GetInstanceID() };
                 }
 
                 if (storeResult)
                 {
-                    summary["guid"] = _registry.Store(value);
+                    summary.Guid = _registry.Store(value);
                 }
 
                 return summary;
             }
 
+            var result = new ValueInfo { Kind = "Object", Type = valueType.FullName };
             if (storeResult)
             {
-                return new { type = valueType.FullName, guid = _registry.Store(value) };
+                result.Guid = _registry.Store(value);
             }
 
-            return new { type = valueType.FullName };
+            return result;
         }
 
-        private static object CreateGameObjectNode(GameObject gameObject)
+        private static object? SerializeSimpleValue(object value)
         {
-            return new
+            if (value is Vector2 vector2)
             {
-                gameObject.name,
-                instanceID = gameObject.GetInstanceID(),
-                components = gameObject.GetComponents<Component>()
-                    .Where(component => component != null)
-                    .Select(component => new { type = component.GetType().FullName, instanceID = component.GetInstanceID() })
-                    .ToList(),
-                children = Enumerable.Range(0, gameObject.transform.childCount)
+                return new VectorInfo { X = vector2.x, Y = vector2.y };
+            }
+
+            if (value is Vector3 vector3)
+            {
+                return new VectorInfo { X = vector3.x, Y = vector3.y, Z = vector3.z };
+            }
+
+            if (value is Vector4 vector4)
+            {
+                return new VectorInfo { X = vector4.x, Y = vector4.y, Z = vector4.z, W = vector4.w };
+            }
+
+            if (value is Quaternion quaternion)
+            {
+                return new VectorInfo { X = quaternion.x, Y = quaternion.y, Z = quaternion.z, W = quaternion.w };
+            }
+
+            if (value is Color color)
+            {
+                return new ColorInfo { R = color.r, G = color.g, B = color.b, A = color.a };
+            }
+
+            return value;
+        }
+
+        private static GameObjectNode CreateGameObjectNode(GameObject gameObject)
+        {
+            return new GameObjectNode
+            {
+                Name = gameObject.name,
+                InstanceID = gameObject.GetInstanceID(),
+                Components = GetComponentInfos(gameObject),
+                Children = Enumerable.Range(0, gameObject.transform.childCount)
                     .Select(i => CreateGameObjectNode(gameObject.transform.GetChild(i).gameObject))
                     .ToList()
             };
+        }
+
+        private static List<ComponentInfo> GetComponentInfos(GameObject gameObject)
+        {
+            return gameObject.GetComponents<Component>()
+                .Where(component => component != null)
+                .Select(component => new ComponentInfo { Type = component.GetType().FullName, InstanceID = component.GetInstanceID() })
+                .ToList();
         }
 
         private static bool IsInactive(UnityEngine.Object obj)
@@ -607,24 +662,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
 
                 return true;
-            }
-        }
-
-        private static class Json
-        {
-            private static readonly JsonSerializerSettings Settings = new JsonSerializerSettings
-            {
-                NullValueHandling = NullValueHandling.Ignore
-            };
-
-            public static string Ok(object? data)
-            {
-                return JsonConvert.SerializeObject(new { ok = true, data }, Settings);
-            }
-
-            public static string Error(string message)
-            {
-                return JsonConvert.SerializeObject(new { ok = false, error = message }, Settings);
             }
         }
 
