@@ -1,10 +1,10 @@
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovInterop.Infrastructure;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SlimeNull.DuckovCoreUtilities.Features
+namespace SlimeNull.DuckovInterop.Features
 {
     internal sealed class KillRecordFeature : FeatureBase
     {

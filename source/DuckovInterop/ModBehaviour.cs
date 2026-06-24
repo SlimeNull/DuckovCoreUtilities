@@ -1,27 +1,29 @@
+using Duckov.Modding;
 using EleCho.JsonRpc;
-using SlimeNull.DuckovCoreUtilities.HierarchyInspector;
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using Jint;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using SlimeNull.DuckovInterop.HierarchyInspector;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace SlimeNull.DuckovCoreUtilities.Features
+namespace SlimeNull.DuckovInterop
 {
-    internal sealed class HierarchyInspectorMcpFeature : FeatureBase, IHierarchyInspectorRpc
+    internal sealed class ModBehaviour : Duckov.Modding.ModBehaviour, IHierarchyInspectorRpc
     {
         private readonly MainThreadDispatcher _dispatcher = new MainThreadDispatcher();
         private readonly ObjectRegistry _registry = new ObjectRegistry();
@@ -30,33 +32,33 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private readonly object _clientsLock = new object();
         private TcpListener? _listener;
         private Thread? _serverTask;
+        private Engine? _jsEngine;
 
-        public override string Name => "Hierarchy inspector MCP";
-
-        async Task SomeAsyncMethod()
+        protected override void OnAfterSetup()
         {
-            Debug.Log("Action in async method 1");
-            await Task.Delay(10);
-            Debug.Log("Action in async method 2");
-        }
-
-        protected override void OnEnable()
-        {
-            var t = SomeAsyncMethod();
-
-            _stopping = false;
-            Debug.Log($"[HierarchyInspectorMcpFeature] RPC server thread start");
-            _serverTask = new Thread(RunServerLoop)
+            try
             {
-                IsBackground = true
-            };
+                _jsEngine = new Engine((Options cfg) => cfg.AllowClr());
 
-            _serverTask.Start();
-            Debug.Log($"[HierarchyInspectorMcpFeature] RPC server thread started");
+                _stopping = false;
+                _serverTask = new Thread(RunServerLoop)
+                {
+                    IsBackground = true
+                };
+
+                _serverTask.Start();
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError(ex);
+            }
         }
 
-        protected override void OnDisable()
+        protected override void OnBeforeDeactivate()
         {
+            _jsEngine?.Dispose();
+            _jsEngine = null;
+
             _stopping = true;
             try
             {
@@ -90,7 +92,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _serverTask = null;
         }
 
-        public override void Tick()
+        void Update()
         {
             _dispatcher.Drain();
         }
@@ -283,6 +285,33 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
 
                 return ApiResult<ValueInfo>.Success(SerializeValue(access.Value, storeResult));
+            });
+        }
+
+        public ApiResult<ValueInfo> JintEvaluate(string script, bool storeResult)
+        {
+            return _dispatcher.Invoke(() =>
+            {
+                try
+                {
+                    Stopwatch sw = Stopwatch.StartNew();
+                    var result = _jsEngine.Evaluate(script);
+
+                    if (result is Jint.Runtime.Interop.ObjectWrapper wrapper)
+                    {
+                        // returns CLR object
+                        return ApiResult<ValueInfo>.Success(SerializeValue(wrapper.Target, storeResult));
+                    }
+                    else
+                    {
+                        // returns Jint value (primitive, array, object, etc.)
+                        return ApiResult<ValueInfo>.Success(SerializeValue(result.ToObject(), storeResult));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return ApiResult<ValueInfo>.Failure($"JavaScript execution error: {ex.Message}");
+                }
             });
         }
 

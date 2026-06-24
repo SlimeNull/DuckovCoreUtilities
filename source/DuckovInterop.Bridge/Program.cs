@@ -1,7 +1,7 @@
 using EleCho.JsonRpc;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using SlimeNull.DuckovCoreUtilities.HierarchyInspector;
+using SlimeNull.DuckovInterop.HierarchyInspector;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,7 +11,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
+namespace SlimeNull.DuckovInterop.HierarchyInspectorBridge
 {
     internal sealed class Program
     {
@@ -60,7 +60,7 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
 
     public sealed class DuckovApiClient : IDisposable
     {
-        private const string ConnectionError = "无法连接到 Duckov Api Host, 游戏是否在运行且启用了 Mod?";
+        private const string ConnectionError = "无法连接到 DuckovInterop, 游戏是否在运行且启用了 Mod?";
 
         private readonly object _sync = new object();
         private TcpClient? _tcpClient;
@@ -224,6 +224,15 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspectorBridge
             [Description("Whether the assigned value should be stored and returned with a GUID when applicable.")] bool storeResult)
         {
             return _apiClient.Invoke(api => api.SetValue(objectId, path, valueJson, storeResult));
+        }
+
+        [McpServerTool(Name = "jint_evaluate", ReadOnly = false, Destructive = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<ValueInfo>))]
+        [Description("Evaluate JavaScript code using Jint. JS object will be returned directly. Non-primitive CLR object can be stored and returned with a GUID.")]
+        public ApiResult<ValueInfo> JintEvaluate(
+            [Description("JavaScript code to evaluate.")] string script,
+            [Description("Whether non-primitive CLR results should be stored and returned with a GUID.")] bool storeResult)
+        {
+            return _apiClient.Invoke(api => api.JintEvaluate(script, storeResult));
         }
 
         [McpServerTool(Name = "call_method", ReadOnly = false, Destructive = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<ValueInfo>))]

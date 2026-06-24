@@ -1,4 +1,4 @@
-namespace SlimeNull.DuckovCoreUtilities.HierarchyInspector
+namespace SlimeNull.DuckovInterop.HierarchyInspector
 {
     using System.Collections.Generic;
 
@@ -17,6 +17,8 @@ namespace SlimeNull.DuckovCoreUtilities.HierarchyInspector
         ApiResult<ValueInfo> GetValue(string objectId, string path, bool storeResult);
 
         ApiResult<ValueInfo> SetValue(string objectId, string path, string valueJson, bool storeResult);
+
+        ApiResult<ValueInfo> JintEvaluate(string script, bool storeResult);
 
         ApiResult<ValueInfo> CallMethod(string objectId, string path, string argumentsJson, bool storeResult);
     }

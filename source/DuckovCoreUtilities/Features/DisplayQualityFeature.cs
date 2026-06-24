@@ -1,14 +1,14 @@
 ﻿using Duckov.UI;
 using HarmonyLib;
 using ItemStatsSystem;
-using SlimeNull.DuckovCoreUtilities.Features.Abstraction;
-using SlimeNull.DuckovCoreUtilities.Utilities;
+using SlimeNull.DuckovInterop.Features.Abstraction;
+using SlimeNull.DuckovInterop.Utilities;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using VLB;
 
-namespace SlimeNull.DuckovCoreUtilities.Features
+namespace SlimeNull.DuckovInterop.Features
 {
     internal sealed class DisplayQualityFeature : ItemDecorateFeature
     {

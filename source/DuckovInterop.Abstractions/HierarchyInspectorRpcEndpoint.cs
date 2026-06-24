@@ -1,4 +1,4 @@
-namespace SlimeNull.DuckovCoreUtilities.HierarchyInspector
+namespace SlimeNull.DuckovInterop.HierarchyInspector
 {
     public static class HierarchyInspectorRpcEndpoint
     {

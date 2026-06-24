@@ -1,7 +1,7 @@
 ﻿using EPOOutline;
 using HarmonyLib;
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
-using SlimeNull.DuckovCoreUtilities.Utilities;
+using SlimeNull.DuckovInterop.Infrastructure;
+using SlimeNull.DuckovInterop.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using VLB;
 
-namespace SlimeNull.DuckovCoreUtilities.Features
+namespace SlimeNull.DuckovInterop.Features
 {
     internal sealed class LootboxOutlineFeature : FeatureBase
     {

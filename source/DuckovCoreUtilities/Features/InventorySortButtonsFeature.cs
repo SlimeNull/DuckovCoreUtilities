@@ -1,7 +1,7 @@
 using Duckov.UI;
 using HarmonyLib;
 using ItemStatsSystem;
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovInterop.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +10,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace SlimeNull.DuckovCoreUtilities.Features
+namespace SlimeNull.DuckovInterop.Features
 {
     internal sealed class InventorySortButtonsFeature : FeatureBase
     {

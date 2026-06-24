@@ -1,11 +1,11 @@
 ﻿using Duckov.UI;
 using Duckov.Utilities;
 using ItemStatsSystem;
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovInterop.Infrastructure;
 using TMPro;
 using UnityEngine;
 
-namespace SlimeNull.DuckovCoreUtilities.Features.Abstraction
+namespace SlimeNull.DuckovInterop.Features.Abstraction
 {
     public abstract class ItemInfoDisplayFeature : FeatureBase
     {
