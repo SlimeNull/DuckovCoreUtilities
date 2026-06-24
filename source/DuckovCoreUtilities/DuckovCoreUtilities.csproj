@@ -108,6 +108,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="preview.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Update="info.ini">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

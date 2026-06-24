@@ -1,19 +1,23 @@
 namespace SlimeNull.DuckovCoreUtilities.HierarchyInspector
 {
+    using System.Collections.Generic;
+
     public interface IHierarchyInspectorRpc
     {
         string Test(string input);
 
-        string GetHierarchy();
+        ApiResult<HierarchyResponse> GetHierarchy();
 
-        string FindByName(string name, bool includeInactive);
+        ApiResult<List<ComponentInfo>> GetComponents(string gameObjectId);
 
-        string FindByType(string typeName, bool includeInactive);
+        ApiResult<List<ObjectSearchResult>> FindByName(string name, bool includeInactive);
 
-        string GetValue(string objectId, string path, bool storeResult);
+        ApiResult<List<ObjectSearchResult>> FindByType(string typeName, bool includeInactive);
 
-        string SetValue(string objectId, string path, string valueJson, bool storeResult);
+        ApiResult<ValueInfo> GetValue(string objectId, string path, bool storeResult);
 
-        string CallMethod(string objectId, string path, string argumentsJson, bool storeResult);
+        ApiResult<ValueInfo> SetValue(string objectId, string path, string valueJson, bool storeResult);
+
+        ApiResult<ValueInfo> CallMethod(string objectId, string path, string argumentsJson, bool storeResult);
     }
 }
