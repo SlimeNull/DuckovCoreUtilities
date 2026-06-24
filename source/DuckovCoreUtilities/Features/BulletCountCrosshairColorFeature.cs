@@ -1,10 +1,10 @@
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovInterop.Infrastructure;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using VLB;
 
-namespace SlimeNull.DuckovCoreUtilities.Features
+namespace SlimeNull.DuckovInterop.Features
 {
     internal sealed class BulletCountCrosshairColorFeature : FeatureBase
     {

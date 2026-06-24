@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace SlimeNull.DuckovCoreUtilities.Infrastructure
+namespace SlimeNull.DuckovInterop.Infrastructure
 {
     internal sealed class FeatureHost
     {

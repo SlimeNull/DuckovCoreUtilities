@@ -4,7 +4,7 @@
     <LangVersion>12</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <AssemblyName>SlimeNull.DuckovCoreUtilities.HierarchyInspector.Abstractions</AssemblyName>
-    <RootNamespace>SlimeNull.DuckovCoreUtilities.HierarchyInspector</RootNamespace>
+    <AssemblyName>SlimeNull.DuckovInterop.Bridge.Abstractions</AssemblyName>
+    <RootNamespace>SlimeNull.DuckovInterop.Bridge</RootNamespace>
   </PropertyGroup>
 </Project>

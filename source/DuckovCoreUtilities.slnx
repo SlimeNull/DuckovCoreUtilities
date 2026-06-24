@@ -2,8 +2,9 @@
   <Folder Name="/解决方案项/">
     <File Path="Global.props" />
   </Folder>
-  <Project Path="DuckovCoreUtilities.HierarchyInspector.Abstractions/DuckovCoreUtilities.HierarchyInspector.Abstractions.csproj" />
-  <Project Path="DuckovCoreUtilities.HierarchyInspectorBridge/DuckovCoreUtilities.HierarchyInspectorBridge.csproj" />
   <Project Path="DuckovCoreUtilities/DuckovCoreUtilities.csproj" />
+  <Project Path="DuckovInterop.Abstractions/DuckovInterop.Abstractions.csproj" />
+  <Project Path="DuckovInterop.Bridge/DuckovInterop.Bridge.csproj" />
+  <Project Path="DuckovInterop/DuckovInterop.csproj" />
   <Project Path="JsonRpc/JsonRpc.csproj" Id="8f95fe97-2677-4574-87cd-13fd371a06da" />
 </Solution>

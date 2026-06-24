@@ -1,11 +1,11 @@
 ﻿using Duckov.UI;
 using HarmonyLib;
 using ItemStatsSystem;
-using SlimeNull.DuckovCoreUtilities.Features.Abstraction;
+using SlimeNull.DuckovInterop.Features.Abstraction;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace SlimeNull.DuckovCoreUtilities.Features
+namespace SlimeNull.DuckovInterop.Features
 {
     internal sealed class DisplayStorageCount : ItemInfoDisplayFeature
     {

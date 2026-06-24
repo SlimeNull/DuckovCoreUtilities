@@ -1,18 +1,30 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="../Global.props" />
-  
+
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
-    <AssemblyName>SlimeNull.DuckovCoreUtilities</AssemblyName>
-    <RootNamespace>SlimeNull.DuckovCoreUtilities</RootNamespace>
+    <AssemblyName>SlimeNull.DuckovInterop</AssemblyName>
+    <RootNamespace>SlimeNull.DuckovInterop</RootNamespace>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Jint" Version="4.10.1" />
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
   </ItemGroup>
+  <ItemGroup>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(ManagedPath)\Newtonsoft.Json.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DuckovInterop.Abstractions\DuckovInterop.Abstractions.csproj" />
+    <ProjectReference Include="..\JsonRpc\JsonRpc.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
       <HintPath>$(ManagedPath)\Assembly-CSharp.dll</HintPath>

@@ -1,9 +1,9 @@
-using SlimeNull.DuckovCoreUtilities.Features;
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovInterop.Features;
+using SlimeNull.DuckovInterop.Infrastructure;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace SlimeNull.DuckovCoreUtilities
+namespace SlimeNull.DuckovInterop
 {
     public class ModBehaviour : Duckov.Modding.ModBehaviour
     {
@@ -34,7 +34,6 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(new BulletCountCrosshairColorFeature());
             _features.Register(new LowHealthInnerShadowFeature());
             _features.Register(new KillRecordFeature());
-            _features.Register(new HierarchyInspectorMcpFeature());
             _features.EnableAll();
 
             Debug.Log("loaded DCU");

@@ -1,12 +1,12 @@
 ﻿using Duckov.UI;
 using HarmonyLib;
-using SlimeNull.DuckovCoreUtilities.Collections;
-using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovInterop.Collections;
+using SlimeNull.DuckovInterop.Infrastructure;
 using System;
 using UnityEngine;
 using VLB;
 
-namespace SlimeNull.DuckovCoreUtilities.Features.Abstraction
+namespace SlimeNull.DuckovInterop.Features.Abstraction
 {
     public abstract class ItemDecorateFeature : FeatureBase
     {
