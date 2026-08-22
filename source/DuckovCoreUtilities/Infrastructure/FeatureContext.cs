@@ -1,7 +1,7 @@
 using HarmonyLib;
 using UnityEngine;
 
-namespace SlimeNull.DuckovInterop.Infrastructure
+namespace SlimeNull.DuckovCoreUtilities.Infrastructure
 {
     public sealed class FeatureContext
     {

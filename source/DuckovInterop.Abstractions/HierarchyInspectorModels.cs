@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace SlimeNull.DuckovInterop.HierarchyInspector
+namespace SlimeNull.DuckovInterop
 {
     public sealed class ApiResult<T>
     {

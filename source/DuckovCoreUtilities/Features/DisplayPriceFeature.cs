@@ -1,10 +1,10 @@
 ﻿using Duckov.UI;
 using ItemStatsSystem;
-using SlimeNull.DuckovInterop.Features.Abstraction;
+using SlimeNull.DuckovCoreUtilities.Features.Abstraction;
 using System;
 using System.ComponentModel;
 
-namespace SlimeNull.DuckovInterop.Features
+namespace SlimeNull.DuckovCoreUtilities.Features
 {
     [Description("Display item price in item hovering UI.")]
     internal sealed class DisplayPriceFeature : ItemInfoDisplayFeature

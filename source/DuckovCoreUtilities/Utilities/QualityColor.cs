@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace SlimeNull.DuckovInterop.Utilities
+namespace SlimeNull.DuckovCoreUtilities.Utilities
 {
     public static class QualityColor
     {

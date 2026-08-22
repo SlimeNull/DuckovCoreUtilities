@@ -1,6 +1,6 @@
 using System;
 
-namespace SlimeNull.DuckovInterop.Infrastructure
+namespace SlimeNull.DuckovCoreUtilities.Infrastructure
 {
     public abstract class FeatureBase
     {
