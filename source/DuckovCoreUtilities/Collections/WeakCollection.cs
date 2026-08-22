@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace SlimeNull.DuckovInterop.Collections
+namespace SlimeNull.DuckovCoreUtilities.Collections
 {
     public class WeakCollection<T> : ICollection<T>, IReadOnlyCollection<T>
         where T : class

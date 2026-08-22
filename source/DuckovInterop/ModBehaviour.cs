@@ -1,20 +1,16 @@
-using Duckov.Modding;
 using EleCho.JsonRpc;
 using Jint;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using SlimeNull.DuckovInterop.HierarchyInspector;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -99,19 +95,19 @@ namespace SlimeNull.DuckovInterop
 
         private void RunServerLoop()
         {
-            Debug.Log($"[HierarchyInspectorMcpFeature] Enter Server Loop");
+            Debug.Log($"[DuckovInterop] Enter Server Loop");
 
             try
             {
                 _listener = new TcpListener(IPAddress.Parse(HierarchyInspectorRpcEndpoint.Host), HierarchyInspectorRpcEndpoint.Port);
                 _listener.Start();
-                Debug.Log($"[HierarchyInspectorMcpFeature] RPC TCP listener started at {HierarchyInspectorRpcEndpoint.Host}:{HierarchyInspectorRpcEndpoint.Port}");
+                Debug.Log($"[DuckovInterop] RPC TCP listener started at {HierarchyInspectorRpcEndpoint.Host}:{HierarchyInspectorRpcEndpoint.Port}");
 
                 while (!_stopping)
                 {
                     var client = _listener.AcceptTcpClient();
                     TrackClient(client);
-                    Debug.Log($"[HierarchyInspectorMcpFeature] RPC client connected");
+                    Debug.Log($"[DuckovInterop] RPC client connected");
 
                     var thread = new Thread(() => RunClient(client))
                     {
@@ -129,12 +125,12 @@ namespace SlimeNull.DuckovInterop
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[HierarchyInspectorMcpFeature] RPC listener error: {ex}");
+                Debug.LogError($"[DuckovInterop] RPC listener error: {ex}");
             }
             finally
             {
                 _listener = null;
-                Debug.Log($"[HierarchyInspectorMcpFeature] RPC listener stopped");
+                Debug.Log($"[DuckovInterop] RPC listener stopped");
             }
         }
 
@@ -153,13 +149,13 @@ namespace SlimeNull.DuckovInterop
             {
                 if (!_stopping)
                 {
-                    Debug.LogError($"[HierarchyInspectorMcpFeature] RPC client error: {ex}");
+                    Debug.LogError($"[DuckovInterop] RPC client error: {ex}");
                 }
             }
             finally
             {
                 UntrackClient(client);
-                Debug.Log($"[HierarchyInspectorMcpFeature] RPC client disconnected");
+                Debug.Log($"[DuckovInterop] RPC client disconnected");
             }
         }
 
@@ -294,8 +290,9 @@ namespace SlimeNull.DuckovInterop
             {
                 try
                 {
-                    Stopwatch sw = Stopwatch.StartNew();
-                    var result = _jsEngine.Evaluate(script);
+                    var sw = System.Diagnostics.Stopwatch.StartNew();
+                    var result = _jsEngine!.Evaluate(script);
+                    Debug.Log($"[DuckovInterop] Jint evaluation completed in {sw.ElapsedMilliseconds} ms");
 
                     if (result is Jint.Runtime.Interop.ObjectWrapper wrapper)
                     {

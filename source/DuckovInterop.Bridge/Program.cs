@@ -1,15 +1,9 @@
 using EleCho.JsonRpc;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
-using SlimeNull.DuckovInterop.HierarchyInspector;
-using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Net.Sockets;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace SlimeNull.DuckovInterop.HierarchyInspectorBridge
 {
@@ -31,11 +25,11 @@ namespace SlimeNull.DuckovInterop.HierarchyInspectorBridge
                 ServerInfo = new Implementation
                 {
                     Name = HierarchyInspectorRpcEndpoint.ServerName,
-                    Title = "Duckov Hierarchy Inspector",
+                    Title = "Duckov Interop",
                     Version = "1.0.0"
                 },
                 ToolCollection = DiscoverTools(tools),
-                ServerInstructions = "Inspect and manipulate Unity hierarchy objects through instance IDs and stored object GUIDs."
+                ServerInstructions = "Inspect and manipulate Unity objects through instance IDs and stored object GUIDs."
             };
         }
 

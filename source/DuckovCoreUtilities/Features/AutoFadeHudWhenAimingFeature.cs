@@ -1,9 +1,9 @@
-﻿using SlimeNull.DuckovInterop.Infrastructure;
+﻿using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using System.Collections.Generic;
 using UnityEngine;
 using VLB;
 
-namespace SlimeNull.DuckovInterop.Features
+namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal class AutoFadeHudWhenAimingFeature : FeatureBase
     {

@@ -1,8 +1,8 @@
 ﻿using Duckov.UI;
-using SlimeNull.DuckovInterop.Infrastructure;
+using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using UnityEngine.InputSystem;
 
-namespace SlimeNull.DuckovInterop.Features
+namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal class AutoCloseBackpackFeature : FeatureBase
     {

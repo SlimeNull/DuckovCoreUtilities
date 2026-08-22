@@ -1,4 +1,4 @@
-namespace SlimeNull.DuckovInterop.HierarchyInspector
+namespace SlimeNull.DuckovInterop
 {
     using System.Collections.Generic;
 

@@ -1,7 +1,7 @@
-using SlimeNull.DuckovInterop.Infrastructure;
+using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using UnityEngine;
 
-namespace SlimeNull.DuckovInterop.Features
+namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal sealed class LowHealthInnerShadowFeature : FeatureBase
     {

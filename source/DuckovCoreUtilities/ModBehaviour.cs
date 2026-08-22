@@ -1,9 +1,9 @@
-using SlimeNull.DuckovInterop.Features;
-using SlimeNull.DuckovInterop.Infrastructure;
+using SlimeNull.DuckovCoreUtilities.Features;
+using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace SlimeNull.DuckovInterop
+namespace SlimeNull.DuckovCoreUtilities
 {
     public class ModBehaviour : Duckov.Modding.ModBehaviour
     {
