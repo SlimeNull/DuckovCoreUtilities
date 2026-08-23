@@ -8,6 +8,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal class AutoFadeHudWhenAimingFeature : FeatureBase
     {
+        private AutoFadeWhenAiming? _controller;
+
         public override string Name => "Fade HUD when aiming";
 
         public float TargetAlpha { get; set; } = .3f;
@@ -21,12 +23,23 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         protected override void OnDisable()
         {
             LevelManager.OnAfterLevelInitialized -= LevelManager_OnAfterLevelInitialized;
+
+            if (_controller != null)
+            {
+                _controller.RestoreAndClearOwner();
+                Object.Destroy(_controller);
+                _controller = null;
+            }
         }
 
         private void LevelManager_OnAfterLevelInitialized()
         {
             var hudCanvasObject = GameObject.Find("HUDCanvas");
-            var hudCanvas = hudCanvasObject.GetComponent<Canvas>();
+            var hudCanvas = hudCanvasObject != null ? hudCanvasObject.GetComponent<Canvas>() : null;
+            if (hudCanvas == null)
+            {
+                return;
+            }
 
             List<CanvasGroup> groups = new();
 
@@ -46,7 +59,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 groups.Add(canvasGroup);
             }
 
-            hudCanvas.gameObject.GetOrAddComponent<AutoFadeWhenAiming>().Initialize(this, groups);
+            _controller = hudCanvas.gameObject.GetOrAddComponent<AutoFadeWhenAiming>();
+            _controller.Initialize(this, groups);
         }
 
         private class AutoFadeWhenAiming : MonoBehaviour
@@ -56,11 +70,18 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             private float _currentAlpha = 1;
             private float _currentVelocity;
+            private float _lastAppliedAlpha = 1f;
+            private bool _lastAiming;
+            private bool _stateInitialized;
 
             public void Initialize(AutoFadeHudWhenAimingFeature ownerFeature, List<CanvasGroup> canvasGroups)
             {
                 _ownerFeature = ownerFeature;
                 _canvasGroups = canvasGroups;
+                _currentAlpha = 1f;
+                _currentVelocity = 0f;
+                _lastAppliedAlpha = 1f;
+                _stateInitialized = false;
             }
 
             void Update()
@@ -73,16 +94,53 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                 var isAiming = IsAiming();
                 var targetAlpha = isAiming ? _ownerFeature.TargetAlpha : 1f;
-                var smoothAlpha = UnityEngine.Mathf.SmoothDamp(_currentAlpha, targetAlpha, ref _currentVelocity, _ownerFeature.SmoothTime);
-                _currentAlpha = smoothAlpha;
+                if (_stateInitialized &&
+                    isAiming == _lastAiming &&
+                    Mathf.Abs(_currentAlpha - targetAlpha) < 0.001f)
+                {
+                    return;
+                }
+
+                _stateInitialized = true;
+                _lastAiming = isAiming;
+                _currentAlpha = Mathf.SmoothDamp(_currentAlpha, targetAlpha, ref _currentVelocity, _ownerFeature.SmoothTime);
+                if (Mathf.Abs(_currentAlpha - targetAlpha) < 0.001f)
+                {
+                    _currentAlpha = targetAlpha;
+                    _currentVelocity = 0f;
+                }
+
+                if (Mathf.Abs(_lastAppliedAlpha - _currentAlpha) < 0.0001f)
+                {
+                    return;
+                }
 
                 foreach (var canvasGroup in _canvasGroups)
                 {
                     if (canvasGroup != null)
                     {
-                        canvasGroup.alpha = smoothAlpha;
+                        canvasGroup.alpha = _currentAlpha;
                     }
                 }
+
+                _lastAppliedAlpha = _currentAlpha;
+            }
+
+            public void RestoreAndClearOwner()
+            {
+                if (_canvasGroups != null)
+                {
+                    foreach (var canvasGroup in _canvasGroups)
+                    {
+                        if (canvasGroup != null)
+                        {
+                            canvasGroup.alpha = 1f;
+                        }
+                    }
+                }
+
+                _ownerFeature = null;
+                _canvasGroups = null;
             }
 
             static bool IsAiming()

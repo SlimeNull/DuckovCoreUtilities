@@ -1,4 +1,5 @@
 ﻿using EPOOutline;
+using FOW;
 using HarmonyLib;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using SlimeNull.DuckovCoreUtilities.Utilities;
@@ -14,8 +15,13 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     internal sealed class LootboxOutlineFeature : FeatureBase
     {
         private const string HarmonyCatagory = nameof(LootboxOutlineFeature);
-        private static readonly List<SpriteRenderer> PickupSpriteRenderers = new List<SpriteRenderer>();
+        private static readonly List<SpriteRenderer> VisiblePickupSpriteRenderers = new List<SpriteRenderer>();
         private static LootboxOutlineFeature? ActiveFeature;
+        private readonly List<OutlinableBehaviourBase> _groundItemControllers = new List<OutlinableBehaviourBase>();
+        private readonly List<LootOutlinable> _lootboxControllers = new List<LootOutlinable>();
+        private FogOfWarRevealer3D? _playerRevealer;
+        private VisibilityContext _visibilityContext;
+        private float _nextControllerPruneTime;
 
         public override string Name => "Loot outline";
 
@@ -26,20 +32,101 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         public bool GroundItemBreathingEffect { get; set; } = true;
         public float BreathingPeriod { get; set; } = 1.5f;
         public float BreathingMinAlpha { get; set; } = 0.35f;
+        private float CurrentBreathingAlpha { get; set; } = 1f;
 
         protected override void OnEnable()
         {
             ActiveFeature = this;
             Context.Harmony.PatchCategory(HarmonyCatagory);
             RenderPipelineManager.endCameraRendering += ResetPickupBillboards;
+            ReactivateControllers();
         }
 
         protected override void OnDisable()
         {
             RenderPipelineManager.endCameraRendering -= ResetPickupBillboards;
             Context.Harmony.UnpatchCategory(HarmonyCatagory);
-            PickupSpriteRenderers.Clear();
+            foreach (var controller in _groundItemControllers)
+            {
+                if (controller != null)
+                {
+                    controller.Deactivate();
+                }
+            }
+
+            foreach (var controller in _lootboxControllers)
+            {
+                if (controller != null)
+                {
+                    controller.Deactivate();
+                }
+            }
+
+            VisiblePickupSpriteRenderers.Clear();
+            _playerRevealer = null;
             ActiveFeature = null;
+        }
+
+        public override void Tick()
+        {
+            _playerRevealer = LevelManager.Instance?.FogOfWarManager?.mainVis;
+            _visibilityContext = VisibilityContext.Create(_playerRevealer);
+
+            var period = Mathf.Max(0.01f, BreathingPeriod);
+            var normalized = (Mathf.Sin(Time.time / period * Mathf.PI * 2f) + 1f) * 0.5f;
+            CurrentBreathingAlpha = Mathf.Lerp(Mathf.Clamp01(BreathingMinAlpha), 1f, normalized);
+
+            if (Time.unscaledTime >= _nextControllerPruneTime)
+            {
+                _nextControllerPruneTime = Time.unscaledTime + 2f;
+                _groundItemControllers.RemoveAll(static controller => controller == null);
+                _lootboxControllers.RemoveAll(static controller => controller == null);
+            }
+
+            foreach (var controller in _groundItemControllers)
+            {
+                if (controller != null)
+                {
+                    controller.Tick();
+                }
+            }
+
+            foreach (var controller in _lootboxControllers)
+            {
+                if (controller != null)
+                {
+                    controller.Tick();
+                }
+            }
+        }
+
+        private void ReactivateControllers()
+        {
+            for (var i = _groundItemControllers.Count - 1; i >= 0; i--)
+            {
+                var controller = _groundItemControllers[i];
+                if (controller == null)
+                {
+                    _groundItemControllers.RemoveAt(i);
+                }
+                else
+                {
+                    controller.Activate(this);
+                }
+            }
+
+            for (var i = _lootboxControllers.Count - 1; i >= 0; i--)
+            {
+                var controller = _lootboxControllers[i];
+                if (controller == null)
+                {
+                    _lootboxControllers.RemoveAt(i);
+                }
+                else
+                {
+                    controller.Initialize(this);
+                }
+            }
         }
 
         private static void EnsureOutlineAttached(InteractableLootbox instance)
@@ -50,7 +137,11 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return;
             }
 
-            instance.GetOrAddComponent<LootOutlinable>().Initialize(ActiveFeature);
+            var controller = instance.GetOrAddComponent<LootOutlinable>().Initialize(ActiveFeature);
+            if (!ActiveFeature._lootboxControllers.Contains(controller))
+            {
+                ActiveFeature._lootboxControllers.Add(controller);
+            }
         }
 
         private static void EnsureOutlineAttached(InteractablePickup instance)
@@ -61,20 +152,36 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return;
             }
 
-            instance.GetOrAddComponent<GroundItemOutlinable>().Initialize(ActiveFeature);
+            var controller = instance.GetOrAddComponent<GroundItemOutlinable>().Initialize(ActiveFeature);
+            if (!ActiveFeature._groundItemControllers.Contains(controller))
+            {
+                ActiveFeature._groundItemControllers.Add(controller);
+            }
         }
 
-        private static void RegisterPickupSpriteRenderer(SpriteRenderer spriteRenderer)
+        private static void SetPickupSpriteRendererVisible(SpriteRenderer spriteRenderer, bool visible)
         {
-            if (!PickupSpriteRenderers.Contains(spriteRenderer))
+            if (visible)
             {
-                PickupSpriteRenderers.Add(spriteRenderer);
+                if (!VisiblePickupSpriteRenderers.Contains(spriteRenderer))
+                {
+                    VisiblePickupSpriteRenderers.Add(spriteRenderer);
+                }
+            }
+            else
+            {
+                VisiblePickupSpriteRenderers.Remove(spriteRenderer);
             }
         }
 
         private static void OrientPickupBillboards()
         {
-            PickupSpriteRenderers.RemoveAll(static renderer => renderer == null);
+            VisiblePickupSpriteRenderers.RemoveAll(static renderer => renderer == null);
+
+            if (VisiblePickupSpriteRenderers.Count == 0)
+            {
+                return;
+            }
 
             var mainCamera = Camera.main;
             if (mainCamera == null)
@@ -83,7 +190,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
 
             var cameraTransform = mainCamera.transform;
-            foreach (var spriteRenderer in PickupSpriteRenderers)
+            foreach (var spriteRenderer in VisiblePickupSpriteRenderers)
             {
                 var rendererTransform = spriteRenderer.transform;
                 var direction = rendererTransform.position - cameraTransform.position;
@@ -94,9 +201,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private static void ResetPickupBillboards(ScriptableRenderContext context, Camera camera)
         {
-            PickupSpriteRenderers.RemoveAll(static renderer => renderer == null);
+            VisiblePickupSpriteRenderers.RemoveAll(static renderer => renderer == null);
 
-            foreach (var spriteRenderer in PickupSpriteRenderers)
+            foreach (var spriteRenderer in VisiblePickupSpriteRenderers)
             {
                 spriteRenderer.transform.localScale = new Vector3(1f, 1f, 1f);
             }
@@ -104,37 +211,179 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private static bool IsVisibleToPlayer(Vector3 position)
         {
-            var levelManager = LevelManager.Instance;
-            var revealer = levelManager != null
-                ? levelManager.FogOfWarManager?.mainVis
-                : null;
+            var feature = ActiveFeature;
+            var revealer = feature?._playerRevealer;
+            if (feature is null || revealer == null)
+            {
+                return false;
+            }
 
-            return revealer != null && revealer.TestPoint(position);
+            return feature._visibilityContext.MayBeVisible(position) &&
+                revealer.TestPoint(position);
+        }
+
+        private readonly struct VisibilityContext
+        {
+            private readonly FogOfWarWorld.GamePlane _gamePlane;
+            private readonly Vector2 _eyePosition;
+            private readonly Vector2 _forward;
+            private readonly float _viewRadiusSquared;
+            private readonly float _senseRadiusSquared;
+            private readonly float _halfViewAngleCos;
+            private readonly bool _hasSenseRadius;
+            private readonly bool _fullCircle;
+            private readonly bool _valid;
+
+            private VisibilityContext(
+                FogOfWarWorld.GamePlane gamePlane,
+                Vector2 eyePosition,
+                Vector2 forward,
+                float viewRadius,
+                float senseRadius,
+                float viewAngle)
+            {
+                _gamePlane = gamePlane;
+                _eyePosition = eyePosition;
+                _forward = forward.normalized;
+                _viewRadiusSquared = viewRadius * viewRadius;
+                _senseRadiusSquared = senseRadius * senseRadius;
+                _halfViewAngleCos = Mathf.Cos(viewAngle * 0.5f * Mathf.Deg2Rad);
+                _hasSenseRadius = senseRadius > 0f;
+                _fullCircle = viewAngle >= 359.999f;
+                _valid = true;
+            }
+
+            public static VisibilityContext Create(FogOfWarRevealer3D? revealer)
+            {
+                var world = FogOfWarWorld.instance;
+                if (revealer == null || world == null)
+                {
+                    return default;
+                }
+
+                var viewRadius = revealer.ViewRadius;
+                if (world.UsingSoftening)
+                {
+                    viewRadius += revealer.RevealHiderInFadeOutZonePercentage * revealer.SoftenDistance;
+                }
+
+                var forward = world.gamePlane == FogOfWarWorld.GamePlane.XZ
+                    ? revealer.transform.forward
+                    : revealer.transform.up;
+                return new VisibilityContext(
+                    world.gamePlane,
+                    Project(world.gamePlane, revealer.GetEyePosition()),
+                    Project(world.gamePlane, forward),
+                    Mathf.Max(0f, viewRadius),
+                    revealer.UnobscuredRadius,
+                    revealer.ViewAngle);
+            }
+
+            public bool MayBeVisible(Vector3 worldPosition)
+            {
+                if (!_valid)
+                {
+                    return false;
+                }
+
+                var delta = Project(_gamePlane, worldPosition) - _eyePosition;
+                var distanceSquared = delta.sqrMagnitude;
+                if (_hasSenseRadius && distanceSquared < _senseRadiusSquared)
+                {
+                    return true;
+                }
+
+                if (distanceSquared >= _viewRadiusSquared)
+                {
+                    return false;
+                }
+
+                if (_fullCircle || distanceSquared <= Mathf.Epsilon)
+                {
+                    return true;
+                }
+
+                return Vector2.Dot(delta, _forward) >
+                    _halfViewAngleCos * Mathf.Sqrt(distanceSquared);
+            }
+
+            private static Vector2 Project(FogOfWarWorld.GamePlane gamePlane, Vector3 value)
+            {
+                return gamePlane switch
+                {
+                    FogOfWarWorld.GamePlane.XY => new Vector2(value.x, value.y),
+                    FogOfWarWorld.GamePlane.ZY => new Vector2(value.z, value.y),
+                    _ => new Vector2(value.x, value.z),
+                };
+            }
         }
 
         private abstract class OutlinableBehaviourBase : MonoBehaviour
         {
             protected Outlinable? Outlinable { get; set; }
             protected LootboxOutlineFeature? OwnerFeature { get; private set; }
+            private bool _outlineVisible;
+            private bool _lastBreathingEnabled;
 
             protected void InitializeOwner(LootboxOutlineFeature ownerFeature)
             {
                 OwnerFeature = ownerFeature;
+                enabled = true;
             }
 
-            protected virtual void Update()
+            public void Activate(LootboxOutlineFeature ownerFeature)
+            {
+                InitializeOwner(ownerFeature);
+            }
+
+            public void Deactivate()
+            {
+                SetOutlineVisible(visible: false);
+                OwnerFeature = null;
+                enabled = false;
+            }
+
+            public void Tick()
             {
                 if (Outlinable is null)
                 {
                     return;
                 }
 
-                Outlinable.enabled = IsVisibleToPlayer(transform.position);
+                SetOutlineVisible(IsVisibleToPlayer(transform.position));
 
-                if (Outlinable.enabled)
+                if (!_outlineVisible)
                 {
-                    Outlinable.OutlineParameters.Color = ApplyBreathing(GetOutlineColor(), UseBreathingEffect());
+                    return;
                 }
+
+                var breathingEnabled = UseBreathingEffect();
+                if (breathingEnabled)
+                {
+                    Outlinable.OutlineParameters.Color = ApplyBreathing(GetOutlineColor());
+                }
+                else if (_lastBreathingEnabled)
+                {
+                    Outlinable.OutlineParameters.Color = GetOutlineColor();
+                }
+
+                _lastBreathingEnabled = breathingEnabled;
+            }
+
+            private void SetOutlineVisible(bool visible)
+            {
+                if (_outlineVisible == visible || Outlinable is null)
+                {
+                    return;
+                }
+
+                _outlineVisible = visible;
+                Outlinable.enabled = visible;
+                OnOutlineVisibilityChanged(visible);
+            }
+
+            protected virtual void OnOutlineVisibilityChanged(bool visible)
+            {
             }
 
             protected static void ConfigureOutline(Outlinable outlinable, Color color)
@@ -155,17 +404,14 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return false;
             }
 
-            protected Color ApplyBreathing(Color color, bool enabled)
+            protected Color ApplyBreathing(Color color)
             {
-                if (!enabled || OwnerFeature is null)
+                if (OwnerFeature is null)
                 {
                     return color;
                 }
 
-                var period = Mathf.Max(0.01f, OwnerFeature.BreathingPeriod);
-                var normalized = (Mathf.Sin(Time.time / period * Mathf.PI * 2f) + 1f) * 0.5f;
-                var minAlpha = Mathf.Clamp01(OwnerFeature.BreathingMinAlpha);
-                color.a *= Mathf.Lerp(minAlpha, 1f, normalized);
+                color.a *= OwnerFeature.CurrentBreathingAlpha;
                 return color;
             }
 
@@ -209,6 +455,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             private Outlinable? outlinable;
             private LootboxOutlineFeature? _ownerFeature;
             private Color _outlineColor = Color.white;
+            private bool _outlineVisible;
+            private bool _lastBreathingEnabled;
 
             public bool UseQualityColor { get; set; } = true;
 
@@ -216,7 +464,20 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             {
                 _ownerFeature = ownerFeature;
                 UseQualityColor = ownerFeature.UseQualityColor;
+                enabled = true;
                 return this;
+            }
+
+            public void Deactivate()
+            {
+                _outlineVisible = false;
+                if (outlinable != null)
+                {
+                    outlinable.enabled = false;
+                }
+
+                _ownerFeature = null;
+                enabled = false;
             }
 
             void Start()
@@ -230,25 +491,41 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
             }
 
-            void Update()
+            public void Tick()
             {
                 if (outlinable is null)
                 {
                     return;
                 }
 
-                outlinable.enabled = IsVisibleToPlayer(transform.position);
-                if (outlinable.enabled)
+                var visible = IsVisibleToPlayer(transform.position);
+                if (_outlineVisible != visible)
+                {
+                    _outlineVisible = visible;
+                    outlinable.enabled = visible;
+                }
+
+                if (!_outlineVisible)
+                {
+                    return;
+                }
+
+                var breathingEnabled = _ownerFeature?.LootboxBreathingEffect == true;
+                if (breathingEnabled)
                 {
                     outlinable.OutlineParameters.Color = ApplyBreathing(_outlineColor);
                 }
+                else if (_lastBreathingEnabled)
+                {
+                    outlinable.OutlineParameters.Color = _outlineColor;
+                }
+
+                _lastBreathingEnabled = breathingEnabled;
             }
 
             private void AttachOutline()
             {
                 outlinable = gameObject.AddComponent<Outlinable>();
-                Debug.Log($"[LootboxOutlineFeature] Added outline to {gameObject.name}");
-
                 AddLootboxRenderers(outlinable);
                 outlinable.OutlineParameters.Enabled = true;
                 _outlineColor = Color.white;
@@ -285,9 +562,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     return color;
                 }
 
-                var period = Mathf.Max(0.01f, _ownerFeature.BreathingPeriod);
-                var normalized = (Mathf.Sin(Time.time / period * Mathf.PI * 2f) + 1f) * 0.5f;
-                color.a *= Mathf.Lerp(Mathf.Clamp01(_ownerFeature.BreathingMinAlpha), 1f, normalized);
+                color.a *= _ownerFeature.CurrentBreathingAlpha;
                 return color;
             }
 
@@ -299,7 +574,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     if (ShouldOutlineRenderer(renderer))
                     {
                         outlinable.AddRenderer(renderer);
-                        Debug.Log($"[LootboxOutlineFeature] Added renderer {renderer.GetType().Name} to outline of {gameObject.name}");
                     }
                 }
             }
@@ -370,6 +644,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private class GroundItemOutlinable : OutlinableBehaviourBase
         {
             private InteractablePickup? _pickup;
+            private SpriteRenderer? _spriteRenderer;
 
             public GroundItemOutlinable Initialize(LootboxOutlineFeature ownerFeature)
             {
@@ -395,13 +670,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     return;
                 }
 
-                var spriteRenderer = _pickup.GetComponentInChildren<SpriteRenderer>();
-                if (spriteRenderer != null)
+                _spriteRenderer = _pickup.GetComponentInChildren<SpriteRenderer>();
+                if (_spriteRenderer != null)
                 {
-                    Outlinable = spriteRenderer.gameObject.GetComponent<Outlinable>() ??
-                        spriteRenderer.gameObject.AddComponent<Outlinable>();
-                    RegisterPickupSpriteRenderer(spriteRenderer);
-                    Outlinable.AddRenderer(spriteRenderer);
+                    Outlinable = _spriteRenderer.gameObject.GetComponent<Outlinable>() ??
+                        _spriteRenderer.gameObject.AddComponent<Outlinable>();
+                    Outlinable.AddRenderer(_spriteRenderer);
                     ConfigureOutline(Outlinable, GetOutlineColor());
                     return;
                 }
@@ -452,6 +726,22 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             protected override bool UseBreathingEffect()
             {
                 return OwnerFeature?.GroundItemBreathingEffect == true;
+            }
+
+            protected override void OnOutlineVisibilityChanged(bool visible)
+            {
+                if (_spriteRenderer != null)
+                {
+                    SetPickupSpriteRendererVisible(_spriteRenderer, visible);
+                }
+            }
+
+            private void OnDestroy()
+            {
+                if (_spriteRenderer != null)
+                {
+                    SetPickupSpriteRendererVisible(_spriteRenderer, visible: false);
+                }
             }
         }
 

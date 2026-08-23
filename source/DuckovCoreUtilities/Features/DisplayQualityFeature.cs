@@ -49,8 +49,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             var backgroundRing = backgroundRingOfItemDisplay.Invoke(itemDisplay).GetComponent<Graphic>();
             var qualityDisplayComponent = itemDisplay.gameObject.GetOrAddComponent<QualityDisplayComponent>();
             qualityDisplayComponent.Initialize(itemDisplay, backgroundRing, display);
-
-            Debug.Log($"Display quality feature applied to {itemDisplay.name}");
         }
 
         private class QualityDisplayComponent : MonoBehaviour
@@ -75,9 +73,11 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 {
                     _originColorOfBackgroundRing = originBackgroundRing.color;
                 }
+
+                Refresh();
             }
 
-            void LateUpdate()
+            public void Refresh()
             {
                 if (_target is not null &&
                     (_target.Target != _lastItem || _target.Target?.Inspected != _lastInspected))
@@ -95,7 +95,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                     _lastItem = _target.Target;
                     _lastInspected = _target.Target?.Inspected;
-                    Debug.Log($"Quality display updated for {_lastItem?.DisplayName}, quality: {_lastItem?.Quality}");
                 }
             }
 
@@ -133,6 +132,16 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                         _originBackgroundRing.color = color;
                     }
                 }
+            }
+        }
+
+        [HarmonyPatchCategory("ItemDecorateFeature")]
+        [HarmonyPatch(typeof(ItemDisplay), "Refresh")]
+        private static class ItemDisplayRefreshPatch
+        {
+            private static void Postfix(ItemDisplay __instance)
+            {
+                __instance.GetComponent<QualityDisplayComponent>()?.Refresh();
             }
         }
 

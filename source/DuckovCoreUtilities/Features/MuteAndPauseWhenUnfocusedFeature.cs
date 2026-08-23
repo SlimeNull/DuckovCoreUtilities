@@ -12,6 +12,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private bool _capturedMuteState;
         private bool _muteStateBeforeFocusLoss;
         private bool _focused;
+        private float _nextUnfocusedRetryTime;
 
         public override string Name => "Mute and pause when unfocused";
 
@@ -40,7 +41,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             {
                 SetFocused(focused);
             }
-            else if (!focused)
+            else if (!focused && Time.unscaledTime >= _nextUnfocusedRetryTime)
             {
                 ApplyUnfocusedState();
             }
@@ -66,6 +67,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private void ApplyUnfocusedState()
         {
+            _nextUnfocusedRetryTime = Time.unscaledTime + 0.5f;
+
             if (MuteWhenUnfocused)
             {
                 EnsureMuted();

@@ -63,6 +63,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             if (_attachedCharacter is not null)
             {
                 _attachedCharacter.Health.OnHurtEvent.RemoveListener(OnHurt);
+                _attachedCharacter = null;
             }
         }
 
