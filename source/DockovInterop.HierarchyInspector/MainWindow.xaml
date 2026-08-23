@@ -183,7 +183,7 @@
                     <Border Background="{StaticResource OverlayBrush}" Visibility="{Binding BusyVisibility}">
                         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
                             <ProgressBar Width="180" Height="4" IsIndeterminate="True" />
-                            <TextBlock Text="Reading scene snapshot..." Margin="0,10,0,0" 
+                            <TextBlock Text="Reading scene hierarchy..." Margin="0,10,0,0"
                                        HorizontalAlignment="Center"/>
                         </StackPanel>
                     </Border>

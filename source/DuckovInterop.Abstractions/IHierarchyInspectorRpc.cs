@@ -10,6 +10,10 @@ namespace SlimeNull.DuckovInterop
 
         ApiResult<SceneSnapshot> GetSceneSnapshot();
 
+        ApiResult<SceneSnapshot> GetSceneOverview();
+
+        ApiResult<List<InspectorComponent>> GetInspectorComponents(string gameObjectId);
+
         ApiResult<bool> SetGameObjectActive(string gameObjectId, bool active);
 
         ApiResult<List<ComponentInfo>> GetComponents(string gameObjectId);
