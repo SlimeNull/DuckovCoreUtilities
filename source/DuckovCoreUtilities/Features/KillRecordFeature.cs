@@ -1,31 +1,37 @@
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.UI.ProceduralImage;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal sealed class KillRecordFeature : FeatureBase
     {
-        private const string SourceOperationName = "Operation";
         private const string HudCanvasName = "HUDCanvas";
+        private const string IndicatorsName = "SimpleIndicators";
+        private const string ToggleName = "SimpleIndicatorEntry_Toggle";
+        private const string ToggleTitleName = "MapTitle";
         private const string RecordPanelName = "KillRecord";
-        private const string RecordLineName = "KillRecordLine";
-        private const float LineHeight = 22f;
-        private const float LineSpacing = 2f;
+        private const string RecordTextName = "Text (TMP)";
+        private const string BackgroundSpriteName = "procedural_ui_image_default_sprite";
+        private const string GameFontName = "ResourceHanRoundedCN-Medium SDF";
+        private const float DefaultPanelWidth = 282f;
+        private const float HorizontalPadding = 12f;
+        private const float VerticalPadding = 8f;
+        private const float AttachRetryInterval = 1f;
 
-        private readonly Queue<GameObject> _records = new Queue<GameObject>();
+        private static readonly Color BackgroundColor = new Color(0f, 0f, 0f, 0.772549f);
+
+        private readonly List<KillRecord> _records = new List<KillRecord>();
 
         private GameObject? _panel;
-        private RectTransform? _contentRoot;
-        private LayoutElement? _layoutElement;
-        private TMP_FontAsset? _textFont;
-        private Material? _textFontMaterial;
-        private float _textFontSize = 18f;
-        private FontStyles _textFontStyle = FontStyles.Normal;
-        private Color _textColor = Color.white;
-        private bool _hasTextStyle;
+        private GameObject? _toggleParent;
+        private TextMeshProUGUI? _recordText;
+        private LayoutElement? _panelLayout;
+        private float _nextAttachAttempt;
 
         public override string Name => "Kill record";
 
@@ -37,7 +43,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             Health.OnDead += OnHealthDead;
             LevelManager.OnAfterLevelInitialized += OnAfterLevelInitialized;
-            TryCreatePanel();
+            TryAttachToIndicators();
         }
 
         protected override void OnDisable()
@@ -47,10 +53,29 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             DestroyPanel();
         }
 
+        public override void Tick()
+        {
+            if (_panel == null || _toggleParent == null || _recordText == null || _panelLayout == null)
+            {
+                ClearDestroyedPanelReferences();
+                if (Time.unscaledTime >= _nextAttachAttempt)
+                {
+                    TryAttachToIndicators();
+                }
+            }
+
+            if (PruneExpiredRecords())
+            {
+                RefreshPanel();
+            }
+
+            UpdateVisibility();
+        }
+
         private void OnAfterLevelInitialized()
         {
             DestroyPanel();
-            TryCreatePanel();
+            TryAttachToIndicators();
         }
 
         private void OnHealthDead(Health health, DamageInfo damageInfo)
@@ -60,295 +85,177 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return;
             }
 
-            if (health == null)
-            {
-                return;
-            }
-
-            TryCreatePanel();
-            if (_panel == null ||
-                _contentRoot == null)
-            {
-                Debug.LogWarning("[KillRecordFeature] Skip record because panel/content was not created.");
-                return;
-            }
-
-            TrimToCapacityBeforeAdd();
-
             var victimName = GetVictimName(health);
-            var line = CreateRecordLine(string.Format(RecordFormat, victimName));
-            _records.Enqueue(line);
-            UpdatePanelHeight();
-            _panel.SetActive(true);
-            LayoutRebuilder.ForceRebuildLayoutImmediate(_contentRoot);
-            Object.Destroy(line, Mathf.Max(0.01f, RecordDuration));
+            _records.Add(new KillRecord(FormatRecord(victimName), Time.time + Mathf.Max(0.01f, RecordDuration)));
+
+            var maxRecordCount = Mathf.Max(1, MaxRecordCount);
+            if (_records.Count > maxRecordCount)
+            {
+                _records.RemoveRange(0, _records.Count - maxRecordCount);
+            }
+
+            TryAttachToIndicators();
+            RefreshPanel();
+            UpdateVisibility();
         }
 
-        public override void Tick()
-        {
-            if (_records.Count <= 0)
-            {
-                return;
-            }
-
-            var previousCount = _records.Count;
-            PruneDestroyedRecords();
-            if (_records.Count == previousCount)
-            {
-                return;
-            }
-
-            if (_panel != null &&
-                _panel.activeSelf &&
-                _records.Count <= 0)
-            {
-                _panel.SetActive(false);
-            }
-
-            if (_records.Count > 0)
-            {
-                UpdatePanelHeight();
-            }
-        }
-
-        private static bool IsPlayerKill(Health? health, DamageInfo damageInfo)
-        {
-            if (health == null ||
-                health.team == Teams.player ||
-                damageInfo.fromCharacter == null ||
-                !damageInfo.fromCharacter.IsMainCharacter)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private void TryCreatePanel()
+        private void TryAttachToIndicators()
         {
             if (_panel != null)
             {
                 return;
             }
 
-            var source = FindOperationPanel();
-            var parent = FindVisibleHudParent(source);
-            if (source == null ||
-                parent == null)
-            {
-                Debug.LogWarning("[KillRecordFeature] Operation panel or visible HUD parent was not found.");
-                return;
-            }
+            _nextAttachAttempt = Time.unscaledTime + AttachRetryInterval;
 
-            var cloned = Object.Instantiate(source, parent);
-            cloned.name = RecordPanelName;
-            cloned.SetActive(false);
-            _panel = cloned;
-
-            SetupPanelTransform(source.GetComponent<RectTransform>(), cloned.GetComponent<RectTransform>());
-            SetupContentRoot(cloned);
-        }
-
-        private static GameObject? FindOperationPanel()
-        {
-            GameObject? fallback = null;
-            var objects = Resources.FindObjectsOfTypeAll<GameObject>();
-            foreach (var obj in objects)
-            {
-                if (obj.name == SourceOperationName &&
-                    obj.GetComponent<RectTransform>() != null &&
-                    obj.GetComponentInParent<Canvas>() != null)
-                {
-                    if (fallback == null)
-                    {
-                        fallback = obj;
-                    }
-
-                    if (obj.activeInHierarchy)
-                    {
-                        return obj;
-                    }
-                }
-            }
-
-            return fallback;
-        }
-
-        private static Transform? FindVisibleHudParent(GameObject? source)
-        {
             var hudCanvas = GameObject.Find(HudCanvasName);
-            if (hudCanvas != null &&
-                hudCanvas.activeInHierarchy)
+            var indicatorsTransform = hudCanvas != null ? hudCanvas.transform.Find(IndicatorsName) : null;
+            var indicatorHud = indicatorsTransform != null ? indicatorsTransform.GetComponent<IndicatorHUD>() : null;
+            var toggleParent = indicatorHud != null ? indicatorHud.toggleParent : null;
+            var toggle = indicatorsTransform != null ? indicatorsTransform.Find(ToggleName)?.gameObject : null;
+            if (indicatorsTransform == null || toggleParent == null || toggle == null)
             {
-                return hudCanvas.transform;
+                return;
             }
 
-            if (source != null)
+            var panel = new GameObject(
+                RecordPanelName,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(LayoutElement));
+            panel.transform.SetParent(indicatorsTransform, false);
+            panel.transform.SetSiblingIndex(toggleParent.transform.GetSiblingIndex());
+
+            var panelRect = panel.GetComponent<RectTransform>();
+            panelRect.localScale = Vector3.one;
+
+            var modifier = panel.AddComponent<UniformModifier>();
+            var background = panel.AddComponent<ProceduralImage>();
+            modifier.Radius = 8f;
+            background.color = BackgroundColor;
+            background.raycastTarget = false;
+            background.sprite = FindBackgroundSprite(toggle);
+
+            var toggleParentRect = toggleParent.GetComponent<RectTransform>();
+            var panelWidth = toggleParentRect != null && toggleParentRect.rect.width > 0f
+                ? toggleParentRect.rect.width
+                : DefaultPanelWidth;
+            _panelLayout = panel.GetComponent<LayoutElement>();
+            _panelLayout.preferredWidth = panelWidth;
+            _panelLayout.flexibleWidth = 0f;
+            _panelLayout.flexibleHeight = 0f;
+
+            var textObject = new GameObject(RecordTextName, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
+            textObject.transform.SetParent(panel.transform, false);
+
+            var textRect = textObject.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(HorizontalPadding, VerticalPadding);
+            textRect.offsetMax = new Vector2(-HorizontalPadding, -VerticalPadding);
+
+            var titleTemplate = toggle.transform.Find(ToggleTitleName)?.GetComponent<TextMeshProUGUI>();
+            _recordText = textObject.GetComponent<TextMeshProUGUI>();
+            _recordText.font = FindGameFont() ?? titleTemplate?.font ?? TMP_Settings.defaultFontAsset;
+            _recordText.fontSize = titleTemplate != null ? titleTemplate.fontSize : 28f;
+            _recordText.fontStyle = titleTemplate != null ? titleTemplate.fontStyle : FontStyles.Normal;
+            _recordText.color = Color.white;
+            _recordText.alignment = TextAlignmentOptions.TopLeft;
+            _recordText.enableWordWrapping = false;
+            _recordText.overflowMode = TextOverflowModes.Ellipsis;
+            _recordText.raycastTarget = false;
+
+            _panel = panel;
+            _toggleParent = toggleParent;
+            RefreshPanel();
+            UpdateVisibility();
+        }
+
+        private void RefreshPanel()
+        {
+            if (_recordText == null || _panelLayout == null)
             {
-                var sourceCanvas = source.GetComponentInParent<Canvas>();
-                if (sourceCanvas != null &&
-                    sourceCanvas.gameObject.activeInHierarchy)
+                return;
+            }
+
+            if (_records.Count == 0)
+            {
+                _recordText.text = string.Empty;
+                _panelLayout.preferredHeight = 0f;
+                return;
+            }
+
+            var lines = new string[_records.Count];
+            for (var i = 0; i < _records.Count; i++)
+            {
+                lines[i] = _records[i].Text;
+            }
+
+            _recordText.text = string.Join("\n", lines);
+            var availableWidth = Mathf.Max(1f, _panelLayout.preferredWidth - HorizontalPadding * 2f);
+            var preferredTextHeight = _recordText.GetPreferredValues(_recordText.text, availableWidth, 0f).y;
+            _panelLayout.preferredHeight = Mathf.Ceil(preferredTextHeight) + VerticalPadding * 2f;
+        }
+
+        private void UpdateVisibility()
+        {
+            if (_panel == null || _toggleParent == null)
+            {
+                return;
+            }
+
+            var shouldShow = _records.Count > 0 && !_toggleParent.activeSelf;
+            if (_panel.activeSelf != shouldShow)
+            {
+                _panel.SetActive(shouldShow);
+            }
+        }
+
+        private bool PruneExpiredRecords()
+        {
+            var changed = false;
+            for (var i = _records.Count - 1; i >= 0; i--)
+            {
+                if (Time.time >= _records[i].ExpiresAt)
                 {
-                    return sourceCanvas.transform;
+                    _records.RemoveAt(i);
+                    changed = true;
                 }
             }
 
-            return null;
+            return changed;
         }
 
-        private void SetupPanelTransform(RectTransform sourceRect, RectTransform recordRect)
+        private string FormatRecord(string victimName)
         {
-            recordRect.anchorMin = new Vector2(1f, 1f);
-            recordRect.anchorMax = new Vector2(1f, 1f);
-            recordRect.pivot = new Vector2(1f, 1f);
-            recordRect.sizeDelta = new Vector2(Mathf.Max(240f, sourceRect.rect.width > 0f ? sourceRect.rect.width : 320f), 0f);
-            recordRect.anchoredPosition = new Vector2(-24f, -180f);
-        }
-
-        private void SetupContentRoot(GameObject panel)
-        {
-            _contentRoot = panel.GetComponent<RectTransform>();
-            CaptureTextStyle(panel.GetComponentInChildren<TextMeshProUGUI>(true));
-
-            for (var i = panel.transform.childCount - 1; i >= 0; i--)
+            try
             {
-                Object.Destroy(panel.transform.GetChild(i).gameObject);
+                return string.Format(RecordFormat, victimName);
             }
-
-            var layout = panel.GetComponent<VerticalLayoutGroup>() ?? panel.AddComponent<VerticalLayoutGroup>();
-            layout.childAlignment = TextAnchor.UpperLeft;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-            layout.spacing = LineSpacing;
-            layout.padding = new RectOffset(10, 10, 8, 8);
-
-            var fitter = panel.GetComponent<ContentSizeFitter>();
-            if (fitter != null)
+            catch (FormatException)
             {
-                Object.Destroy(fitter);
-            }
-
-            _layoutElement = panel.GetComponent<LayoutElement>() ?? panel.AddComponent<LayoutElement>();
-            _layoutElement.preferredHeight = 0f;
-            _layoutElement.flexibleHeight = 0f;
-        }
-
-        private GameObject CreateRecordLine(string text)
-        {
-            var line = new GameObject(RecordLineName, typeof(RectTransform), typeof(CanvasRenderer), typeof(TextMeshProUGUI));
-            line.transform.SetParent(_contentRoot, false);
-
-            var rectTransform = line.GetComponent<RectTransform>();
-            rectTransform.anchorMin = new Vector2(0f, 1f);
-            rectTransform.anchorMax = new Vector2(1f, 1f);
-            rectTransform.pivot = new Vector2(0f, 1f);
-            rectTransform.sizeDelta = new Vector2(0f, LineHeight);
-
-            var layoutElement = line.AddComponent<LayoutElement>();
-            layoutElement.preferredHeight = LineHeight;
-            layoutElement.flexibleHeight = 0f;
-
-            var textComponent = line.GetComponent<TextMeshProUGUI>();
-            CopyTextStyle(textComponent);
-            textComponent.text = text;
-
-            return line;
-        }
-
-        private void CaptureTextStyle(TextMeshProUGUI? template)
-        {
-            if (template == null)
-            {
-                return;
-            }
-
-            _textFont = template.font;
-            _textFontMaterial = template.fontSharedMaterial;
-            _textFontSize = template.fontSize;
-            _textFontStyle = template.fontStyle;
-            _textColor = template.color;
-            _hasTextStyle = true;
-        }
-
-        private void CopyTextStyle(TextMeshProUGUI target)
-        {
-            if (_hasTextStyle)
-            {
-                target.font = _textFont;
-                target.fontSharedMaterial = _textFontMaterial;
-                target.fontSize = _textFontSize;
-                target.fontStyle = _textFontStyle;
-                target.color = _textColor;
-            }
-            else
-            {
-                target.fontSize = 18f;
-                target.color = Color.white;
-            }
-
-            target.alignment = TextAlignmentOptions.Left;
-            target.enableWordWrapping = false;
-            target.overflowMode = TextOverflowModes.Ellipsis;
-        }
-
-        private void TrimToCapacityBeforeAdd()
-        {
-            PruneDestroyedRecords();
-
-            var maxRecordCount = Mathf.Max(1, MaxRecordCount);
-            while (_records.Count >= maxRecordCount)
-            {
-                var oldest = _records.Dequeue();
-                if (oldest != null)
-                {
-                    Object.Destroy(oldest);
-                }
-            }
-
-            UpdatePanelHeight();
-        }
-
-        private void PruneDestroyedRecords()
-        {
-            while (_records.Count > 0 &&
-                _records.Peek() == null)
-            {
-                _records.Dequeue();
+                return victimName;
             }
         }
 
-        private void UpdatePanelHeight()
+        private static bool IsPlayerKill(Health? health, DamageInfo damageInfo)
         {
-            if (_layoutElement == null)
-            {
-                return;
-            }
-
-            PruneDestroyedRecords();
-
-            if (_records.Count <= 0)
-            {
-                _layoutElement.preferredHeight = 0f;
-                return;
-            }
-
-            _layoutElement.preferredHeight = 16f + _records.Count * LineHeight + (_records.Count - 1) * LineSpacing;
+            return health != null &&
+                health.team != Teams.player &&
+                damageInfo.fromCharacter != null &&
+                damageInfo.fromCharacter.IsMainCharacter;
         }
 
         private static string GetVictimName(Health health)
         {
             var character = health.TryGetCharacter();
             var preset = character != null ? character.characterPreset : null;
-            if (preset != null &&
-                !string.IsNullOrWhiteSpace(preset.DisplayName))
+            if (preset != null && !string.IsNullOrWhiteSpace(preset.DisplayName))
             {
                 return preset.DisplayName;
             }
 
-            if (preset != null &&
-                !string.IsNullOrWhiteSpace(preset.Name))
+            if (preset != null && !string.IsNullOrWhiteSpace(preset.Name))
             {
                 return preset.Name;
             }
@@ -356,20 +263,78 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             return health.team.ToString();
         }
 
-        private void DestroyPanel()
+        private static TMP_FontAsset? FindGameFont()
         {
-            _records.Clear();
-            _contentRoot = null;
-            _layoutElement = null;
-            _textFont = null;
-            _textFontMaterial = null;
-            _hasTextStyle = false;
+            var fonts = Resources.FindObjectsOfTypeAll<TMP_FontAsset>();
+            foreach (var font in fonts)
+            {
+                if (font != null && font.name == GameFontName)
+                {
+                    return font;
+                }
+            }
+
+            return null;
+        }
+
+        private static Sprite? FindBackgroundSprite(GameObject toggle)
+        {
+            var sprites = Resources.FindObjectsOfTypeAll<Sprite>();
+            foreach (var sprite in sprites)
+            {
+                if (sprite != null && sprite.name == BackgroundSpriteName)
+                {
+                    return sprite;
+                }
+            }
+
+            return toggle.GetComponent<ProceduralImage>()?.sprite;
+        }
+
+        private void ClearDestroyedPanelReferences()
+        {
+            if (_panel != null && _toggleParent != null && _recordText != null && _panelLayout != null)
+            {
+                return;
+            }
 
             if (_panel != null)
             {
-                Object.Destroy(_panel);
-                _panel = null;
+                UnityEngine.Object.Destroy(_panel);
             }
+
+            _panel = null;
+            _toggleParent = null;
+            _recordText = null;
+            _panelLayout = null;
+        }
+
+        private void DestroyPanel()
+        {
+            _records.Clear();
+            if (_panel != null)
+            {
+                UnityEngine.Object.Destroy(_panel);
+            }
+
+            _panel = null;
+            _toggleParent = null;
+            _recordText = null;
+            _panelLayout = null;
+            _nextAttachAttempt = 0f;
+        }
+
+        private sealed class KillRecord
+        {
+            public KillRecord(string text, float expiresAt)
+            {
+                Text = text;
+                ExpiresAt = expiresAt;
+            }
+
+            public string Text { get; }
+
+            public float ExpiresAt { get; }
         }
     }
 }
