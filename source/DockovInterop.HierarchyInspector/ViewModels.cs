@@ -64,9 +64,9 @@ public sealed class InspectorGameObjectViewModel : INotifyPropertyChanged
     public string? ActivationError => _activationError;
     public Visibility ActivationErrorVisibility => string.IsNullOrWhiteSpace(ActivationError) ? Visibility.Collapsed : Visibility.Visible;
 
-    internal bool TryBeginDetailsLoad()
+    internal bool TryBeginDetailsLoad(bool forceRefresh = false)
     {
-        if (_detailsLoaded || _detailsLoading)
+        if (_detailsLoading || (_detailsLoaded && !forceRefresh))
         {
             return false;
         }
@@ -290,6 +290,7 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly DuckovRpcConnection _connection = new();
     private readonly SemaphoreSlim _rpcGate = new(1, 1);
     private readonly AsyncCommand _refreshCommand;
+    private readonly AsyncCommand _refreshComponentsCommand;
     private SceneSnapshot? _snapshot;
     private string _filterText = string.Empty;
     private InspectorGameObjectViewModel? _selectedObject;
@@ -299,14 +300,19 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private string _snapshotTimeText = string.Empty;
     private Brush _connectionBrush = new SolidColorBrush(Color.FromRgb(130, 130, 130));
     private int _selectionVersion;
+    private int _componentLoadsInProgress;
 
     public MainViewModel()
     {
         _refreshCommand = new AsyncCommand(RefreshAsync, () => !IsBusy);
+        _refreshComponentsCommand = new AsyncCommand(
+            RefreshComponentsAsync,
+            () => SelectedObject != null && !IsBusy && _componentLoadsInProgress == 0);
     }
 
     public ObservableCollection<HierarchyItem> Hierarchy { get; } = new();
     public ICommand RefreshCommand => _refreshCommand;
+    public ICommand RefreshComponentsCommand => _refreshComponentsCommand;
 
     public string FilterText
     {
@@ -332,6 +338,7 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             {
                 OnPropertyChanged(nameof(EmptySelectionVisibility));
                 OnPropertyChanged(nameof(InspectorVisibility));
+                _refreshComponentsCommand.RaiseCanExecuteChanged();
                 StatusText = value == null
                     ? SnapshotSummary()
                     : $"GameObject {value.InstanceID} | {value.ComponentCount} components";
@@ -354,6 +361,7 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             {
                 OnPropertyChanged(nameof(BusyVisibility));
                 _refreshCommand.RaiseCanExecuteChanged();
+                _refreshComponentsCommand.RaiseCanExecuteChanged();
             }
         }
     }
@@ -403,38 +411,57 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    private async Task LoadObjectDetailsAsync(InspectorGameObjectViewModel target, int selectionVersion)
+    private async Task RefreshComponentsAsync()
     {
-        if (!target.TryBeginDetailsLoad())
+        var target = SelectedObject;
+        if (target == null || IsBusy)
         {
             return;
         }
+
+        await LoadObjectDetailsAsync(target, _selectionVersion, forceRefresh: true);
+    }
+
+    private async Task LoadObjectDetailsAsync(InspectorGameObjectViewModel target, int selectionVersion, bool forceRefresh = false)
+    {
+        if (!target.TryBeginDetailsLoad(forceRefresh))
+        {
+            return;
+        }
+
+        _componentLoadsInProgress++;
+        _refreshComponentsCommand.RaiseCanExecuteChanged();
 
         if (ReferenceEquals(SelectedObject, target))
         {
             StatusText = $"Loading components for GameObject {target.InstanceID}...";
         }
 
-        var result = await Task.Run(() =>
-            _connection.Invoke(api => api.GetInspectorComponents(target.InstanceID.ToString())));
-
-        if (result.Ok && result.Data != null)
+        try
         {
-            target.ApplyDetails(result.Data);
+            var result = await Task.Run(() =>
+                _connection.Invoke(api => api.GetInspectorComponents(target.InstanceID.ToString())));
+
+            if (result.Ok && result.Data != null)
+            {
+                target.ApplyDetails(result.Data);
+            }
+
+            if (selectionVersion != _selectionVersion || !ReferenceEquals(SelectedObject, target))
+            {
+                return;
+            }
+
+            StatusText = result.Ok
+                ? $"GameObject {target.InstanceID} | {target.ComponentCount} components"
+                : result.Error ?? $"Failed to load GameObject {target.InstanceID}.";
         }
-        else
+        finally
         {
             target.EndDetailsLoad();
+            _componentLoadsInProgress--;
+            _refreshComponentsCommand.RaiseCanExecuteChanged();
         }
-
-        if (selectionVersion != _selectionVersion || !ReferenceEquals(SelectedObject, target))
-        {
-            return;
-        }
-
-        StatusText = result.Ok
-            ? $"GameObject {target.InstanceID} | {target.ComponentCount} components"
-            : result.Error ?? $"Failed to load GameObject {target.InstanceID}.";
     }
 
     private void RebuildHierarchy()
