@@ -174,6 +174,13 @@ namespace SlimeNull.DuckovInterop.HierarchyInspectorBridge
             return _apiClient.Invoke(api => api.GetHierarchy());
         }
 
+        [McpServerTool(Name = "get_scene_snapshot", ReadOnly = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<SceneSnapshot>))]
+        [Description("Return a complete Unity scene snapshot including hierarchy, components, and Inspector-visible serialized fields.")]
+        public ApiResult<SceneSnapshot> GetSceneSnapshot()
+        {
+            return _apiClient.Invoke(api => api.GetSceneSnapshot());
+        }
+
         [McpServerTool(Name = "get_components", ReadOnly = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<List<ComponentInfo>>))]
         [Description("Return all components attached to a GameObject by GameObject instance ID.")]
         public ApiResult<List<ComponentInfo>> GetComponents([Description("GameObject instance ID.")] string gameObjectId)

@@ -8,6 +8,8 @@ namespace SlimeNull.DuckovInterop
 
         ApiResult<HierarchyResponse> GetHierarchy();
 
+        ApiResult<SceneSnapshot> GetSceneSnapshot();
+
         ApiResult<List<ComponentInfo>> GetComponents(string gameObjectId);
 
         ApiResult<List<ObjectSearchResult>> FindByName(string name, bool includeInactive);

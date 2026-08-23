@@ -109,4 +109,89 @@ namespace SlimeNull.DuckovInterop
 
         public float A { get; set; }
     }
+
+    public sealed class SceneSnapshot
+    {
+        public string? CapturedAtUtc { get; set; }
+
+        public List<InspectorScene> Scenes { get; set; } = new List<InspectorScene>();
+    }
+
+    public sealed class InspectorScene
+    {
+        public string? Name { get; set; }
+
+        public int BuildIndex { get; set; }
+
+        public List<InspectorGameObject> Roots { get; set; } = new List<InspectorGameObject>();
+    }
+
+    public sealed class InspectorGameObject
+    {
+        public string? Name { get; set; }
+
+        public int InstanceID { get; set; }
+
+        public bool ActiveSelf { get; set; }
+
+        public bool ActiveInHierarchy { get; set; }
+
+        public string? Tag { get; set; }
+
+        public int Layer { get; set; }
+
+        public List<InspectorComponent> Components { get; set; } = new List<InspectorComponent>();
+
+        public List<InspectorGameObject> Children { get; set; } = new List<InspectorGameObject>();
+    }
+
+    public sealed class InspectorComponent
+    {
+        public string? Name { get; set; }
+
+        public string? Type { get; set; }
+
+        public int InstanceID { get; set; }
+
+        public bool? Enabled { get; set; }
+
+        public string? Error { get; set; }
+
+        public List<SerializedFieldInfo> Fields { get; set; } = new List<SerializedFieldInfo>();
+    }
+
+    public sealed class SerializedFieldInfo
+    {
+        public string? Name { get; set; }
+
+        public string? DisplayName { get; set; }
+
+        public string? Type { get; set; }
+
+        public string? Kind { get; set; }
+
+        public string? Value { get; set; }
+
+        public int? InstanceID { get; set; }
+
+        public string? ObjectName { get; set; }
+
+        public string? Header { get; set; }
+
+        public string? Tooltip { get; set; }
+
+        public float? RangeMin { get; set; }
+
+        public float? RangeMax { get; set; }
+
+        public bool Multiline { get; set; }
+
+        public int? TextAreaMinLines { get; set; }
+
+        public int? TextAreaMaxLines { get; set; }
+
+        public List<string> EnumNames { get; set; } = new List<string>();
+
+        public List<SerializedFieldInfo> Children { get; set; } = new List<SerializedFieldInfo>();
+    }
 }

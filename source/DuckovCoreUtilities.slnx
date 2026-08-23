@@ -3,6 +3,7 @@
     <File Path="Global.props" />
   </Folder>
   <Project Path="DuckovCoreUtilities/DuckovCoreUtilities.csproj" />
+  <Project Path="DockovInterop.HierarchyInspector/DockovInterop.HierarchyInspector.csproj" />
   <Project Path="DuckovInterop.Abstractions/DuckovInterop.Abstractions.csproj" />
   <Project Path="DuckovInterop.Bridge/DuckovInterop.Bridge.csproj" />
   <Project Path="DuckovInterop/DuckovInterop.csproj" />
