@@ -10,6 +10,8 @@ namespace SlimeNull.DuckovInterop
 
         ApiResult<SceneSnapshot> GetSceneSnapshot();
 
+        ApiResult<bool> SetGameObjectActive(string gameObjectId, bool active);
+
         ApiResult<List<ComponentInfo>> GetComponents(string gameObjectId);
 
         ApiResult<List<ObjectSearchResult>> FindByName(string name, bool includeInactive);

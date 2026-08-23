@@ -234,6 +234,25 @@ namespace SlimeNull.DuckovInterop
             });
         }
 
+        public ApiResult<bool> SetGameObjectActive(string gameObjectId, bool active)
+        {
+            return _dispatcher.Invoke(() =>
+            {
+                if (!_registry.TryResolve(gameObjectId, out var root, out var error))
+                {
+                    return ApiResult<bool>.Failure(error);
+                }
+
+                if (root is not GameObject gameObject)
+                {
+                    return ApiResult<bool>.Failure($"Object '{gameObjectId}' is not a GameObject.");
+                }
+
+                gameObject.SetActive(active);
+                return ApiResult<bool>.Success(gameObject.activeSelf);
+            });
+        }
+
         public ApiResult<List<ObjectSearchResult>> FindByName(string name, bool includeInactive)
         {
             return _dispatcher.Invoke(() =>
@@ -719,7 +738,67 @@ namespace SlimeNull.DuckovInterop
                 }
             }
 
+            var memberNames = new HashSet<string>(result.Select(field => field.Name ?? string.Empty), StringComparer.Ordinal);
+            foreach (var property in EnumerateUnityNativeProperties(component.GetType()))
+            {
+                if (!memberNames.Add(property.Name))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var info = CreateValueField(property.Name, NicifyName(property.Name), property.PropertyType,
+                        property.GetValue(component, null), property.Name, 0, visited, property.GetSetMethod(nonPublic: false) != null);
+                    result.Add(info);
+                }
+                catch (Exception ex)
+                {
+                    result.Add(new SerializedFieldInfo
+                    {
+                        Name = property.Name,
+                        DisplayName = NicifyName(property.Name),
+                        Type = property.PropertyType.FullName,
+                        Path = property.Name,
+                        Kind = "Error",
+                        Value = ex.GetBaseException().Message
+                    });
+                }
+            }
+
             return result;
+        }
+
+        private static IEnumerable<PropertyInfo> EnumerateUnityNativeProperties(Type componentType)
+        {
+            var hierarchy = new Stack<Type>();
+            for (var type = componentType; type != null && type != typeof(object); type = type.BaseType)
+            {
+                hierarchy.Push(type);
+            }
+
+            while (hierarchy.Count > 0)
+            {
+                foreach (var property in hierarchy.Pop().GetProperties(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                    .OrderBy(property => property.MetadataToken))
+                {
+                    if (property.GetGetMethod(nonPublic: false) != null &&
+                        property.GetIndexParameters().Length == 0 &&
+                        property.Name != "enabled" &&
+                        HasNativePropertyAttribute(property) &&
+                        IsUnitySerializableType(property.PropertyType))
+                    {
+                        yield return property;
+                    }
+                }
+            }
+        }
+
+        private static bool HasNativePropertyAttribute(PropertyInfo property)
+        {
+            const string attributeName = "UnityEngine.Bindings.NativePropertyAttribute";
+            return property.GetCustomAttributes(true).Any(attribute => attribute.GetType().FullName == attributeName) ||
+                property.GetAccessors(true).Any(accessor => accessor.GetCustomAttributes(true).Any(attribute => attribute.GetType().FullName == attributeName));
         }
 
         private static IEnumerable<FieldInfo> EnumerateUnitySerializedFields(Type componentType)
@@ -779,7 +858,7 @@ namespace SlimeNull.DuckovInterop
             return type.IsSerializable;
         }
 
-        private static SerializedFieldInfo CreateValueField(string name, string displayName, Type declaredType, object? value, string path, int depth, HashSet<object> visited)
+        private static SerializedFieldInfo CreateValueField(string name, string displayName, Type declaredType, object? value, string path, int depth, HashSet<object> visited, bool canWrite = true)
         {
             var info = new SerializedFieldInfo
             {
@@ -793,14 +872,14 @@ namespace SlimeNull.DuckovInterop
             {
                 info.Kind = typeof(UnityEngine.Object).IsAssignableFrom(declaredType) ? "ObjectReference" : "Null";
                 info.Value = "None";
-                info.CanWrite = typeof(UnityEngine.Object).IsAssignableFrom(declaredType);
+                info.CanWrite = canWrite && typeof(UnityEngine.Object).IsAssignableFrom(declaredType);
                 return info;
             }
 
             if (value is UnityEngine.Object unityObject)
             {
                 info.Kind = "ObjectReference";
-                info.CanWrite = true;
+                info.CanWrite = canWrite;
                 if (unityObject == null)
                 {
                     info.Value = "None";
@@ -820,58 +899,58 @@ namespace SlimeNull.DuckovInterop
             {
                 info.Kind = "Boolean";
                 info.Value = ((bool)value).ToString(CultureInfo.InvariantCulture);
-                info.CanWrite = true;
+                info.CanWrite = canWrite;
             }
             else if (actualType.IsEnum)
             {
                 info.Kind = "Enum";
                 info.Value = value.ToString();
                 info.EnumNames = Enum.GetNames(actualType).ToList();
-                info.CanWrite = true;
+                info.CanWrite = canWrite;
             }
             else if (actualType == typeof(string) || actualType == typeof(char))
             {
                 info.Kind = "String";
                 info.Value = value.ToString();
-                info.CanWrite = true;
+                info.CanWrite = canWrite;
             }
             else if (actualType == typeof(float) || actualType == typeof(double) || actualType == typeof(decimal))
             {
                 info.Kind = "Float";
                 info.Value = Convert.ToString(value, CultureInfo.InvariantCulture);
-                info.CanWrite = true;
+                info.CanWrite = canWrite;
             }
             else if (actualType.IsPrimitive)
             {
                 info.Kind = "Integer";
                 info.Value = Convert.ToString(value, CultureInfo.InvariantCulture);
-                info.CanWrite = true;
+                info.CanWrite = canWrite;
             }
             else if (value is Color color)
             {
                 info.Kind = "Color";
                 info.Value = string.Format(CultureInfo.InvariantCulture, "{0:R},{1:R},{2:R},{3:R}", color.r, color.g, color.b, color.a);
-                AddVectorChildren(info, new[] { ("r", color.r), ("g", color.g), ("b", color.b), ("a", color.a) }, path, depth, visited);
+                AddVectorChildren(info, new[] { ("r", color.r), ("g", color.g), ("b", color.b), ("a", color.a) }, path, depth, visited, canWrite);
             }
             else if (value is Vector2 vector2)
             {
                 info.Kind = "Vector2";
-                AddVectorChildren(info, new[] { ("x", vector2.x), ("y", vector2.y) }, path, depth, visited);
+                AddVectorChildren(info, new[] { ("x", vector2.x), ("y", vector2.y) }, path, depth, visited, canWrite);
             }
             else if (value is Vector3 vector3)
             {
                 info.Kind = "Vector3";
-                AddVectorChildren(info, new[] { ("x", vector3.x), ("y", vector3.y), ("z", vector3.z) }, path, depth, visited);
+                AddVectorChildren(info, new[] { ("x", vector3.x), ("y", vector3.y), ("z", vector3.z) }, path, depth, visited, canWrite);
             }
             else if (value is Vector4 vector4)
             {
                 info.Kind = "Vector4";
-                AddVectorChildren(info, new[] { ("x", vector4.x), ("y", vector4.y), ("z", vector4.z), ("w", vector4.w) }, path, depth, visited);
+                AddVectorChildren(info, new[] { ("x", vector4.x), ("y", vector4.y), ("z", vector4.z), ("w", vector4.w) }, path, depth, visited, canWrite);
             }
             else if (value is Quaternion quaternion)
             {
                 info.Kind = "Quaternion";
-                AddVectorChildren(info, new[] { ("x", quaternion.x), ("y", quaternion.y), ("z", quaternion.z), ("w", quaternion.w) }, path, depth, visited);
+                AddVectorChildren(info, new[] { ("x", quaternion.x), ("y", quaternion.y), ("z", quaternion.z), ("w", quaternion.w) }, path, depth, visited, canWrite);
             }
             else if (value is IList list)
             {
@@ -881,7 +960,7 @@ namespace SlimeNull.DuckovInterop
                 var count = Math.Min(list.Count, 512);
                 for (var i = 0; i < count; i++)
                 {
-                    info.Children.Add(CreateValueField("[" + i + "]", "Element " + i, elementType, list[i], path + "[" + i + "]", depth + 1, visited));
+                    info.Children.Add(CreateValueField("[" + i + "]", "Element " + i, elementType, list[i], path + "[" + i + "]", depth + 1, visited, canWrite));
                 }
                 if (list.Count > count)
                 {
@@ -906,7 +985,7 @@ namespace SlimeNull.DuckovInterop
                     try
                     {
                         var childPath = string.IsNullOrEmpty(path) ? childField.Name : path + "." + childField.Name;
-                        var child = CreateValueField(childField.Name, NicifyName(childField.Name), childField.FieldType, childField.GetValue(value), childPath, depth + 1, visited);
+                        var child = CreateValueField(childField.Name, NicifyName(childField.Name), childField.FieldType, childField.GetValue(value), childPath, depth + 1, visited, canWrite);
                         ApplyInspectorAttributes(child, childField);
                         info.Children.Add(child);
                     }
@@ -924,11 +1003,11 @@ namespace SlimeNull.DuckovInterop
             return info;
         }
 
-        private static void AddVectorChildren(SerializedFieldInfo parent, IEnumerable<(string name, float value)> values, string path, int depth, HashSet<object> visited)
+        private static void AddVectorChildren(SerializedFieldInfo parent, IEnumerable<(string name, float value)> values, string path, int depth, HashSet<object> visited, bool canWrite)
         {
             foreach (var item in values)
             {
-                parent.Children.Add(CreateValueField(item.name, item.name.ToUpperInvariant(), typeof(float), item.value, path + "." + item.name, depth + 1, visited));
+                parent.Children.Add(CreateValueField(item.name, item.name.ToUpperInvariant(), typeof(float), item.value, path + "." + item.name, depth + 1, visited, canWrite));
             }
         }
 

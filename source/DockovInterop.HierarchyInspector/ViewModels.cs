@@ -19,21 +19,75 @@ public sealed class HierarchyItem
     public Brush ForegroundBrush { get; init; } = new SolidColorBrush(Color.FromRgb(216, 216, 216));
 }
 
-public sealed class InspectorGameObjectViewModel
+public sealed class InspectorGameObjectViewModel : INotifyPropertyChanged
 {
+    private readonly MainViewModel _owner;
+    private bool _activeSelf;
+    private bool _isUpdatingActive;
+    private string? _activationError;
+
     internal InspectorGameObjectViewModel(InspectorGameObject source, MainViewModel owner)
     {
         Source = source;
+        _owner = owner;
+        _activeSelf = source.ActiveSelf;
         Components = source.Components.Select(component => new InspectorComponentViewModel(component, owner)).ToList();
     }
 
     public InspectorGameObject Source { get; }
     public string Name => Source.Name ?? "GameObject";
     public int InstanceID => Source.InstanceID;
-    public bool ActiveSelf => Source.ActiveSelf;
+    public bool ActiveSelf
+    {
+        get => _activeSelf;
+        set
+        {
+            if (_activeSelf == value || _isUpdatingActive)
+            {
+                return;
+            }
+
+            var previous = _activeSelf;
+            _activeSelf = value;
+            OnPropertyChanged();
+            _ = UpdateActiveAsync(value, previous);
+        }
+    }
     public string Tag => Source.Tag ?? "Untagged";
     public int Layer => Source.Layer;
     public IReadOnlyList<InspectorComponentViewModel> Components { get; }
+    public bool CanEditActive => !_isUpdatingActive;
+    public string? ActivationError => _activationError;
+    public Visibility ActivationErrorVisibility => string.IsNullOrWhiteSpace(ActivationError) ? Visibility.Collapsed : Visibility.Visible;
+
+    private async Task UpdateActiveAsync(bool value, bool previous)
+    {
+        _isUpdatingActive = true;
+        _activationError = null;
+        OnPropertyChanged(nameof(CanEditActive));
+        OnPropertyChanged(nameof(ActivationError));
+        OnPropertyChanged(nameof(ActivationErrorVisibility));
+
+        var error = await _owner.SetGameObjectActiveAsync(Source.InstanceID, value);
+        if (error != null)
+        {
+            _activationError = error;
+            _activeSelf = previous;
+            OnPropertyChanged(nameof(ActiveSelf));
+        }
+        else
+        {
+            Source.ActiveSelf = value;
+        }
+
+        _isUpdatingActive = false;
+        OnPropertyChanged(nameof(CanEditActive));
+        OnPropertyChanged(nameof(ActivationError));
+        OnPropertyChanged(nameof(ActivationErrorVisibility));
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
 public sealed class InspectorComponentViewModel : INotifyPropertyChanged
@@ -419,6 +473,27 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             }
 
             StatusText = $"Updated {path} on component {instanceId}";
+            return null;
+        }
+        finally
+        {
+            _rpcGate.Release();
+        }
+    }
+
+    internal async Task<string?> SetGameObjectActiveAsync(int instanceId, bool active)
+    {
+        await _rpcGate.WaitAsync();
+        try
+        {
+            var result = await Task.Run(() => _connection.Invoke(api => api.SetGameObjectActive(instanceId.ToString(), active)));
+            if (!result.Ok)
+            {
+                StatusText = result.Error ?? $"Failed to update GameObject {instanceId}.";
+                return StatusText;
+            }
+
+            StatusText = $"Set GameObject {instanceId} activeSelf to {active}";
             return null;
         }
         finally
