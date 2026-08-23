@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -189,6 +190,29 @@ namespace SlimeNull.DuckovInterop
                     })
                     .ToList();
                 return ApiResult<HierarchyResponse>.Success(new HierarchyResponse { Scenes = scenes });
+            });
+        }
+
+        public ApiResult<SceneSnapshot> GetSceneSnapshot()
+        {
+            return _dispatcher.Invoke(() =>
+            {
+                var scenes = Enumerable.Range(0, SceneManager.sceneCount)
+                    .Select(SceneManager.GetSceneAt)
+                    .Where(scene => scene.IsValid() && scene.isLoaded)
+                    .Select(scene => new InspectorScene
+                    {
+                        Name = scene.name,
+                        BuildIndex = scene.buildIndex,
+                        Roots = scene.GetRootGameObjects().Select(CreateInspectorGameObject).ToList()
+                    })
+                    .ToList();
+
+                return ApiResult<SceneSnapshot>.Success(new SceneSnapshot
+                {
+                    CapturedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                    Scenes = scenes
+                });
             });
         }
 
@@ -580,6 +604,371 @@ namespace SlimeNull.DuckovInterop
                 .Where(component => component != null)
                 .Select(component => new ComponentInfo { Type = component.GetType().FullName, InstanceID = component.GetInstanceID() })
                 .ToList();
+        }
+
+        private static InspectorGameObject CreateInspectorGameObject(GameObject gameObject)
+        {
+            string tag;
+            try
+            {
+                tag = gameObject.tag;
+            }
+            catch
+            {
+                tag = "Untagged";
+            }
+
+            return new InspectorGameObject
+            {
+                Name = gameObject.name,
+                InstanceID = gameObject.GetInstanceID(),
+                ActiveSelf = gameObject.activeSelf,
+                ActiveInHierarchy = gameObject.activeInHierarchy,
+                Tag = tag,
+                Layer = gameObject.layer,
+                Components = gameObject.GetComponents<Component>().Select(CreateInspectorComponent).ToList(),
+                Children = Enumerable.Range(0, gameObject.transform.childCount)
+                    .Select(i => CreateInspectorGameObject(gameObject.transform.GetChild(i).gameObject))
+                    .ToList()
+            };
+        }
+
+        private static InspectorComponent CreateInspectorComponent(Component component)
+        {
+            if (component == null)
+            {
+                return new InspectorComponent { Name = "Missing Script", Type = "Missing", Error = "The referenced script could not be loaded." };
+            }
+
+            var type = component.GetType();
+            var result = new InspectorComponent
+            {
+                Name = NicifyName(type.Name),
+                Type = type.FullName,
+                InstanceID = component.GetInstanceID(),
+                Enabled = TryGetEnabled(component)
+            };
+
+            try
+            {
+                result.Fields = GetSerializedFields(component);
+            }
+            catch (Exception ex)
+            {
+                result.Error = ex.GetBaseException().Message;
+            }
+
+            return result;
+        }
+
+        private static bool? TryGetEnabled(Component component)
+        {
+            try
+            {
+                var property = component.GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
+                return property != null && property.PropertyType == typeof(bool) ? (bool?)property.GetValue(component) : null;
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        private static List<SerializedFieldInfo> GetSerializedFields(Component component)
+        {
+            var result = new List<SerializedFieldInfo>();
+            var visited = new HashSet<object>(ReferenceComparer.Instance);
+
+            if (component is Transform transform)
+            {
+                result.Add(CreateValueField("m_LocalPosition", "Position", typeof(Vector3), transform.localPosition, 0, visited));
+                result.Add(CreateValueField("m_LocalRotation", "Rotation", typeof(Vector3), transform.localEulerAngles, 0, visited));
+                result.Add(CreateValueField("m_LocalScale", "Scale", typeof(Vector3), transform.localScale, 0, visited));
+            }
+
+            foreach (var field in EnumerateUnitySerializedFields(component.GetType()))
+            {
+                try
+                {
+                    var info = CreateValueField(field.Name, NicifyName(field.Name), field.FieldType, field.GetValue(component), 0, visited);
+                    ApplyInspectorAttributes(info, field);
+                    result.Add(info);
+                }
+                catch (Exception ex)
+                {
+                    result.Add(new SerializedFieldInfo
+                    {
+                        Name = field.Name,
+                        DisplayName = NicifyName(field.Name),
+                        Type = field.FieldType.FullName,
+                        Kind = "Error",
+                        Value = ex.GetBaseException().Message
+                    });
+                }
+            }
+
+            return result;
+        }
+
+        private static IEnumerable<FieldInfo> EnumerateUnitySerializedFields(Type componentType)
+        {
+            var hierarchy = new Stack<Type>();
+            for (var type = componentType; type != null && type != typeof(object); type = type.BaseType)
+            {
+                hierarchy.Push(type);
+            }
+
+            while (hierarchy.Count > 0)
+            {
+                foreach (var field in hierarchy.Pop().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.DeclaredOnly)
+                    .OrderBy(field => field.MetadataToken))
+                {
+                    if (IsUnitySerializedField(field))
+                    {
+                        yield return field;
+                    }
+                }
+            }
+        }
+
+        private static bool IsUnitySerializedField(FieldInfo field)
+        {
+            if (field.IsStatic || field.IsLiteral || field.IsInitOnly || field.IsNotSerialized || HasAttribute(field, "UnityEngine.HideInInspector"))
+            {
+                return false;
+            }
+
+            var serializeReference = HasAttribute(field, "UnityEngine.SerializeReference");
+            if (!field.IsPublic && !HasAttribute(field, "UnityEngine.SerializeField") && !serializeReference)
+            {
+                return false;
+            }
+
+            return serializeReference || IsUnitySerializableType(field.FieldType);
+        }
+
+        private static bool IsUnitySerializableType(Type type)
+        {
+            if (type.IsPrimitive || type.IsEnum || type == typeof(string) || typeof(UnityEngine.Object).IsAssignableFrom(type))
+            {
+                return true;
+            }
+
+            if (type.IsArray)
+            {
+                return type.GetArrayRank() == 1 && IsUnitySerializableType(type.GetElementType()!);
+            }
+
+            if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                return IsUnitySerializableType(type.GetGenericArguments()[0]);
+            }
+
+            return type.IsSerializable;
+        }
+
+        private static SerializedFieldInfo CreateValueField(string name, string displayName, Type declaredType, object? value, int depth, HashSet<object> visited)
+        {
+            var info = new SerializedFieldInfo
+            {
+                Name = name,
+                DisplayName = displayName,
+                Type = declaredType.FullName
+            };
+
+            if (value == null)
+            {
+                info.Kind = typeof(UnityEngine.Object).IsAssignableFrom(declaredType) ? "ObjectReference" : "Null";
+                info.Value = "None";
+                return info;
+            }
+
+            if (value is UnityEngine.Object unityObject)
+            {
+                info.Kind = "ObjectReference";
+                if (unityObject == null)
+                {
+                    info.Value = "None";
+                }
+                else
+                {
+                    info.ObjectName = unityObject.name;
+                    info.InstanceID = unityObject.GetInstanceID();
+                    info.Value = unityObject.name + " (" + NicifyName(unityObject.GetType().Name) + ")";
+                }
+                return info;
+            }
+
+            var actualType = value.GetType();
+            info.Type = actualType.FullName ?? declaredType.FullName;
+            if (actualType == typeof(bool))
+            {
+                info.Kind = "Boolean";
+                info.Value = ((bool)value).ToString(CultureInfo.InvariantCulture);
+            }
+            else if (actualType.IsEnum)
+            {
+                info.Kind = "Enum";
+                info.Value = value.ToString();
+                info.EnumNames = Enum.GetNames(actualType).ToList();
+            }
+            else if (actualType == typeof(string) || actualType == typeof(char))
+            {
+                info.Kind = "String";
+                info.Value = value.ToString();
+            }
+            else if (actualType == typeof(float) || actualType == typeof(double) || actualType == typeof(decimal))
+            {
+                info.Kind = "Float";
+                info.Value = Convert.ToString(value, CultureInfo.InvariantCulture);
+            }
+            else if (actualType.IsPrimitive)
+            {
+                info.Kind = "Integer";
+                info.Value = Convert.ToString(value, CultureInfo.InvariantCulture);
+            }
+            else if (value is Color color)
+            {
+                info.Kind = "Color";
+                info.Value = string.Format(CultureInfo.InvariantCulture, "{0:R},{1:R},{2:R},{3:R}", color.r, color.g, color.b, color.a);
+            }
+            else if (value is Vector2 vector2)
+            {
+                info.Kind = "Vector2";
+                AddVectorChildren(info, new[] { ("x", vector2.x), ("y", vector2.y) }, depth, visited);
+            }
+            else if (value is Vector3 vector3)
+            {
+                info.Kind = "Vector3";
+                AddVectorChildren(info, new[] { ("x", vector3.x), ("y", vector3.y), ("z", vector3.z) }, depth, visited);
+            }
+            else if (value is Vector4 vector4)
+            {
+                info.Kind = "Vector4";
+                AddVectorChildren(info, new[] { ("x", vector4.x), ("y", vector4.y), ("z", vector4.z), ("w", vector4.w) }, depth, visited);
+            }
+            else if (value is Quaternion quaternion)
+            {
+                info.Kind = "Quaternion";
+                AddVectorChildren(info, new[] { ("x", quaternion.x), ("y", quaternion.y), ("z", quaternion.z), ("w", quaternion.w) }, depth, visited);
+            }
+            else if (value is IList list)
+            {
+                info.Kind = "Array";
+                info.Value = list.Count.ToString(CultureInfo.InvariantCulture);
+                var elementType = actualType.IsArray ? actualType.GetElementType()! : actualType.GetGenericArguments().FirstOrDefault() ?? typeof(object);
+                var count = Math.Min(list.Count, 512);
+                for (var i = 0; i < count; i++)
+                {
+                    info.Children.Add(CreateValueField("[" + i + "]", "Element " + i, elementType, list[i], depth + 1, visited));
+                }
+                if (list.Count > count)
+                {
+                    info.Children.Add(new SerializedFieldInfo { DisplayName = "...", Kind = "Truncated", Value = (list.Count - count) + " more elements" });
+                }
+            }
+            else if (depth >= 8)
+            {
+                info.Kind = "Truncated";
+                info.Value = "Max depth reached";
+            }
+            else if (!actualType.IsValueType && !visited.Add(value))
+            {
+                info.Kind = "Reference";
+                info.Value = "Cyclic reference";
+            }
+            else
+            {
+                info.Kind = "Object";
+                foreach (var childField in EnumerateUnitySerializedFields(actualType))
+                {
+                    try
+                    {
+                        var child = CreateValueField(childField.Name, NicifyName(childField.Name), childField.FieldType, childField.GetValue(value), depth + 1, visited);
+                        ApplyInspectorAttributes(child, childField);
+                        info.Children.Add(child);
+                    }
+                    catch (Exception ex)
+                    {
+                        info.Children.Add(new SerializedFieldInfo { Name = childField.Name, DisplayName = NicifyName(childField.Name), Kind = "Error", Value = ex.GetBaseException().Message });
+                    }
+                }
+                if (!actualType.IsValueType)
+                {
+                    visited.Remove(value);
+                }
+            }
+
+            return info;
+        }
+
+        private static void AddVectorChildren(SerializedFieldInfo parent, IEnumerable<(string name, float value)> values, int depth, HashSet<object> visited)
+        {
+            foreach (var item in values)
+            {
+                parent.Children.Add(CreateValueField(item.name, item.name.ToUpperInvariant(), typeof(float), item.value, depth + 1, visited));
+            }
+        }
+
+        private static void ApplyInspectorAttributes(SerializedFieldInfo info, FieldInfo field)
+        {
+            foreach (var attribute in field.GetCustomAttributes(true))
+            {
+                var name = attribute.GetType().FullName;
+                if (name == "UnityEngine.HeaderAttribute")
+                {
+                    info.Header = ReadAttributeValue(attribute, "header")?.ToString();
+                }
+                else if (name == "UnityEngine.TooltipAttribute")
+                {
+                    info.Tooltip = ReadAttributeValue(attribute, "tooltip")?.ToString();
+                }
+                else if (name == "UnityEngine.RangeAttribute")
+                {
+                    info.RangeMin = Convert.ToSingle(ReadAttributeValue(attribute, "min"), CultureInfo.InvariantCulture);
+                    info.RangeMax = Convert.ToSingle(ReadAttributeValue(attribute, "max"), CultureInfo.InvariantCulture);
+                }
+                else if (name == "UnityEngine.MultilineAttribute")
+                {
+                    info.Multiline = true;
+                    info.TextAreaMinLines = Convert.ToInt32(ReadAttributeValue(attribute, "lines") ?? 3, CultureInfo.InvariantCulture);
+                }
+                else if (name == "UnityEngine.TextAreaAttribute")
+                {
+                    info.Multiline = true;
+                    info.TextAreaMinLines = Convert.ToInt32(ReadAttributeValue(attribute, "minLines") ?? 3, CultureInfo.InvariantCulture);
+                    info.TextAreaMaxLines = Convert.ToInt32(ReadAttributeValue(attribute, "maxLines") ?? 3, CultureInfo.InvariantCulture);
+                }
+            }
+        }
+
+        private static object? ReadAttributeValue(object attribute, string memberName)
+        {
+            var type = attribute.GetType();
+            return type.GetField(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(attribute)
+                ?? type.GetProperty(memberName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)?.GetValue(attribute);
+        }
+
+        private static bool HasAttribute(FieldInfo field, string fullName)
+        {
+            return field.GetCustomAttributes(true).Any(attribute => attribute.GetType().FullName == fullName);
+        }
+
+        private static string NicifyName(string value)
+        {
+            value = value.StartsWith("m_", StringComparison.Ordinal) ? value.Substring(2) : value.TrimStart('_');
+            value = Regex.Replace(value, "(?<=[a-z0-9])(?=[A-Z])", " ");
+            value = value.Replace('_', ' ');
+            return CultureInfo.InvariantCulture.TextInfo.ToTitleCase(value);
+        }
+
+        private sealed class ReferenceComparer : IEqualityComparer<object>
+        {
+            public static readonly ReferenceComparer Instance = new ReferenceComparer();
+
+            public new bool Equals(object? x, object? y) => ReferenceEquals(x, y);
+
+            public int GetHashCode(object obj) => RuntimeHelpers.GetHashCode(obj);
         }
 
         private static bool IsInactive(UnityEngine.Object obj)
