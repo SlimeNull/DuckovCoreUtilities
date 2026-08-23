@@ -1,4 +1,6 @@
+using HarmonyLib;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -8,6 +10,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal sealed class BulletCountCrosshairColorFeature : FeatureBase
     {
+        private const string HarmonyCategory = nameof(BulletCountCrosshairColorFeature);
+        private static BulletCountCrosshairColorFeature? ActiveFeature;
         private readonly List<CrosshairColorControllerBase> _controllers = new List<CrosshairColorControllerBase>();
 
         public override string Name => "Bullet count crosshair color";
@@ -16,6 +20,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         protected override void OnEnable()
         {
+            ActiveFeature = this;
+            Context.Harmony.PatchCategory(HarmonyCategory);
             LevelManager.OnAfterLevelInitialized += OnAfterLevelInitialized;
             AttachToCrosshairs();
         }
@@ -23,7 +29,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         protected override void OnDisable()
         {
             LevelManager.OnAfterLevelInitialized -= OnAfterLevelInitialized;
+            Context.Harmony.UnpatchCategory(HarmonyCategory);
             DetachControllers();
+            if (ReferenceEquals(ActiveFeature, this))
+            {
+                ActiveFeature = null;
+            }
         }
 
         private void OnAfterLevelInitialized()
@@ -43,7 +54,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             var aimMarkers = GameObject.FindObjectsOfType<AimMarker>();
             foreach (var aimMarker in aimMarkers)
             {
-                RegisterController(aimMarker.gameObject.GetOrAddComponent<AimMarkerColorController>().Initialize(this, aimMarker));
+                AttachToAimMarker(aimMarker);
             }
         }
 
@@ -52,8 +63,28 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             var adsAimMarkers = GameObject.FindObjectsOfType<ADSAimMarker>();
             foreach (var adsAimMarker in adsAimMarkers)
             {
+                AttachToAdsAimMarker(adsAimMarker);
+            }
+        }
+
+        private void AttachToAdsAimMarker(ADSAimMarker? adsAimMarker)
+        {
+            if (adsAimMarker != null)
+            {
                 RegisterController(adsAimMarker.gameObject.GetOrAddComponent<AdsAimMarkerColorController>().Initialize(this, adsAimMarker));
             }
+
+            PruneControllers();
+        }
+
+        private void AttachToAimMarker(AimMarker? aimMarker)
+        {
+            if (aimMarker != null)
+            {
+                RegisterController(aimMarker.gameObject.GetOrAddComponent<AimMarkerColorController>().Initialize(this, aimMarker));
+            }
+
+            PruneControllers();
         }
 
         private void RegisterController(CrosshairColorControllerBase controller)
@@ -217,6 +248,40 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                 ApplyGraphicColor(_adsAimMarker.sniperRoundRenderer, color);
                 ApplyGraphicColor(_adsAimMarker.followSniperRoundRenderer, color);
+            }
+        }
+
+        [HarmonyPatchCategory(HarmonyCategory)]
+        [HarmonyPatch(typeof(AimMarker), "Awake")]
+        private static class AimMarkerAwakePatch
+        {
+            private static void Postfix(AimMarker __instance)
+            {
+                try
+                {
+                    ActiveFeature?.AttachToAimMarker(__instance);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[BulletCountCrosshairColorFeature] Failed to attach to AimMarker: {ex}");
+                }
+            }
+        }
+
+        [HarmonyPatchCategory(HarmonyCategory)]
+        [HarmonyPatch(typeof(AimMarker), "SwitchAdsAimMarker")]
+        private static class SwitchAdsAimMarkerPatch
+        {
+            private static void Postfix(ADSAimMarker? ___currentAdsAimMarker)
+            {
+                try
+                {
+                    ActiveFeature?.AttachToAdsAimMarker(___currentAdsAimMarker);
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[BulletCountCrosshairColorFeature] Failed to attach to ADSAimMarker: {ex}");
+                }
             }
         }
     }
