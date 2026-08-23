@@ -19,7 +19,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         public override string Name => "Loot outline";
 
-        public int ActivationDistance { get; set; } = 10;
         public bool EnableLootboxOutline { get; set; } = true;
         public bool EnableGroundItemOutline { get; set; } = true;
         public bool UseQualityColor { get; set; } = true;
@@ -103,19 +102,24 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
         }
 
+        private static bool IsVisibleToPlayer(Vector3 position)
+        {
+            var levelManager = LevelManager.Instance;
+            var revealer = levelManager != null
+                ? levelManager.FogOfWarManager?.mainVis
+                : null;
+
+            return revealer != null && revealer.TestPoint(position);
+        }
+
         private abstract class OutlinableBehaviourBase : MonoBehaviour
         {
             protected Outlinable? Outlinable { get; set; }
             protected LootboxOutlineFeature? OwnerFeature { get; private set; }
 
-            private CharacterMainControl? _player;
-
-            public int ActivationDistance { get; set; } = 10;
-
             protected void InitializeOwner(LootboxOutlineFeature ownerFeature)
             {
                 OwnerFeature = ownerFeature;
-                ActivationDistance = ownerFeature.ActivationDistance;
             }
 
             protected virtual void Update()
@@ -125,13 +129,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     return;
                 }
 
-                _player ??= LevelManager.Instance.MainCharacter;
-                if (_player is null)
-                {
-                    return;
-                }
-
-                Outlinable.enabled = Vector3.Distance(transform.position, _player.transform.position) < ActivationDistance;
+                Outlinable.enabled = IsVisibleToPlayer(transform.position);
 
                 if (Outlinable.enabled)
                 {
@@ -209,17 +207,14 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             private InteractableLootbox? lootBox;
             private Outlinable? outlinable;
-            private CharacterMainControl? _player;
             private LootboxOutlineFeature? _ownerFeature;
             private Color _outlineColor = Color.white;
 
-            public int ActivationDistance { get; set; } = 10;
             public bool UseQualityColor { get; set; } = true;
 
             public LootOutlinable Initialize(LootboxOutlineFeature ownerFeature)
             {
                 _ownerFeature = ownerFeature;
-                ActivationDistance = ownerFeature.ActivationDistance;
                 UseQualityColor = ownerFeature.UseQualityColor;
                 return this;
             }
@@ -242,13 +237,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     return;
                 }
 
-                _player ??= LevelManager.Instance.MainCharacter;
-                if (_player is null)
-                {
-                    return;
-                }
-
-                outlinable.enabled = Vector3.Distance(transform.position, _player.transform.position) < ActivationDistance;
+                outlinable.enabled = IsVisibleToPlayer(transform.position);
                 if (outlinable.enabled)
                 {
                     outlinable.OutlineParameters.Color = ApplyBreathing(_outlineColor);
