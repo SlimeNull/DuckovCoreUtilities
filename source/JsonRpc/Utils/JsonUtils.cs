@@ -1,16 +1,22 @@
 using System;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json.Serialization;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace EleCho.JsonRpc.Utils
 {
     internal static class JsonUtils
     {
-        public static JsonSerializerSettings Settings { get; } = new JsonSerializerSettings
+        public static JsonSerializerOptions Options { get; } = new JsonSerializerOptions
         {
-            ContractResolver = new CamelCasePropertyNamesContractResolver(),
-            NullValueHandling = NullValueHandling.Ignore,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DictionaryKeyPolicy = JsonNamingPolicy.CamelCase,
+            PropertyNameCaseInsensitive = true,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            IncludeFields = true,
+            NumberHandling = JsonNumberHandling.AllowReadingFromString |
+                             JsonNumberHandling.AllowNamedFloatingPointLiterals,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             Converters =
             {
                 RpcPackageConverter.Instance,
@@ -18,75 +24,131 @@ namespace EleCho.JsonRpc.Utils
             }
         };
 
-        public static JsonSerializer Serializer { get; } = JsonSerializer.Create(Settings);
+        public static string SerializePackage(RpcPackage package)
+        {
+            return JsonSerializer.Serialize(package, package.GetType(), Options);
+        }
+
+        public static object? ConvertToType(object? value, Type targetType)
+        {
+            return value is JsonElement element
+                ? element.Deserialize(targetType, Options)
+                : value;
+        }
 
         public class RpcPackageConverter : JsonConverter<RpcPackage>
         {
             public static RpcPackageConverter Instance { get; } = new RpcPackageConverter();
 
-            public override bool CanWrite => false;
-
-            public override RpcPackage? ReadJson(JsonReader reader, Type objectType, RpcPackage? existingValue, bool hasExistingValue, JsonSerializer serializer)
+            public override RpcPackage? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
-                var token = JToken.Load(reader);
-                if (token is not JObject obj)
+                using JsonDocument document = JsonDocument.ParseValue(ref reader);
+                JsonElement root = document.RootElement;
+
+                if (root.ValueKind != JsonValueKind.Object)
                     return null;
 
-                if (obj["method"] != null)
+                if (root.TryGetProperty("method", out JsonElement methodElement))
                     return new RpcRequest(
-                        obj.Value<string>("method") ?? string.Empty,
-                        ReadObjectArray(obj["params"]),
-                        obj.Value<string>("signature"),
-                        ReadNullableId(obj["id"], serializer));
+                        ReadString(methodElement) ?? string.Empty,
+                        ReadObjectArray(root, "params"),
+                        ReadOptionalString(root, "signature"),
+                        ReadNullableId(root, "id", options));
 
-                if (obj["error"] is JObject errorObj)
+                if (root.TryGetProperty("error", out JsonElement errorElement) &&
+                    errorElement.ValueKind == JsonValueKind.Object)
                     return new RpcErrorResponse(
                         new RpcError(
-                            errorObj.Value<int>("code"),
-                            errorObj.Value<string>("message") ?? string.Empty,
-                            errorObj["data"]),
-                        ReadRequiredId(obj["id"], serializer));
+                            ReadInt32(errorElement, "code"),
+                            ReadOptionalString(errorElement, "message") ?? string.Empty,
+                            ReadObject(errorElement, "data")),
+                        ReadRequiredId(root, "id", options));
 
                 return new RpcResponse(
-                    obj["result"],
-                    ReadObjectArray(obj["ref_results"]),
-                    ReadRequiredId(obj["id"], serializer));
+                    ReadObject(root, "result"),
+                    ReadObjectArray(root, "ref_results"),
+                    ReadRequiredId(root, "id", options));
             }
 
-            public override void WriteJson(JsonWriter writer, RpcPackage? value, JsonSerializer serializer)
+            public override void Write(Utf8JsonWriter writer, RpcPackage value, JsonSerializerOptions options)
             {
-                throw new NotSupportedException($"{nameof(RpcPackageConverter)} is only used for reading polymorphic RPC packages.");
+                JsonSerializer.Serialize(writer, value, value.GetType(), options);
             }
 
-            private static object?[]? ReadObjectArray(JToken? token)
+            private static object? ReadObject(JsonElement parent, string propertyName)
             {
-                if (token == null || token.Type == JTokenType.Null)
+                if (!parent.TryGetProperty(propertyName, out JsonElement element) ||
+                    element.ValueKind == JsonValueKind.Null)
                     return null;
 
-                if (token is not JArray array)
-                    throw new JsonSerializationException("Expected JSON array.");
+                return element.Clone();
+            }
 
-                var result = new object?[array.Count];
-                for (var i = 0; i < array.Count; i++)
-                    result[i] = array[i];
+            private static object?[]? ReadObjectArray(JsonElement parent, string propertyName)
+            {
+                if (!parent.TryGetProperty(propertyName, out JsonElement element) ||
+                    element.ValueKind == JsonValueKind.Null)
+                    return null;
+
+                if (element.ValueKind != JsonValueKind.Array)
+                    throw new JsonException("Expected JSON array.");
+
+                var result = new object?[element.GetArrayLength()];
+                var index = 0;
+                foreach (JsonElement item in element.EnumerateArray())
+                    result[index++] = item.Clone();
 
                 return result;
             }
 
-            private static RpcPackageId? ReadNullableId(JToken? token, JsonSerializer serializer)
+            private static string? ReadOptionalString(JsonElement parent, string propertyName)
             {
-                if (token == null || token.Type == JTokenType.Null)
-                    return null;
-
-                return ReadRequiredId(token, serializer);
+                return parent.TryGetProperty(propertyName, out JsonElement element)
+                    ? ReadString(element)
+                    : null;
             }
 
-            private static RpcPackageId ReadRequiredId(JToken? token, JsonSerializer serializer)
+            private static string? ReadString(JsonElement element)
             {
-                if (token == null || token.Type == JTokenType.Null)
-                    throw new JsonSerializationException("JSON-RPC package id is required.");
+                if (element.ValueKind == JsonValueKind.Null)
+                    return null;
+                if (element.ValueKind != JsonValueKind.String)
+                    throw new JsonException("Expected JSON string.");
 
-                return token.ToObject<RpcPackageId>(serializer);
+                return element.GetString();
+            }
+
+            private static int ReadInt32(JsonElement parent, string propertyName)
+            {
+                if (!parent.TryGetProperty(propertyName, out JsonElement element))
+                    return 0;
+                if (element.ValueKind != JsonValueKind.Number || !element.TryGetInt32(out int value))
+                    throw new JsonException("Expected 32-bit JSON integer.");
+
+                return value;
+            }
+
+            private static RpcPackageId? ReadNullableId(JsonElement parent, string propertyName, JsonSerializerOptions options)
+            {
+                if (!parent.TryGetProperty(propertyName, out JsonElement element) ||
+                    element.ValueKind == JsonValueKind.Null)
+                    return null;
+
+                return ReadRequiredId(element, options);
+            }
+
+            private static RpcPackageId ReadRequiredId(JsonElement parent, string propertyName, JsonSerializerOptions options)
+            {
+                if (!parent.TryGetProperty(propertyName, out JsonElement element) ||
+                    element.ValueKind == JsonValueKind.Null)
+                    throw new JsonException("JSON-RPC package id is required.");
+
+                return ReadRequiredId(element, options);
+            }
+
+            private static RpcPackageId ReadRequiredId(JsonElement element, JsonSerializerOptions options)
+            {
+                return element.Deserialize<RpcPackageId>(options);
             }
         }
 
@@ -94,19 +156,24 @@ namespace EleCho.JsonRpc.Utils
         {
             public static RpcPackageIdConverter Instance { get; } = new RpcPackageIdConverter();
 
-            public override RpcPackageId ReadJson(JsonReader reader, Type objectType, RpcPackageId existingValue, bool hasExistingValue, JsonSerializer serializer)
+            public override RpcPackageId Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
-                if (reader.TokenType == JsonToken.String)
-                    return RpcPackageId.Create((string)reader.Value!);
-                if (reader.TokenType == JsonToken.Integer)
-                    return RpcPackageId.Create(Convert.ToInt32(reader.Value));
+                if (reader.TokenType == JsonTokenType.String)
+                    return RpcPackageId.Create(reader.GetString()!);
+                if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int id))
+                    return RpcPackageId.Create(id);
 
-                throw new JsonSerializationException("Invalid JSON-RPC id token.");
+                throw new JsonException("Invalid JSON-RPC id token.");
             }
 
-            public override void WriteJson(JsonWriter writer, RpcPackageId value, JsonSerializer serializer)
+            public override void Write(Utf8JsonWriter writer, RpcPackageId value, JsonSerializerOptions options)
             {
-                serializer.Serialize(writer, value.Value);
+                if (value.Value is string stringId)
+                    writer.WriteStringValue(stringId);
+                else if (value.Value is int integerId)
+                    writer.WriteNumberValue(integerId);
+                else
+                    throw new JsonException("Invalid JSON-RPC id value.");
             }
         }
     }

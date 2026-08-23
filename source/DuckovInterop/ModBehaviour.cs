@@ -17,6 +17,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace SlimeNull.DuckovInterop
 {
@@ -141,7 +142,10 @@ namespace SlimeNull.DuckovInterop
             {
                 using (client)
                 using (var stream = client.GetStream())
-                using (var server = new RpcServer<IHierarchyInspectorRpc>(stream, this))
+                using (var server = new RpcServer<IHierarchyInspectorRpc>(stream, this)
+                {
+                    DiagnosticLogger = message => Debug.Log($"[DuckovInterop/RPC] {message}")
+                })
                 {
                     server.Run();
                 }
@@ -195,25 +199,65 @@ namespace SlimeNull.DuckovInterop
 
         public ApiResult<SceneSnapshot> GetSceneSnapshot()
         {
-            return _dispatcher.Invoke(() =>
-            {
-                var scenes = Enumerable.Range(0, SceneManager.sceneCount)
-                    .Select(SceneManager.GetSceneAt)
-                    .Where(scene => scene.IsValid() && scene.isLoaded)
-                    .Select(scene => new InspectorScene
-                    {
-                        Name = scene.name,
-                        BuildIndex = scene.buildIndex,
-                        Roots = scene.GetRootGameObjects().Select(CreateInspectorGameObject).ToList()
-                    })
-                    .ToList();
+            var requestStopwatch = Stopwatch.StartNew();
+            var metrics = new SnapshotMetrics(requestStopwatch);
+            Debug.Log("[DuckovInterop/Snapshot] Request queued for the Unity main thread.");
 
-                return ApiResult<SceneSnapshot>.Success(new SceneSnapshot
+            using (var progressTimer = new Timer(
+                _ => Debug.Log($"[DuckovInterop/Snapshot] Still working: {metrics.Describe()}"),
+                null,
+                TimeSpan.FromSeconds(5),
+                TimeSpan.FromSeconds(5)))
+            {
+                return _dispatcher.Invoke(() =>
                 {
-                    CapturedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
-                    Scenes = scenes
+                    metrics.Stage = "building snapshot";
+                    Debug.Log(
+                        $"[DuckovInterop/Snapshot] Main-thread build started after " +
+                        $"{requestStopwatch.ElapsedMilliseconds} ms in the queue.");
+
+                    try
+                    {
+                        var scenes = new List<InspectorScene>();
+                        for (var i = 0; i < SceneManager.sceneCount; i++)
+                        {
+                            var scene = SceneManager.GetSceneAt(i);
+                            if (!scene.IsValid() || !scene.isLoaded)
+                                continue;
+
+                            metrics.Scene = scene.name;
+                            metrics.Stage = "reading scene";
+                            Debug.Log($"[DuckovInterop/Snapshot] Reading scene '{scene.name}'.");
+
+                            var roots = scene.GetRootGameObjects();
+                            scenes.Add(new InspectorScene
+                            {
+                                Name = scene.name,
+                                BuildIndex = scene.buildIndex,
+                                Roots = roots.Select(root => CreateInspectorGameObject(root, metrics)).ToList()
+                            });
+                            metrics.Scenes++;
+                            Debug.Log(
+                                $"[DuckovInterop/Snapshot] Scene '{scene.name}' completed: " +
+                                $"roots={roots.Length}, {metrics.Describe()}.");
+                        }
+
+                        metrics.Stage = "snapshot built";
+                        Debug.Log($"[DuckovInterop/Snapshot] Build completed: {metrics.Describe()}.");
+                        return ApiResult<SceneSnapshot>.Success(new SceneSnapshot
+                        {
+                            CapturedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
+                            Scenes = scenes
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        metrics.Stage = "build failed";
+                        Debug.LogError($"[DuckovInterop/Snapshot] Build failed: {metrics.Describe()}. {ex}");
+                        throw;
+                    }
                 });
-            });
+            }
         }
 
         public ApiResult<List<ComponentInfo>> GetComponents(string gameObjectId)
@@ -635,8 +679,9 @@ namespace SlimeNull.DuckovInterop
                 .ToList();
         }
 
-        private static InspectorGameObject CreateInspectorGameObject(GameObject gameObject)
+        private static InspectorGameObject CreateInspectorGameObject(GameObject gameObject, SnapshotMetrics metrics)
         {
+            metrics.VisitGameObject(gameObject.name);
             string tag;
             try
             {
@@ -655,15 +700,18 @@ namespace SlimeNull.DuckovInterop
                 ActiveInHierarchy = gameObject.activeInHierarchy,
                 Tag = tag,
                 Layer = gameObject.layer,
-                Components = gameObject.GetComponents<Component>().Select(CreateInspectorComponent).ToList(),
+                Components = gameObject.GetComponents<Component>()
+                    .Select(component => CreateInspectorComponent(component, metrics))
+                    .ToList(),
                 Children = Enumerable.Range(0, gameObject.transform.childCount)
-                    .Select(i => CreateInspectorGameObject(gameObject.transform.GetChild(i).gameObject))
+                    .Select(i => CreateInspectorGameObject(gameObject.transform.GetChild(i).gameObject, metrics))
                     .ToList()
             };
         }
 
-        private static InspectorComponent CreateInspectorComponent(Component component)
+        private static InspectorComponent CreateInspectorComponent(Component component, SnapshotMetrics metrics)
         {
+            metrics.VisitComponent(component == null ? "Missing Script" : component.GetType().FullName ?? component.GetType().Name);
             if (component == null)
             {
                 return new InspectorComponent { Name = "Missing Script", Type = "Missing", Error = "The referenced script could not be loaded." };
@@ -681,6 +729,7 @@ namespace SlimeNull.DuckovInterop
             try
             {
                 result.Fields = GetSerializedFields(component);
+                metrics.Fields += result.Fields.Count;
             }
             catch (Exception ex)
             {
@@ -1105,6 +1154,46 @@ namespace SlimeNull.DuckovInterop
         public string Test(string input)
         {
             return input;
+        }
+
+        private sealed class SnapshotMetrics
+        {
+            private readonly Stopwatch _stopwatch;
+
+            public SnapshotMetrics(Stopwatch stopwatch)
+            {
+                _stopwatch = stopwatch;
+            }
+
+            public string Stage { get; set; } = "waiting for Unity main thread";
+            public string Scene { get; set; } = "<none>";
+            public string GameObject { get; private set; } = "<none>";
+            public string Component { get; private set; } = "<none>";
+            public int Scenes { get; set; }
+            public int GameObjects { get; private set; }
+            public int Components { get; private set; }
+            public int Fields { get; set; }
+
+            public void VisitGameObject(string name)
+            {
+                Stage = "reading GameObjects";
+                GameObject = name;
+                GameObjects++;
+            }
+
+            public void VisitComponent(string typeName)
+            {
+                Stage = "reading components";
+                Component = typeName;
+                Components++;
+            }
+
+            public string Describe()
+            {
+                return $"stage={Stage}, elapsed={_stopwatch.ElapsedMilliseconds} ms, scenes={Scenes}, " +
+                       $"gameObjects={GameObjects}, components={Components}, fields={Fields}, " +
+                       $"scene='{Scene}', gameObject='{GameObject}', component='{Component}'";
+            }
         }
 
         private sealed class MainThreadDispatcher

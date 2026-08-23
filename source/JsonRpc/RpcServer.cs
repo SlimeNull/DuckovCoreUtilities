@@ -6,7 +6,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 namespace EleCho.JsonRpc
 {
@@ -105,6 +105,11 @@ namespace EleCho.JsonRpc
         /// Whether dispose base streams while disposing current object
         /// </summary>
         public bool DisposeBaseStream { get; set; } = false;
+
+        /// <summary>
+        /// Receives diagnostic messages for request processing, serialization, and transport failures.
+        /// </summary>
+        public Action<string>? DiagnosticLogger { get; set; }
 
         /// <summary>
         /// Whether main loop is running
@@ -276,6 +281,7 @@ namespace EleCho.JsonRpc
                 {
                     if ((await _recvReader.ReadPackageAsync(_readLock, cancellationToken)) is not RpcPackage package)
                     {
+                        LogDiagnostic("Connection closed because no valid RPC package was received.");
                         Trace.WriteLine("RPC Closed because invalid package received");
                         Dispose();
                         return;
@@ -287,6 +293,10 @@ namespace EleCho.JsonRpc
 
                     if (package is RpcRequest requestPackage)
                     {
+                        LogDiagnostic(
+                            $"Request received: method={requestPackage.Method}, " +
+                            $"id={requestPackage.Id?.Value?.ToString() ?? "<notification>"}, " +
+                            $"args={requestPackage.Args?.Length ?? 0}.");
                         Trace.WriteLine($"RPC ready to process request");
 
                         var processAndRespondTask = AllowParallelInvoking ?
@@ -301,26 +311,30 @@ namespace EleCho.JsonRpc
                 }
                 catch (JsonException ex)
                 {
+                    LogDiagnostic($"JSON request parsing failed: {ex}");
                     Trace.WriteLine($"RPC json exception");
                     var errorPackage = new RpcErrorResponse(
                         new RpcError(RpcErrorCode.ParseError, ex.Message, ex.Data),
                         SharedRandom.NextId());
 
-                    await _sendWriter.WritePackageAsync(_writeLock, errorPackage, cancellationToken);
+                    await _sendWriter.WritePackageAsync(_writeLock, errorPackage, cancellationToken, LogDiagnostic);
                 }
                 catch (OperationCanceledException ocex)
                 {
+                    LogDiagnostic($"RPC loop canceled: {ocex.Message}");
                     Trace.WriteLine($"RPC break because: {ocex}");
                     break;
                 }
                 catch (IOException ioe)
                 {
+                    LogDiagnostic($"RPC connection I/O failure: {ioe}");
                     Trace.WriteLine($"RPC break because: {ioe}");
                     Dispose();
                     throw;
                 }
                 catch (Exception ex)
                 {
+                    LogDiagnostic($"Unhandled RPC loop exception: {ex}");
                     Trace.WriteLine($"RPC main loop other exception {ex}");
                     // ignore
                 }
@@ -330,15 +344,43 @@ namespace EleCho.JsonRpc
 
             async Task ProcessRequestAndRespondAsync(RpcRequest requestPackage)
             {
-                Trace.WriteLine($"RPC ready to call server process request async");
+                var requestStopwatch = Stopwatch.StartNew();
+                try
+                {
+                    LogDiagnostic($"Invoking service method {requestPackage.Method}.");
+                    Trace.WriteLine($"RPC ready to call server process request async");
 
-                RpcPackage? r_pkg = await RpcUtils.ServerProcessRequestAsync(requestPackage, _methodsNameCache, _methodsSignatureCache, Implementation, cancellationToken);
+                    RpcPackage? r_pkg = await RpcUtils.ServerProcessRequestAsync(
+                        requestPackage, _methodsNameCache, _methodsSignatureCache, Implementation, cancellationToken);
 
-                if (r_pkg == null)
-                    return;
+                    LogDiagnostic(
+                        $"Service method {requestPackage.Method} completed in {requestStopwatch.ElapsedMilliseconds} ms; " +
+                        $"response={r_pkg?.GetType().Name ?? "<none>"}.");
+                    if (r_pkg == null)
+                        return;
 
-                Trace.WriteLine("RPC ready to send response");
-                await _sendWriter.WritePackageAsync(_writeLock, r_pkg, cancellationToken);
+                    Trace.WriteLine("RPC ready to send response");
+                    bool written = await _sendWriter.WritePackageAsync(
+                        _writeLock, r_pkg, cancellationToken, LogDiagnostic);
+                    if (!written)
+                        LogDiagnostic($"Response for {requestPackage.Method} was not sent.");
+                }
+                catch (Exception ex)
+                {
+                    LogDiagnostic(
+                        $"Request {requestPackage.Method} crashed after {requestStopwatch.ElapsedMilliseconds} ms: {ex}");
+                }
+            }
+        }
+
+        private void LogDiagnostic(string message)
+        {
+            try
+            {
+                DiagnosticLogger?.Invoke(message);
+            }
+            catch
+            {
             }
         }
 
