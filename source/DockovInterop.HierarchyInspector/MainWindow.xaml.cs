@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 
 namespace DockovInterop.HierarchyInspector;
 
@@ -21,6 +22,18 @@ public partial class MainWindow : Window
         {
             _viewModel.SelectedObject = item.GameObject;
         }
+    }
+
+    private void HierarchyFilterButton_OnClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { ContextMenu: { } menu } button)
+        {
+            return;
+        }
+
+        menu.PlacementTarget = button;
+        menu.Placement = PlacementMode.Bottom;
+        menu.IsOpen = true;
     }
 
     protected override void OnClosing(CancelEventArgs e)

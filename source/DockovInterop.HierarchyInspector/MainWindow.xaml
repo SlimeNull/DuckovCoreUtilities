@@ -33,6 +33,8 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="8" />
                     <ColumnDefinition Width="260" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
@@ -43,7 +45,21 @@
                  Text="{Binding FilterText, UpdateSourceTrigger=PropertyChanged}" ToolTip="Filter hierarchy by name" />
                 <TextBlock Grid.Column="2" Text="Filter hierarchy" Foreground="{StaticResource DisabledTextBrush}" Margin="7,0" VerticalAlignment="Center"
                    IsHitTestVisible="False" Visibility="{Binding IsFilterHintVisible}" />
-                <StackPanel Grid.Column="4" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button x:Name="HierarchyFilterButton" Grid.Column="4" Width="30" Height="28" Padding="0"
+                        Click="HierarchyFilterButton_OnClick" ToolTip="Hierarchy filters">
+                    <TextBlock FontFamily="Segoe MDL2 Assets" FontSize="14" Text="&#xE71C;" />
+                    <Button.ContextMenu>
+                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                            <MenuItem Header="Hide inactive objects" IsCheckable="True" StaysOpenOnClick="True"
+                                      IsChecked="{Binding HideDisabledObjects, Mode=TwoWay}" />
+                            <MenuItem Header="Hide objects without renderers" IsCheckable="True" StaysOpenOnClick="True"
+                                      IsChecked="{Binding HideObjectsWithoutRenderers, Mode=TwoWay}" />
+                            <MenuItem Header="Hide non-UI objects" IsCheckable="True" StaysOpenOnClick="True"
+                                      IsChecked="{Binding HideNonUiObjects, Mode=TwoWay}" />
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+                <StackPanel Grid.Column="6" Orientation="Horizontal" VerticalAlignment="Center">
                     <Ellipse Width="8" Height="8" Fill="{Binding ConnectionBrush}" Margin="0,0,7,0" />
                     <TextBlock Text="{Binding ConnectionText}" VerticalAlignment="Center" />
                 </StackPanel>

@@ -39,6 +39,10 @@ namespace SlimeNull.DuckovInterop
 
         public int InstanceID { get; set; }
 
+        public bool HasRenderer { get; set; }
+
+        public bool IsGUI { get; set; }
+
         public List<ComponentInfo> Components { get; set; } = new List<ComponentInfo>();
 
         public List<GameObjectNode> Children { get; set; } = new List<GameObjectNode>();
@@ -135,6 +139,10 @@ namespace SlimeNull.DuckovInterop
         public bool ActiveSelf { get; set; }
 
         public bool ActiveInHierarchy { get; set; }
+
+        public bool HasRenderer { get; set; }
+
+        public bool IsGUI { get; set; }
 
         public string? Tag { get; set; }
 

@@ -293,6 +293,9 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private readonly AsyncCommand _refreshComponentsCommand;
     private SceneSnapshot? _snapshot;
     private string _filterText = string.Empty;
+    private bool _hideDisabledObjects;
+    private bool _hideObjectsWithoutRenderers;
+    private bool _hideNonUiObjects;
     private InspectorGameObjectViewModel? _selectedObject;
     private bool _isBusy;
     private string _statusText = "Ready";
@@ -328,6 +331,42 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     }
 
     public Visibility IsFilterHintVisible => string.IsNullOrEmpty(FilterText) ? Visibility.Visible : Visibility.Collapsed;
+
+    public bool HideDisabledObjects
+    {
+        get => _hideDisabledObjects;
+        set
+        {
+            if (Set(ref _hideDisabledObjects, value))
+            {
+                RebuildHierarchy();
+            }
+        }
+    }
+
+    public bool HideObjectsWithoutRenderers
+    {
+        get => _hideObjectsWithoutRenderers;
+        set
+        {
+            if (Set(ref _hideObjectsWithoutRenderers, value))
+            {
+                RebuildHierarchy();
+            }
+        }
+    }
+
+    public bool HideNonUiObjects
+    {
+        get => _hideNonUiObjects;
+        set
+        {
+            if (Set(ref _hideNonUiObjects, value))
+            {
+                RebuildHierarchy();
+            }
+        }
+    }
 
     public InspectorGameObjectViewModel? SelectedObject
     {
@@ -474,16 +513,22 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
         foreach (var scene in _snapshot.Scenes)
         {
-            var children = scene.Roots.Select(root => BuildGameObjectItem(root)).Where(item => item != null).Cast<HierarchyItem>().ToList();
             var sceneMatches = Contains(scene.Name, FilterText);
+            var includeAllForText = sceneMatches && !string.IsNullOrWhiteSpace(FilterText);
+            var children = scene.Roots
+                .Select(root => BuildGameObjectItem(root, includeAllForText))
+                .Where(item => item != null)
+                .Cast<HierarchyItem>()
+                .ToList();
             if (!sceneMatches && children.Count == 0)
             {
                 continue;
             }
 
-            if (sceneMatches && !string.IsNullOrWhiteSpace(FilterText))
+            if (children.Count == 0 &&
+                (HideDisabledObjects || HideObjectsWithoutRenderers || HideNonUiObjects))
             {
-                children = scene.Roots.Select(root => BuildGameObjectItem(root, includeAll: true)!).ToList();
+                continue;
             }
 
             Hierarchy.Add(new HierarchyItem
@@ -496,18 +541,23 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
     }
 
-    private HierarchyItem? BuildGameObjectItem(InspectorGameObject source, bool includeAll = false)
+    private HierarchyItem? BuildGameObjectItem(InspectorGameObject source, bool includeAllForText = false)
     {
-        var children = source.Children.Select(child => BuildGameObjectItem(child, includeAll)).Where(item => item != null).Cast<HierarchyItem>().ToList();
-        var matches = includeAll || Contains(source.Name, FilterText);
-        if (!matches && children.Count == 0)
+        var matchesText = includeAllForText || Contains(source.Name, FilterText);
+        var includeChildrenForText = includeAllForText ||
+            (matchesText && !string.IsNullOrWhiteSpace(FilterText));
+        var children = source.Children
+            .Select(child => BuildGameObjectItem(child, includeChildrenForText))
+            .Where(item => item != null)
+            .Cast<HierarchyItem>()
+            .ToList();
+
+        var matchesFilters = (!HideDisabledObjects || source.ActiveInHierarchy) &&
+            (!HideObjectsWithoutRenderers || source.HasRenderer) &&
+            (!HideNonUiObjects || source.IsGUI);
+        if ((!matchesText || !matchesFilters) && children.Count == 0)
         {
             return null;
-        }
-
-        if (matches && !includeAll && !string.IsNullOrWhiteSpace(FilterText))
-        {
-            children = source.Children.Select(child => BuildGameObjectItem(child, includeAll: true)!).ToList();
         }
 
         var viewModel = new InspectorGameObjectViewModel(source, this);

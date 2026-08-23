@@ -49,8 +49,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 if (child.GetComponentInChildren<AimMarker>(true) != null ||
                     child.GetComponentInChildren<ADSAimMarker>(true) != null ||
                     child.GetComponentInChildren<EvacuationCountdownUI>(true) != null ||
-                    child.GetComponentInChildren<HealthBarManager>(true) != null ||
-                    child.GetComponentInChildren<EvacuationCountdownUIProxy>(true) != null)
+                    child.GetComponentInChildren<EvacuationCountdownUIProxy>(true) != null ||
+                    child.GetComponent<HealthBarManager>() != null ||
+                    child.GetComponent<BulletTypeHUD>() != null)
                 {
                     continue;
                 }

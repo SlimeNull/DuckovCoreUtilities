@@ -713,6 +713,8 @@ namespace SlimeNull.DuckovInterop
             {
                 Name = gameObject.name,
                 InstanceID = gameObject.GetInstanceID(),
+                HasRenderer = gameObject.GetComponent<Renderer>() != null,
+                IsGUI = gameObject.transform is RectTransform,
                 Components = GetComponentInfos(gameObject),
                 Children = Enumerable.Range(0, gameObject.transform.childCount)
                     .Select(i => CreateGameObjectNode(gameObject.transform.GetChild(i).gameObject))
@@ -762,6 +764,8 @@ namespace SlimeNull.DuckovInterop
                 InstanceID = gameObject.GetInstanceID(),
                 ActiveSelf = gameObject.activeSelf,
                 ActiveInHierarchy = gameObject.activeInHierarchy,
+                HasRenderer = components.Any(component => component is Renderer),
+                IsGUI = gameObject.transform is RectTransform,
                 Tag = tag,
                 Layer = gameObject.layer,
                 ComponentCount = components.Length,
