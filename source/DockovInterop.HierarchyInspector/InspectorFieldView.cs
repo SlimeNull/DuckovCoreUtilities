@@ -8,10 +8,6 @@ namespace DockovInterop.HierarchyInspector;
 
 public sealed class InspectorFieldView : ContentControl
 {
-    private static readonly Brush InputBrush = new SolidColorBrush(Color.FromRgb(41, 41, 41));
-    private static readonly Brush InputBorderBrush = new SolidColorBrush(Color.FromRgb(30, 30, 30));
-    private static readonly Brush MutedBrush = new SolidColorBrush(Color.FromRgb(155, 155, 155));
-
     public InspectorFieldView()
     {
         HorizontalContentAlignment = HorizontalAlignment.Stretch;
@@ -33,7 +29,7 @@ public sealed class InspectorFieldView : ContentControl
             {
                 Text = field.Header,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(Color.FromRgb(190, 190, 190)),
+                Foreground = ThemeBrush("TextBrush"),
                 Margin = new Thickness(2, 8, 0, 3)
             });
         }
@@ -74,7 +70,7 @@ public sealed class InspectorFieldView : ContentControl
         var text = new TextBlock
         {
             Text = summary,
-            Foreground = MutedBrush,
+            Foreground = ThemeBrush("MutedTextBrush"),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
@@ -129,9 +125,7 @@ public sealed class InspectorFieldView : ContentControl
                     IsHitTestVisible = false,
                     Focusable = false,
                     Height = 22,
-                    Background = InputBrush,
-                    BorderBrush = InputBorderBrush,
-                    Foreground = Brushes.White
+                    Style = ThemeStyle("InspectorComboBoxStyle")
                 };
             case "Vector2":
             case "Vector3":
@@ -147,11 +141,11 @@ public sealed class InspectorFieldView : ContentControl
             case "Float" when field.RangeMin.HasValue && field.RangeMax.HasValue:
                 return CreateRangeEditor(field);
             case "Error":
-                return new TextBlock { Text = field.Value, Foreground = new SolidColorBrush(Color.FromRgb(235, 120, 112)), TextWrapping = TextWrapping.Wrap };
+                return new TextBlock { Text = field.Value, Foreground = ThemeBrush("ErrorBrush"), TextWrapping = TextWrapping.Wrap };
             case "Null":
             case "Reference":
             case "Truncated":
-                return new TextBlock { Text = field.Value, Foreground = MutedBrush, VerticalAlignment = VerticalAlignment.Center };
+                return new TextBlock { Text = field.Value, Foreground = ThemeBrush("MutedTextBrush"), VerticalAlignment = VerticalAlignment.Center };
             default:
                 return CreateTextBox(field.Value, false, 22);
         }
@@ -168,13 +162,7 @@ public sealed class InspectorFieldView : ContentControl
             var label = new TextBlock
             {
                 Text = child.DisplayName,
-                Foreground = i switch
-                {
-                    0 => new SolidColorBrush(Color.FromRgb(226, 103, 94)),
-                    1 => new SolidColorBrush(Color.FromRgb(112, 190, 104)),
-                    2 => new SolidColorBrush(Color.FromRgb(102, 151, 222)),
-                    _ => MutedBrush
-                },
+                Foreground = ThemeBrush(i switch { 0 => "AxisXBrush", 1 => "AxisYBrush", 2 => "AxisZBrush", _ => "AxisWBrush" }),
                 Margin = new Thickness(i == 0 ? 3 : 7, 0, 3, 0),
                 VerticalAlignment = VerticalAlignment.Center
             };
@@ -196,9 +184,8 @@ public sealed class InspectorFieldView : ContentControl
         var swatch = new Border
         {
             Margin = new Thickness(0, 1, 5, 1),
-            BorderBrush = InputBorderBrush,
-            BorderThickness = new Thickness(1),
-            Background = ParseColor(field.Value)
+            Background = ParseColor(field.Value),
+            Style = ThemeStyle("InspectorColorSwatchStyle")
         };
         panel.Children.Add(swatch);
         var input = CreateTextBox(field.Value, false, 22);
@@ -223,10 +210,7 @@ public sealed class InspectorFieldView : ContentControl
         var border = new Border
         {
             Height = 22,
-            Background = InputBrush,
-            BorderBrush = InputBorderBrush,
-            BorderThickness = new Thickness(1),
-            Padding = new Thickness(5, 1, 5, 1)
+            Style = ThemeStyle("InspectorObjectReferenceStyle")
         };
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -234,7 +218,7 @@ public sealed class InspectorFieldView : ContentControl
         grid.Children.Add(new TextBlock { Text = field.Value ?? "None", VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
         if (field.InstanceID.HasValue)
         {
-            var id = new TextBlock { Text = field.InstanceID.Value.ToString(CultureInfo.InvariantCulture), Foreground = MutedBrush, Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            var id = new TextBlock { Text = field.InstanceID.Value.ToString(CultureInfo.InvariantCulture), Foreground = ThemeBrush("MutedTextBrush"), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
             Grid.SetColumn(id, 1);
             grid.Children.Add(id);
         }
@@ -270,13 +254,14 @@ public sealed class InspectorFieldView : ContentControl
         IsReadOnly = true,
         Height = height,
         MinWidth = 20,
-        Background = InputBrush,
-        BorderBrush = InputBorderBrush,
-        Foreground = Brushes.White,
-        Padding = new Thickness(4, 1, 4, 1),
+        Style = ThemeStyle("InspectorReadOnlyTextBoxStyle"),
         VerticalContentAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Center,
         TextWrapping = multiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
         AcceptsReturn = multiline,
         VerticalScrollBarVisibility = multiline ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden
     };
+
+    private static Brush ThemeBrush(string key) => (Brush)Application.Current.FindResource(key);
+
+    private static Style ThemeStyle(string key) => (Style)Application.Current.FindResource(key);
 }
