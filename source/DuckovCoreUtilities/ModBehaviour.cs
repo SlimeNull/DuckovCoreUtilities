@@ -36,6 +36,7 @@ namespace SlimeNull.DuckovCoreUtilities
             };
             var lowHealthShadow = new LowHealthInnerShadowFeature();
             var killRecord = new KillRecordFeature();
+            var minimap = new MinimapFeature();
 
             _features.Register(displayPrice);
             _features.Register(displayStorageCount);
@@ -48,6 +49,7 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(unfocused);
             _features.Register(lowHealthShadow);
             _features.Register(killRecord);
+            _features.Register(minimap);
 
             var settings = new CoreUtilitiesModSettings(info, _features);
             settings.Configure(
@@ -61,7 +63,8 @@ namespace SlimeNull.DuckovCoreUtilities
                 crosshairColor,
                 unfocused,
                 lowHealthShadow,
-                killRecord);
+                killRecord,
+                minimap);
 
             Debug.Log("loaded DCU");
         }

@@ -30,7 +30,8 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             BulletCountCrosshairColorFeature crosshairColor,
             MuteAndPauseWhenUnfocusedFeature unfocused,
             LowHealthInnerShadowFeature lowHealthShadow,
-            KillRecordFeature killRecord)
+            KillRecordFeature killRecord,
+            MinimapFeature minimap)
         {
             ConfigureDisplayPrice(displayPrice);
             ConfigureStorageCount(displayStorageCount);
@@ -43,6 +44,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             ConfigureUnfocused(unfocused);
             ConfigureLowHealthShadow(lowHealthShadow);
             ConfigureKillRecord(killRecord);
+            ConfigureMinimap(minimap);
         }
 
         private void ConfigureDisplayPrice(DisplayPriceFeature feature)
@@ -198,6 +200,51 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             {
                 return false;
             }
+        }
+
+        private void ConfigureMinimap(MinimapFeature feature)
+        {
+            const string prefix = "Minimap";
+            const string fixedAngleOption = "固定角度";
+            const string followPlayerOption = "跟随玩家角度";
+            feature.DisplaySize = Mathf.Clamp(Load(prefix + ".DisplaySize", feature.DisplaySize), 100f, 600f);
+            feature.Zoom = Mathf.Clamp(Load(prefix + ".Zoom", feature.Zoom), MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);
+            feature.Opacity = Mathf.Clamp01(Load(prefix + ".Opacity", feature.Opacity));
+
+            var mode = Load(prefix + ".Mode", feature.Mode.ToString());
+            if (mode == followPlayerOption)
+            {
+                feature.Mode = MinimapFeature.OrientationMode.FollowPlayerHeading;
+            }
+            else if (mode == fixedAngleOption)
+            {
+                feature.Mode = MinimapFeature.OrientationMode.FixedAngle;
+            }
+            else if (Enum.TryParse(mode, out MinimapFeature.OrientationMode parsedMode))
+            {
+                feature.Mode = parsedMode;
+            }
+
+            feature.ZoomChangedByInput += value => _builder.SetValue(prefix + ".Zoom", value);
+
+            AddEnabled(prefix, "小地图", feature, false);
+            _builder
+                .AddSlider(prefix + ".DisplaySize", "小地图显示尺寸", feature.DisplaySize, new Vector2(100f, 600f), value => feature.DisplaySize = value, 0, 4)
+                .AddSlider(prefix + ".Zoom", "缩放系数（[ 缩小，] 放大）", feature.Zoom, new Vector2(MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom), value => feature.Zoom = value, 2)
+                .AddDropdownList(prefix + ".Mode", "地图方向",
+                    new List<string>
+                    {
+                        fixedAngleOption,
+                        followPlayerOption,
+                    },
+                    feature.Mode == MinimapFeature.OrientationMode.FollowPlayerHeading ? followPlayerOption : fixedAngleOption, value =>
+                    {
+                        feature.Mode = value == followPlayerOption
+                            ? MinimapFeature.OrientationMode.FollowPlayerHeading
+                            : MinimapFeature.OrientationMode.FixedAngle;
+                    })
+                .AddSlider(prefix + ".Opacity", "小地图不透明度", feature.Opacity, new Vector2(0f, 1f), value => feature.Opacity = value, 2);
+            AddGroup(prefix, "小地图", prefix + ".Enabled", prefix + ".DisplaySize", prefix + ".Zoom", prefix + ".Mode", prefix + ".Opacity");
         }
 
         private void ConfigureFeatureOnly(string prefix, string description, FeatureBase feature)

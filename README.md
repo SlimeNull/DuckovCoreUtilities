@@ -34,6 +34,7 @@ Core Utilities 提供一组可以在 ModSetting 界面中独立启用和配置�
 - 游戏失去焦点时静音，并可自动打开暂停菜单。
 - 低生命值时显示可配置的屏幕边缘阴影。
 - 在 HUD 中显示近期击杀记录。
+- 在关卡内的时间与风暴信息下方显示可配置的圆角小地图，支持固定方向、跟随玩家朝向、透明度和快捷键缩放。
 
 ### DuckovInterop 与场景检视器
 
@@ -117,6 +118,7 @@ Core Utilities provides individually configurable features through the ModSettin
 - Mute the game and optionally open the pause menu when the game loses focus.
 - Display a configurable screen-edge shadow at low health.
 - Show recent kill records on the HUD.
+- Show a configurable rounded minimap below the time and storm information while in raid levels, with fixed or player-relative orientation, opacity, and keyboard zoom controls.
 
 ### DuckovInterop and Hierarchy Inspector
 
