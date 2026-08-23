@@ -1,7 +1,11 @@
+using Newtonsoft.Json;
 using SlimeNull.DuckovInterop;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace DockovInterop.HierarchyInspector;
@@ -16,7 +20,7 @@ public sealed class InspectorFieldView : ContentControl
 
     private void Rebuild()
     {
-        if (DataContext is not SerializedFieldInfo field)
+        if (DataContext is not InspectorFieldViewModel field)
         {
             Content = null;
             return;
@@ -35,6 +39,15 @@ public sealed class InspectorFieldView : ContentControl
         }
 
         container.Children.Add(IsCompound(field) ? CreateCompound(field) : CreateRow(field));
+        var error = new TextBlock
+        {
+            Foreground = ThemeBrush("ErrorBrush"),
+            Margin = new Thickness(170, 2, 0, 3),
+            TextWrapping = TextWrapping.Wrap
+        };
+        error.SetBinding(TextBlock.TextProperty, new Binding(nameof(InspectorFieldViewModel.Error)));
+        error.SetBinding(VisibilityProperty, new Binding(nameof(InspectorFieldViewModel.ErrorVisibility)));
+        container.Children.Add(error);
         if (!string.IsNullOrWhiteSpace(field.Tooltip))
         {
             container.ToolTip = field.Tooltip;
@@ -42,10 +55,10 @@ public sealed class InspectorFieldView : ContentControl
         Content = container;
     }
 
-    private static bool IsCompound(SerializedFieldInfo field) =>
+    private static bool IsCompound(InspectorFieldViewModel field) =>
         field.Kind is "Array" or "Object" || field.Children.Count > 0 && field.Kind is not ("Vector2" or "Vector3" or "Vector4" or "Quaternion");
 
-    private static FrameworkElement CreateCompound(SerializedFieldInfo field)
+    private static FrameworkElement CreateCompound(InspectorFieldViewModel field)
     {
         var expander = new Expander
         {
@@ -62,7 +75,7 @@ public sealed class InspectorFieldView : ContentControl
         return expander;
     }
 
-    private static FrameworkElement CreateCompoundHeader(SerializedFieldInfo field)
+    private static FrameworkElement CreateCompoundHeader(InspectorFieldViewModel field)
     {
         var grid = CreateBaseGrid();
         grid.Children.Add(CreateLabel(field.DisplayName ?? field.Name ?? "Field"));
@@ -79,7 +92,7 @@ public sealed class InspectorFieldView : ContentControl
         return grid;
     }
 
-    private static FrameworkElement CreateRow(SerializedFieldInfo field)
+    private static FrameworkElement CreateRow(InspectorFieldViewModel field)
     {
         var grid = CreateBaseGrid();
         grid.Children.Add(CreateLabel(field.DisplayName ?? field.Name ?? "Field"));
@@ -105,28 +118,64 @@ public sealed class InspectorFieldView : ContentControl
         Margin = new Thickness(3, 0, 8, 0)
     };
 
-    private static FrameworkElement CreateEditor(SerializedFieldInfo field)
+    private static FrameworkElement CreateEditor(InspectorFieldViewModel field)
     {
         switch (field.Kind)
         {
             case "Boolean":
-                return new CheckBox
+                var checkBox = new CheckBox
                 {
                     IsChecked = bool.TryParse(field.Value, out var value) && value,
-                    IsHitTestVisible = false,
-                    Focusable = false,
+                    IsEnabled = field.CanWrite,
                     VerticalAlignment = VerticalAlignment.Center
                 };
+                var suppressCheckBoxCommit = false;
+                async Task CommitCheckBoxAsync(bool checkedValue)
+                {
+                    if (suppressCheckBoxCommit || !field.CanEdit)
+                    {
+                        return;
+                    }
+
+                    suppressCheckBoxCommit = true;
+                    checkBox.IsEnabled = false;
+                    if (!await field.CommitAsync(checkedValue.ToString(CultureInfo.InvariantCulture), checkedValue ? "true" : "false"))
+                    {
+                        checkBox.IsChecked = bool.TryParse(field.Value, out var original) && original;
+                    }
+                    checkBox.IsEnabled = field.CanWrite;
+                    suppressCheckBoxCommit = false;
+                }
+                checkBox.Checked += async (_, _) => await CommitCheckBoxAsync(true);
+                checkBox.Unchecked += async (_, _) => await CommitCheckBoxAsync(false);
+                return checkBox;
             case "Enum":
-                return new ComboBox
+                var comboBox = new ComboBox
                 {
                     ItemsSource = field.EnumNames,
                     SelectedItem = field.Value,
-                    IsHitTestVisible = false,
-                    Focusable = false,
+                    IsEnabled = field.CanWrite,
                     Height = 22,
                     Style = ThemeStyle("InspectorComboBoxStyle")
                 };
+                var suppressComboBoxCommit = false;
+                comboBox.SelectionChanged += async (_, _) =>
+                {
+                    if (suppressComboBoxCommit || !field.CanEdit || comboBox.SelectedItem is not string selectedValue || selectedValue == field.Value)
+                    {
+                        return;
+                    }
+
+                    suppressComboBoxCommit = true;
+                    comboBox.IsEnabled = false;
+                    if (!await field.CommitAsync(selectedValue, JsonConvert.SerializeObject(selectedValue)))
+                    {
+                        comboBox.SelectedItem = field.Value;
+                    }
+                    comboBox.IsEnabled = field.CanWrite;
+                    suppressComboBoxCommit = false;
+                };
+                return comboBox;
             case "Vector2":
             case "Vector3":
             case "Vector4":
@@ -137,7 +186,7 @@ public sealed class InspectorFieldView : ContentControl
             case "ObjectReference":
                 return CreateObjectReference(field);
             case "String" when field.Multiline:
-                return CreateTextBox(field.Value, true, Math.Max(48, (field.TextAreaMinLines ?? 3) * 18));
+                return CreateTextBox(field, true, Math.Max(48, (field.TextAreaMinLines ?? 3) * 18));
             case "Float" when field.RangeMin.HasValue && field.RangeMax.HasValue:
                 return CreateRangeEditor(field);
             case "Error":
@@ -147,11 +196,11 @@ public sealed class InspectorFieldView : ContentControl
             case "Truncated":
                 return new TextBlock { Text = field.Value, Foreground = ThemeBrush("MutedTextBrush"), VerticalAlignment = VerticalAlignment.Center };
             default:
-                return CreateTextBox(field.Value, false, 22);
+                return CreateTextBox(field, false, 22);
         }
     }
 
-    private static FrameworkElement CreateVectorEditor(SerializedFieldInfo field)
+    private static FrameworkElement CreateVectorEditor(InspectorFieldViewModel field)
     {
         var grid = new Grid();
         for (var i = 0; i < field.Children.Count; i++)
@@ -168,7 +217,7 @@ public sealed class InspectorFieldView : ContentControl
             };
             Grid.SetColumn(label, i * 2);
             grid.Children.Add(label);
-            var input = CreateTextBox(child.Value, false, 22);
+            var input = CreateTextBox(child, false, 22);
             input.MinWidth = 35;
             Grid.SetColumn(input, i * 2 + 1);
             grid.Children.Add(input);
@@ -176,7 +225,7 @@ public sealed class InspectorFieldView : ContentControl
         return grid;
     }
 
-    private static FrameworkElement CreateColorEditor(SerializedFieldInfo field)
+    private static FrameworkElement CreateColorEditor(InspectorFieldViewModel field)
     {
         var panel = new Grid();
         panel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(30) });
@@ -188,9 +237,9 @@ public sealed class InspectorFieldView : ContentControl
             Style = ThemeStyle("InspectorColorSwatchStyle")
         };
         panel.Children.Add(swatch);
-        var input = CreateTextBox(field.Value, false, 22);
-        Grid.SetColumn(input, 1);
-        panel.Children.Add(input);
+        var channels = (Grid)CreateVectorEditor(field);
+        Grid.SetColumn(channels, 1);
+        panel.Children.Add(channels);
         return panel;
     }
 
@@ -205,7 +254,7 @@ public sealed class InspectorFieldView : ContentControl
         return Brushes.Transparent;
     }
 
-    private static FrameworkElement CreateObjectReference(SerializedFieldInfo field)
+    private static FrameworkElement CreateObjectReference(InspectorFieldViewModel field)
     {
         var border = new Border
         {
@@ -214,19 +263,17 @@ public sealed class InspectorFieldView : ContentControl
         };
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(105) });
         grid.Children.Add(new TextBlock { Text = field.Value ?? "None", VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
-        if (field.InstanceID.HasValue)
-        {
-            var id = new TextBlock { Text = field.InstanceID.Value.ToString(CultureInfo.InvariantCulture), Foreground = ThemeBrush("MutedTextBrush"), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(id, 1);
-            grid.Children.Add(id);
-        }
+        var idField = CreateTextBox(field, false, 20, field.InstanceID?.ToString(CultureInfo.InvariantCulture) ?? string.Empty, objectReference: true);
+        idField.Margin = new Thickness(8, -1, -5, -1);
+        Grid.SetColumn(idField, 1);
+        grid.Children.Add(idField);
         border.Child = grid;
         return border;
     }
 
-    private static FrameworkElement CreateRangeEditor(SerializedFieldInfo field)
+    private static FrameworkElement CreateRangeEditor(InspectorFieldViewModel field)
     {
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -237,29 +284,89 @@ public sealed class InspectorFieldView : ContentControl
             Minimum = field.RangeMin!.Value,
             Maximum = field.RangeMax!.Value,
             Value = value,
-            IsHitTestVisible = false,
-            Focusable = false,
+            IsEnabled = field.CanWrite,
             Margin = new Thickness(2, 0, 6, 0)
         };
+        slider.AddHandler(Thumb.DragCompletedEvent, new DragCompletedEventHandler(async (_, _) =>
+        {
+            var text = slider.Value.ToString("R", CultureInfo.InvariantCulture);
+            if (!await field.CommitAsync(text, text))
+            {
+                _ = double.TryParse(field.Value, NumberStyles.Float, CultureInfo.InvariantCulture, out var original);
+                slider.Value = original;
+            }
+        }));
         grid.Children.Add(slider);
-        var input = CreateTextBox(field.Value, false, 22);
+        var input = CreateTextBox(field, false, 22);
         Grid.SetColumn(input, 1);
         grid.Children.Add(input);
         return grid;
     }
 
-    private static TextBox CreateTextBox(string? value, bool multiline, double height) => new()
+    private static TextBox CreateTextBox(InspectorFieldViewModel field, bool multiline, double height, string? initialValue = null, bool objectReference = false)
     {
-        Text = value ?? string.Empty,
-        IsReadOnly = true,
-        Height = height,
-        MinWidth = 20,
-        Style = ThemeStyle("InspectorReadOnlyTextBoxStyle"),
-        VerticalContentAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Center,
-        TextWrapping = multiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
-        AcceptsReturn = multiline,
-        VerticalScrollBarVisibility = multiline ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden
-    };
+        var textBox = new TextBox
+        {
+            Text = initialValue ?? field.Value ?? string.Empty,
+            IsReadOnly = !field.CanWrite,
+            Height = height,
+            MinWidth = 20,
+            Style = ThemeStyle("InspectorReadOnlyTextBoxStyle"),
+            VerticalContentAlignment = multiline ? VerticalAlignment.Top : VerticalAlignment.Center,
+            TextWrapping = multiline ? TextWrapping.Wrap : TextWrapping.NoWrap,
+            AcceptsReturn = multiline,
+            VerticalScrollBarVisibility = multiline ? ScrollBarVisibility.Auto : ScrollBarVisibility.Hidden
+        };
+
+        var committing = false;
+        async Task CommitAsync()
+        {
+            if (committing || !field.CanWrite)
+            {
+                return;
+            }
+
+            var original = objectReference ? field.InstanceID?.ToString(CultureInfo.InvariantCulture) ?? string.Empty : field.Value ?? string.Empty;
+            if (textBox.Text == original)
+            {
+                return;
+            }
+
+            committing = true;
+            textBox.IsReadOnly = true;
+            var json = ToJson(field, textBox.Text, objectReference);
+            if (json == null || !await field.CommitAsync(textBox.Text, json))
+            {
+                textBox.Text = original;
+            }
+            textBox.IsReadOnly = !field.CanWrite;
+            committing = false;
+        }
+
+        textBox.LostKeyboardFocus += async (_, _) => await CommitAsync();
+        textBox.PreviewKeyDown += async (_, e) =>
+        {
+            var shouldCommit = e.Key == Key.Enter && (!multiline || Keyboard.Modifiers.HasFlag(ModifierKeys.Control));
+            if (!shouldCommit)
+            {
+                return;
+            }
+
+            e.Handled = true;
+            await CommitAsync();
+        };
+        return textBox;
+    }
+
+    private static string? ToJson(InspectorFieldViewModel field, string input, bool objectReference)
+    {
+        if (objectReference)
+        {
+            return string.IsNullOrWhiteSpace(input) ? "null" : JsonConvert.SerializeObject(input.Trim());
+        }
+
+        return field.Kind is "String" or "Enum" ? JsonConvert.SerializeObject(input) : input.Trim();
+    }
 
     private static Brush ThemeBrush(string key) => (Brush)Application.Current.FindResource(key);
 

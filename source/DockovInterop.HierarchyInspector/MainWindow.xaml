@@ -116,35 +116,40 @@
                   <DataTemplate>
                     <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1"
                             CornerRadius="2" Margin="0,0,0,8">
-                      <Expander IsExpanded="True">
-                        <Expander.Header>
-                          <Grid Height="30">
-                            <Grid.ColumnDefinitions>
-                              <ColumnDefinition Width="22" />
-                              <ColumnDefinition Width="*" />
-                              <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <CheckBox IsChecked="{Binding Enabled, Mode=OneWay}" IsEnabled="False" Visibility="{Binding EnabledVisibility}" />
-                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                            <TextBlock Grid.Column="2" Text="{Binding ShortType}" Foreground="{StaticResource MutedTextBrush}"
-                                       FontSize="10" VerticalAlignment="Center" Margin="10,0,8,0" />
-                          </Grid>
-                        </Expander.Header>
-                        <StackPanel Margin="8,2,8,9">
-                          <Border Background="{StaticResource ErrorBackgroundBrush}" Padding="6,4" Margin="0,2,0,6" Visibility="{Binding ErrorVisibility}">
-                            <TextBlock Text="{Binding Error}" TextWrapping="Wrap" />
-                          </Border>
-                          <ItemsControl ItemsSource="{Binding Fields}">
-                            <ItemsControl.ItemTemplate>
-                              <DataTemplate>
-                                <local:InspectorFieldView />
-                              </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                          </ItemsControl>
-                          <TextBlock Text="No serialized fields" Foreground="{StaticResource MutedTextBrush}" FontStyle="Italic"
-                                     Margin="4" Visibility="{Binding EmptyFieldsVisibility}" />
-                        </StackPanel>
-                      </Expander>
+                      <Grid>
+                        <Expander IsExpanded="True">
+                          <Expander.Header>
+                            <Grid Height="30">
+                              <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="22" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                              </Grid.ColumnDefinitions>
+                              <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                              <TextBlock Grid.Column="2" Text="{Binding ShortType}" Foreground="{StaticResource MutedTextBrush}"
+                                         FontSize="10" VerticalAlignment="Center" Margin="10,0,8,0" />
+                            </Grid>
+                          </Expander.Header>
+                          <StackPanel Margin="8,2,8,9">
+                            <Border Background="{StaticResource ErrorBackgroundBrush}" Padding="6,4" Margin="0,2,0,6" Visibility="{Binding ErrorVisibility}">
+                              <TextBlock Text="{Binding Error}" TextWrapping="Wrap" />
+                            </Border>
+                            <ItemsControl ItemsSource="{Binding Fields}">
+                              <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                  <local:InspectorFieldView />
+                                </DataTemplate>
+                              </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="No serialized fields" Foreground="{StaticResource MutedTextBrush}" FontStyle="Italic"
+                                       Margin="4" Visibility="{Binding EmptyFieldsVisibility}" />
+                          </StackPanel>
+                        </Expander>
+                        <CheckBox Panel.ZIndex="1" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="26,9,0,0"
+                                  IsChecked="{Binding Enabled, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                  IsEnabled="{Binding CanEditEnabled}" Visibility="{Binding EnabledVisibility}"
+                                  ToolTip="Enable or disable this component" />
+                      </Grid>
                     </Border>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>

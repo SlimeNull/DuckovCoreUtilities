@@ -356,17 +356,27 @@ namespace SlimeNull.DuckovInterop
                     return ApiResult<ValueInfo>.Failure("Only primitive, string, enum, DateTime, decimal, Guid and Unity primitive structs can be set.");
                 }
 
-                if (!ValueConverter.TryConvert(valueJson, access.MemberType, out var converted, out var convertError))
+                if (!ValueConverter.TryConvert(valueJson, access.MemberType, _registry, out var converted, out var convertError))
                 {
                     return ApiResult<ValueInfo>.Failure(convertError);
                 }
 
-                if (!access.SetValue(converted))
+                try
                 {
-                    return ApiResult<ValueInfo>.Failure("The target path is not assignable.");
+                    if (!access.SetValue(converted))
+                    {
+                        return ApiResult<ValueInfo>.Failure("The target path is not assignable.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    return ApiResult<ValueInfo>.Failure(ex.GetBaseException().Message);
                 }
 
-                return ApiResult<ValueInfo>.Success(SerializeValue(converted, storeResult));
+                var updated = ReflectionPath.Resolve(root, path, requireAssignableTarget: false);
+                return updated.Success
+                    ? ApiResult<ValueInfo>.Success(SerializeValue(updated.Value, storeResult))
+                    : ApiResult<ValueInfo>.Failure(updated.Error);
             });
         }
 
@@ -666,7 +676,9 @@ namespace SlimeNull.DuckovInterop
             try
             {
                 var property = component.GetType().GetProperty("enabled", BindingFlags.Instance | BindingFlags.Public);
-                return property != null && property.PropertyType == typeof(bool) ? (bool?)property.GetValue(component) : null;
+                return property != null && property.CanRead && property.CanWrite && property.PropertyType == typeof(bool)
+                    ? (bool?)property.GetValue(component)
+                    : null;
             }
             catch
             {
@@ -681,16 +693,16 @@ namespace SlimeNull.DuckovInterop
 
             if (component is Transform transform)
             {
-                result.Add(CreateValueField("m_LocalPosition", "Position", typeof(Vector3), transform.localPosition, 0, visited));
-                result.Add(CreateValueField("m_LocalRotation", "Rotation", typeof(Vector3), transform.localEulerAngles, 0, visited));
-                result.Add(CreateValueField("m_LocalScale", "Scale", typeof(Vector3), transform.localScale, 0, visited));
+                result.Add(CreateValueField("localPosition", "Position", typeof(Vector3), transform.localPosition, "localPosition", 0, visited));
+                result.Add(CreateValueField("localEulerAngles", "Rotation", typeof(Vector3), transform.localEulerAngles, "localEulerAngles", 0, visited));
+                result.Add(CreateValueField("localScale", "Scale", typeof(Vector3), transform.localScale, "localScale", 0, visited));
             }
 
             foreach (var field in EnumerateUnitySerializedFields(component.GetType()))
             {
                 try
                 {
-                    var info = CreateValueField(field.Name, NicifyName(field.Name), field.FieldType, field.GetValue(component), 0, visited);
+                    var info = CreateValueField(field.Name, NicifyName(field.Name), field.FieldType, field.GetValue(component), field.Name, 0, visited);
                     ApplyInspectorAttributes(info, field);
                     result.Add(info);
                 }
@@ -767,25 +779,28 @@ namespace SlimeNull.DuckovInterop
             return type.IsSerializable;
         }
 
-        private static SerializedFieldInfo CreateValueField(string name, string displayName, Type declaredType, object? value, int depth, HashSet<object> visited)
+        private static SerializedFieldInfo CreateValueField(string name, string displayName, Type declaredType, object? value, string path, int depth, HashSet<object> visited)
         {
             var info = new SerializedFieldInfo
             {
                 Name = name,
                 DisplayName = displayName,
-                Type = declaredType.FullName
+                Type = declaredType.FullName,
+                Path = path
             };
 
             if (value == null)
             {
                 info.Kind = typeof(UnityEngine.Object).IsAssignableFrom(declaredType) ? "ObjectReference" : "Null";
                 info.Value = "None";
+                info.CanWrite = typeof(UnityEngine.Object).IsAssignableFrom(declaredType);
                 return info;
             }
 
             if (value is UnityEngine.Object unityObject)
             {
                 info.Kind = "ObjectReference";
+                info.CanWrite = true;
                 if (unityObject == null)
                 {
                     info.Value = "None";
@@ -805,52 +820,58 @@ namespace SlimeNull.DuckovInterop
             {
                 info.Kind = "Boolean";
                 info.Value = ((bool)value).ToString(CultureInfo.InvariantCulture);
+                info.CanWrite = true;
             }
             else if (actualType.IsEnum)
             {
                 info.Kind = "Enum";
                 info.Value = value.ToString();
                 info.EnumNames = Enum.GetNames(actualType).ToList();
+                info.CanWrite = true;
             }
             else if (actualType == typeof(string) || actualType == typeof(char))
             {
                 info.Kind = "String";
                 info.Value = value.ToString();
+                info.CanWrite = true;
             }
             else if (actualType == typeof(float) || actualType == typeof(double) || actualType == typeof(decimal))
             {
                 info.Kind = "Float";
                 info.Value = Convert.ToString(value, CultureInfo.InvariantCulture);
+                info.CanWrite = true;
             }
             else if (actualType.IsPrimitive)
             {
                 info.Kind = "Integer";
                 info.Value = Convert.ToString(value, CultureInfo.InvariantCulture);
+                info.CanWrite = true;
             }
             else if (value is Color color)
             {
                 info.Kind = "Color";
                 info.Value = string.Format(CultureInfo.InvariantCulture, "{0:R},{1:R},{2:R},{3:R}", color.r, color.g, color.b, color.a);
+                AddVectorChildren(info, new[] { ("r", color.r), ("g", color.g), ("b", color.b), ("a", color.a) }, path, depth, visited);
             }
             else if (value is Vector2 vector2)
             {
                 info.Kind = "Vector2";
-                AddVectorChildren(info, new[] { ("x", vector2.x), ("y", vector2.y) }, depth, visited);
+                AddVectorChildren(info, new[] { ("x", vector2.x), ("y", vector2.y) }, path, depth, visited);
             }
             else if (value is Vector3 vector3)
             {
                 info.Kind = "Vector3";
-                AddVectorChildren(info, new[] { ("x", vector3.x), ("y", vector3.y), ("z", vector3.z) }, depth, visited);
+                AddVectorChildren(info, new[] { ("x", vector3.x), ("y", vector3.y), ("z", vector3.z) }, path, depth, visited);
             }
             else if (value is Vector4 vector4)
             {
                 info.Kind = "Vector4";
-                AddVectorChildren(info, new[] { ("x", vector4.x), ("y", vector4.y), ("z", vector4.z), ("w", vector4.w) }, depth, visited);
+                AddVectorChildren(info, new[] { ("x", vector4.x), ("y", vector4.y), ("z", vector4.z), ("w", vector4.w) }, path, depth, visited);
             }
             else if (value is Quaternion quaternion)
             {
                 info.Kind = "Quaternion";
-                AddVectorChildren(info, new[] { ("x", quaternion.x), ("y", quaternion.y), ("z", quaternion.z), ("w", quaternion.w) }, depth, visited);
+                AddVectorChildren(info, new[] { ("x", quaternion.x), ("y", quaternion.y), ("z", quaternion.z), ("w", quaternion.w) }, path, depth, visited);
             }
             else if (value is IList list)
             {
@@ -860,7 +881,7 @@ namespace SlimeNull.DuckovInterop
                 var count = Math.Min(list.Count, 512);
                 for (var i = 0; i < count; i++)
                 {
-                    info.Children.Add(CreateValueField("[" + i + "]", "Element " + i, elementType, list[i], depth + 1, visited));
+                    info.Children.Add(CreateValueField("[" + i + "]", "Element " + i, elementType, list[i], path + "[" + i + "]", depth + 1, visited));
                 }
                 if (list.Count > count)
                 {
@@ -884,7 +905,8 @@ namespace SlimeNull.DuckovInterop
                 {
                     try
                     {
-                        var child = CreateValueField(childField.Name, NicifyName(childField.Name), childField.FieldType, childField.GetValue(value), depth + 1, visited);
+                        var childPath = string.IsNullOrEmpty(path) ? childField.Name : path + "." + childField.Name;
+                        var child = CreateValueField(childField.Name, NicifyName(childField.Name), childField.FieldType, childField.GetValue(value), childPath, depth + 1, visited);
                         ApplyInspectorAttributes(child, childField);
                         info.Children.Add(child);
                     }
@@ -902,11 +924,11 @@ namespace SlimeNull.DuckovInterop
             return info;
         }
 
-        private static void AddVectorChildren(SerializedFieldInfo parent, IEnumerable<(string name, float value)> values, int depth, HashSet<object> visited)
+        private static void AddVectorChildren(SerializedFieldInfo parent, IEnumerable<(string name, float value)> values, string path, int depth, HashSet<object> visited)
         {
             foreach (var item in values)
             {
-                parent.Children.Add(CreateValueField(item.name, item.name.ToUpperInvariant(), typeof(float), item.value, depth + 1, visited));
+                parent.Children.Add(CreateValueField(item.name, item.name.ToUpperInvariant(), typeof(float), item.value, path + "." + item.name, depth + 1, visited));
             }
         }
 
@@ -1145,11 +1167,27 @@ namespace SlimeNull.DuckovInterop
                 {
                     var last = i == segments.Length - 1;
                     var segment = segments[i];
-                    resolved = ResolveSegment(current, currentType, segment, last && requireAssignableTarget);
-                    if (!resolved.Success)
+                    var owner = current;
+                    var parentSetter = resolved?.SetValue;
+                    var next = ResolveSegment(owner, currentType, segment);
+                    if (!next.Success)
                     {
-                        return resolved;
+                        return next;
                     }
+
+                    var directSetter = next.SetValue;
+                    next.SetValue = newValue =>
+                    {
+                        if (!directSetter(newValue))
+                        {
+                            return false;
+                        }
+
+                        // Reflection mutates a boxed struct. Reassign that box through every
+                        // parent accessor until the change reaches the reference-type root.
+                        return owner == null || !owner.GetType().IsValueType || parentSetter == null || parentSetter(owner);
+                    };
+                    resolved = next;
 
                     current = resolved.Value;
                     currentType = current?.GetType() ?? resolved.MemberType ?? typeof(object);
@@ -1163,7 +1201,7 @@ namespace SlimeNull.DuckovInterop
                 return resolved ?? new PathAccess { Success = true, Value = current, MemberType = currentType };
             }
 
-            private static PathAccess ResolveSegment(object? current, Type currentType, string segment, bool assignable)
+            private static PathAccess ResolveSegment(object? current, Type currentType, string segment)
             {
                 var match = SegmentRegex.Match(segment);
                 if (!match.Success)
@@ -1219,12 +1257,22 @@ namespace SlimeNull.DuckovInterop
                             return Fail($"Indexed target '{name}' is null.");
                         }
 
-                        if (!TryGetIndexed(value, indexMatch.Groups[1].Value, out value, out valueType, out var indexedSetter, out var indexError))
+                        var indexedOwner = value;
+                        var ownerSetter = setter;
+                        if (!TryGetIndexed(indexedOwner, indexMatch.Groups[1].Value, out value, out valueType, out var indexedSetter, out var indexError))
                         {
                             return Fail(indexError);
                         }
 
-                        setter = indexedSetter;
+                        setter = newValue =>
+                        {
+                            if (!indexedSetter(newValue))
+                            {
+                                return false;
+                            }
+
+                            return !indexedOwner!.GetType().IsValueType || ownerSetter(indexedOwner);
+                        };
                     }
                 }
 
@@ -1419,6 +1467,7 @@ namespace SlimeNull.DuckovInterop
             public static bool IsSettableSimple(Type type)
             {
                 return IsSupportedPrimitive(type) ||
+                    typeof(UnityEngine.Object).IsAssignableFrom(type) ||
                     type == typeof(Vector2) ||
                     type == typeof(Vector3) ||
                     type == typeof(Vector4) ||
@@ -1437,7 +1486,7 @@ namespace SlimeNull.DuckovInterop
                     type == typeof(Guid);
             }
 
-            public static bool TryConvert(string valueJson, Type targetType, out object? value, out string error)
+            public static bool TryConvert(string valueJson, Type targetType, ObjectRegistry registry, out object? value, out string error)
             {
                 value = null;
                 error = string.Empty;
@@ -1445,7 +1494,7 @@ namespace SlimeNull.DuckovInterop
                 try
                 {
                     var token = JToken.Parse(valueJson);
-                    return TryConvertJson(token, targetType, null, out value, out error);
+                    return TryConvertJson(token, targetType, registry, out value, out error);
                 }
                 catch (Exception ex)
                 {
@@ -1476,7 +1525,19 @@ namespace SlimeNull.DuckovInterop
 
                 try
                 {
-                    if (targetType == typeof(string))
+                    if (element.Type == JTokenType.Null)
+                    {
+                        if (!targetType.IsValueType || nullable != null)
+                        {
+                            value = null;
+                        }
+                        else
+                        {
+                            error = $"Type '{targetType.FullName}' cannot be null.";
+                            return false;
+                        }
+                    }
+                    else if (targetType == typeof(string))
                     {
                         value = element.Type == JTokenType.String ? element.Value<string>() : element.ToString(Formatting.None);
                     }
@@ -1553,6 +1614,9 @@ namespace SlimeNull.DuckovInterop
                         var id = element.Type == JTokenType.String ? element.Value<string>() : element.ToString(Formatting.None);
                         if (string.IsNullOrEmpty(id) || !registry.TryResolve(id, out value, out _) || value == null || !targetType.IsInstanceOfType(value))
                         {
+                            error = string.IsNullOrEmpty(id)
+                                ? "A Unity object instance ID is required. Use null to clear the reference."
+                                : $"Unity object '{id}' was not found or is not assignable to '{targetType.FullName}'.";
                             return false;
                         }
                     }

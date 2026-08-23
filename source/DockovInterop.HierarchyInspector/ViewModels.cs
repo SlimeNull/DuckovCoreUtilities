@@ -2,6 +2,7 @@ using SlimeNull.DuckovInterop;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -20,10 +21,10 @@ public sealed class HierarchyItem
 
 public sealed class InspectorGameObjectViewModel
 {
-    public InspectorGameObjectViewModel(InspectorGameObject source)
+    internal InspectorGameObjectViewModel(InspectorGameObject source, MainViewModel owner)
     {
         Source = source;
-        Components = source.Components.Select(component => new InspectorComponentViewModel(component)).ToList();
+        Components = source.Components.Select(component => new InspectorComponentViewModel(component, owner)).ToList();
     }
 
     public InspectorGameObject Source { get; }
@@ -35,24 +36,169 @@ public sealed class InspectorGameObjectViewModel
     public IReadOnlyList<InspectorComponentViewModel> Components { get; }
 }
 
-public sealed class InspectorComponentViewModel
+public sealed class InspectorComponentViewModel : INotifyPropertyChanged
 {
-    public InspectorComponentViewModel(InspectorComponent source) => Source = source;
+    private readonly MainViewModel _owner;
+    private IReadOnlyList<InspectorFieldViewModel>? _fields;
+    private bool? _enabled;
+    private bool _isUpdatingEnabled;
+    private string? _editError;
+
+    internal InspectorComponentViewModel(InspectorComponent source, MainViewModel owner)
+    {
+        Source = source;
+        _owner = owner;
+        _enabled = source.Enabled;
+    }
 
     public InspectorComponent Source { get; }
     public string Name => Source.Name ?? "Component";
     public string ShortType => (Source.Type ?? string.Empty).Split('.').LastOrDefault() ?? string.Empty;
-    public bool? Enabled => Source.Enabled;
-    public string? Error => Source.Error;
-    public IReadOnlyList<SerializedFieldInfo> Fields => Source.Fields;
+    public bool? Enabled
+    {
+        get => _enabled;
+        set
+        {
+            if (_enabled == value || !value.HasValue || _isUpdatingEnabled)
+            {
+                return;
+            }
+
+            var previous = _enabled;
+            _enabled = value;
+            OnPropertyChanged();
+            _ = UpdateEnabledAsync(value.Value, previous);
+        }
+    }
+
+    public string? Error => _editError ?? Source.Error;
+    public IReadOnlyList<InspectorFieldViewModel> Fields => _fields ??= Source.Fields.Select(field => new InspectorFieldViewModel(field, Source.InstanceID, _owner)).ToList();
     public Visibility EnabledVisibility => Source.Enabled.HasValue ? Visibility.Visible : Visibility.Hidden;
-    public Visibility ErrorVisibility => string.IsNullOrWhiteSpace(Source.Error) ? Visibility.Collapsed : Visibility.Visible;
+    public bool CanEditEnabled => Source.Enabled.HasValue && !_isUpdatingEnabled;
+    public Visibility ErrorVisibility => string.IsNullOrWhiteSpace(Error) ? Visibility.Collapsed : Visibility.Visible;
     public Visibility EmptyFieldsVisibility => Source.Fields.Count == 0 && string.IsNullOrWhiteSpace(Source.Error) ? Visibility.Visible : Visibility.Collapsed;
+
+    private async Task UpdateEnabledAsync(bool value, bool? previous)
+    {
+        _isUpdatingEnabled = true;
+        _editError = null;
+        OnPropertyChanged(nameof(CanEditEnabled));
+        OnPropertyChanged(nameof(Error));
+        OnPropertyChanged(nameof(ErrorVisibility));
+
+        var error = await _owner.SetRemoteValueAsync(Source.InstanceID, "enabled", value ? "true" : "false");
+        if (error != null)
+        {
+            _editError = error;
+            _enabled = previous;
+            OnPropertyChanged(nameof(Enabled));
+        }
+        else
+        {
+            Source.Enabled = value;
+        }
+
+        _isUpdatingEnabled = false;
+        OnPropertyChanged(nameof(CanEditEnabled));
+        OnPropertyChanged(nameof(Error));
+        OnPropertyChanged(nameof(ErrorVisibility));
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+}
+
+public sealed class InspectorFieldViewModel : INotifyPropertyChanged
+{
+    private readonly MainViewModel _owner;
+    private readonly int _componentInstanceId;
+    private readonly InspectorFieldViewModel? _parent;
+    private IReadOnlyList<InspectorFieldViewModel>? _children;
+    private string? _error;
+    private bool _isBusy;
+
+    internal InspectorFieldViewModel(SerializedFieldInfo source, int componentInstanceId, MainViewModel owner, InspectorFieldViewModel? parent = null)
+    {
+        Source = source;
+        _componentInstanceId = componentInstanceId;
+        _owner = owner;
+        _parent = parent;
+    }
+
+    public SerializedFieldInfo Source { get; }
+    public string? Name => Source.Name;
+    public string? DisplayName => Source.DisplayName;
+    public string? Type => Source.Type;
+    public string? Path => Source.Path;
+    public string? Kind => Source.Kind;
+    public string? Value => Source.Value;
+    public int? InstanceID => Source.InstanceID;
+    public string? ObjectName => Source.ObjectName;
+    public string? Header => Source.Header;
+    public string? Tooltip => Source.Tooltip;
+    public float? RangeMin => Source.RangeMin;
+    public float? RangeMax => Source.RangeMax;
+    public bool Multiline => Source.Multiline;
+    public int? TextAreaMinLines => Source.TextAreaMinLines;
+    public int? TextAreaMaxLines => Source.TextAreaMaxLines;
+    public IReadOnlyList<string> EnumNames => Source.EnumNames;
+    public IReadOnlyList<InspectorFieldViewModel> Children => _children ??= Source.Children.Select(child => new InspectorFieldViewModel(child, _componentInstanceId, _owner, this)).ToList();
+    public bool CanWrite => Source.CanWrite && !string.IsNullOrWhiteSpace(Source.Path);
+    public bool IsBusy { get => _isBusy; private set { if (_isBusy == value) return; _isBusy = value; OnPropertyChanged(); OnPropertyChanged(nameof(CanEdit)); } }
+    public bool CanEdit => CanWrite && !IsBusy;
+    public string? Error { get => _error; private set { if (_error == value) return; _error = value; OnPropertyChanged(); OnPropertyChanged(nameof(ErrorVisibility)); } }
+    public Visibility ErrorVisibility => string.IsNullOrWhiteSpace(Error) ? Visibility.Collapsed : Visibility.Visible;
+
+    public async Task<bool> CommitAsync(string displayValue, string valueJson)
+    {
+        if (!CanEdit || string.IsNullOrWhiteSpace(Path))
+        {
+            return false;
+        }
+
+        IsBusy = true;
+        Error = null;
+        var error = await _owner.SetRemoteValueAsync(_componentInstanceId, Path, valueJson);
+        if (error != null)
+        {
+            Error = error;
+            IsBusy = false;
+            return false;
+        }
+
+        Source.Value = displayValue;
+        if (Kind == "ObjectReference")
+        {
+            Source.InstanceID = int.TryParse(displayValue, out var id) ? id : null;
+            Source.ObjectName = null;
+            Source.Value = Source.InstanceID.HasValue ? displayValue : "None";
+        }
+
+        _parent?.OnChildValueChanged();
+        OnPropertyChanged(nameof(Value));
+        OnPropertyChanged(nameof(InstanceID));
+        IsBusy = false;
+        return true;
+    }
+
+    private void OnChildValueChanged()
+    {
+        if (Kind == "Color")
+        {
+            Source.Value = string.Join(",", Children.Select(child => child.Value));
+            OnPropertyChanged(nameof(Value));
+        }
+        _parent?.OnChildValueChanged();
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+    private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 }
 
 internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 {
     private readonly DuckovRpcConnection _connection = new();
+    private readonly SemaphoreSlim _rpcGate = new(1, 1);
     private readonly AsyncCommand _refreshCommand;
     private SceneSnapshot? _snapshot;
     private string _filterText = string.Empty;
@@ -206,7 +352,7 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
             children = source.Children.Select(child => BuildGameObjectItem(child, includeAll: true)!).ToList();
         }
 
-        var viewModel = new InspectorGameObjectViewModel(source);
+        var viewModel = new InspectorGameObjectViewModel(source, this);
         return new HierarchyItem
         {
             Name = viewModel.Name,
@@ -260,6 +406,27 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
 
     private static bool Contains(string? value, string query) => string.IsNullOrWhiteSpace(query) || (value?.Contains(query, StringComparison.OrdinalIgnoreCase) ?? false);
 
+    internal async Task<string?> SetRemoteValueAsync(int instanceId, string path, string valueJson)
+    {
+        await _rpcGate.WaitAsync();
+        try
+        {
+            var result = await Task.Run(() => _connection.Invoke(api => api.SetValue(instanceId.ToString(), path, valueJson, storeResult: false)));
+            if (!result.Ok)
+            {
+                StatusText = result.Error ?? $"Failed to update {path}.";
+                return StatusText;
+            }
+
+            StatusText = $"Updated {path} on component {instanceId}";
+            return null;
+        }
+        finally
+        {
+            _rpcGate.Release();
+        }
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
     private void OnPropertyChanged([CallerMemberName] string? name = null) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
@@ -271,7 +438,11 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         return true;
     }
 
-    public void Dispose() => _connection.Dispose();
+    public void Dispose()
+    {
+        _connection.Dispose();
+        _rpcGate.Dispose();
+    }
 }
 
 internal sealed class AsyncCommand : ICommand

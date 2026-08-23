@@ -168,6 +168,10 @@ namespace SlimeNull.DuckovInterop
 
         public string? Type { get; set; }
 
+        public string? Path { get; set; }
+
+        public bool CanWrite { get; set; }
+
         public string? Kind { get; set; }
 
         public string? Value { get; set; }
