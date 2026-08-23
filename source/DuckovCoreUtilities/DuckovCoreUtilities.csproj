@@ -94,6 +94,10 @@
       <HintPath>$(ManagedPath)\EPO.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="FOW">
+      <HintPath>$(ManagedPath)\FOW.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>
