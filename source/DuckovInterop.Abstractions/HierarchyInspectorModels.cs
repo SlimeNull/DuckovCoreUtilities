@@ -140,6 +140,8 @@ namespace SlimeNull.DuckovInterop
 
         public int Layer { get; set; }
 
+        public int ComponentCount { get; set; }
+
         public List<InspectorComponent> Components { get; set; } = new List<InspectorComponent>();
 
         public List<InspectorGameObject> Children { get; set; } = new List<InspectorGameObject>();

@@ -269,11 +269,11 @@ namespace EleCho.JsonRpc
         {
             while (true)
             {
-                if (_rpcResponseDict.TryGetValue(id, out RpcPackage? r_pak))
+                if (_rpcResponseDict.TryRemove(id, out RpcPackage? r_pak))
                 {
-                    _rpcResponseDict.TryRemove(id, out _);
                     return r_pak;
                 }
+                Thread.Sleep(1);
             }
         }
 
@@ -281,9 +281,8 @@ namespace EleCho.JsonRpc
         {
             while (true)
             {
-                if (_rpcResponseDict.TryGetValue(id, out RpcPackage? r_pak))
+                if (_rpcResponseDict.TryRemove(id, out RpcPackage? r_pak))
                 {
-                    _rpcResponseDict.TryRemove(id, out _);
                     return r_pak;
                 }
 

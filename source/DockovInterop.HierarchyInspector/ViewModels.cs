@@ -22,8 +22,11 @@ public sealed class HierarchyItem
 public sealed class InspectorGameObjectViewModel : INotifyPropertyChanged
 {
     private readonly MainViewModel _owner;
+    private IReadOnlyList<InspectorComponentViewModel> _components;
     private bool _activeSelf;
     private bool _isUpdatingActive;
+    private bool _detailsLoaded;
+    private bool _detailsLoading;
     private string? _activationError;
 
     internal InspectorGameObjectViewModel(InspectorGameObject source, MainViewModel owner)
@@ -31,12 +34,13 @@ public sealed class InspectorGameObjectViewModel : INotifyPropertyChanged
         Source = source;
         _owner = owner;
         _activeSelf = source.ActiveSelf;
-        Components = source.Components.Select(component => new InspectorComponentViewModel(component, owner)).ToList();
+        _components = CreateComponentViewModels(source.Components);
     }
 
     public InspectorGameObject Source { get; }
     public string Name => Source.Name ?? "GameObject";
     public int InstanceID => Source.InstanceID;
+    public int ComponentCount => Source.ComponentCount;
     public bool ActiveSelf
     {
         get => _activeSelf;
@@ -55,10 +59,42 @@ public sealed class InspectorGameObjectViewModel : INotifyPropertyChanged
     }
     public string Tag => Source.Tag ?? "Untagged";
     public int Layer => Source.Layer;
-    public IReadOnlyList<InspectorComponentViewModel> Components { get; }
+    public IReadOnlyList<InspectorComponentViewModel> Components => _components;
     public bool CanEditActive => !_isUpdatingActive;
     public string? ActivationError => _activationError;
     public Visibility ActivationErrorVisibility => string.IsNullOrWhiteSpace(ActivationError) ? Visibility.Collapsed : Visibility.Visible;
+
+    internal bool TryBeginDetailsLoad()
+    {
+        if (_detailsLoaded || _detailsLoading)
+        {
+            return false;
+        }
+
+        _detailsLoading = true;
+        return true;
+    }
+
+    internal void ApplyDetails(List<InspectorComponent> components)
+    {
+        Source.Components = components;
+        Source.ComponentCount = components.Count;
+        _components = CreateComponentViewModels(components);
+        _detailsLoaded = true;
+        _detailsLoading = false;
+        OnPropertyChanged(nameof(ComponentCount));
+        OnPropertyChanged(nameof(Components));
+    }
+
+    internal void EndDetailsLoad()
+    {
+        _detailsLoading = false;
+    }
+
+    private IReadOnlyList<InspectorComponentViewModel> CreateComponentViewModels(IEnumerable<InspectorComponent> components)
+    {
+        return components.Select(component => new InspectorComponentViewModel(component, _owner)).ToList();
+    }
 
     private async Task UpdateActiveAsync(bool value, bool previous)
     {
@@ -262,6 +298,7 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
     private string _connectionText = "Disconnected";
     private string _snapshotTimeText = string.Empty;
     private Brush _connectionBrush = new SolidColorBrush(Color.FromRgb(130, 130, 130));
+    private int _selectionVersion;
 
     public MainViewModel()
     {
@@ -297,7 +334,13 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 OnPropertyChanged(nameof(InspectorVisibility));
                 StatusText = value == null
                     ? SnapshotSummary()
-                    : $"GameObject {value.InstanceID} | {value.Components.Count} components";
+                    : $"GameObject {value.InstanceID} | {value.ComponentCount} components";
+
+                var selectionVersion = ++_selectionVersion;
+                if (value != null)
+                {
+                    _ = LoadObjectDetailsAsync(value, selectionVersion);
+                }
             }
         }
     }
@@ -331,11 +374,11 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
 
         IsBusy = true;
-        StatusText = "Requesting a complete scene snapshot...";
+        StatusText = "Requesting scene hierarchy...";
         var selectedId = SelectedObject?.InstanceID;
         try
         {
-            var result = await Task.Run(() => _connection.Invoke(api => api.GetSceneSnapshot()));
+            var result = await Task.Run(() => _connection.Invoke(api => api.GetSceneOverview()));
             if (!result.Ok || result.Data == null)
             {
                 ConnectionText = "Disconnected";
@@ -351,13 +394,47 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
                 ? "Captured " + captured.ToLocalTime().ToString("HH:mm:ss")
                 : string.Empty;
             RebuildHierarchy();
-            SelectedObject = selectedId.HasValue ? FindObject(selectedId.Value) : null;
             StatusText = SnapshotSummary();
+            SelectedObject = selectedId.HasValue ? FindObject(selectedId.Value) : null;
         }
         finally
         {
             IsBusy = false;
         }
+    }
+
+    private async Task LoadObjectDetailsAsync(InspectorGameObjectViewModel target, int selectionVersion)
+    {
+        if (!target.TryBeginDetailsLoad())
+        {
+            return;
+        }
+
+        if (ReferenceEquals(SelectedObject, target))
+        {
+            StatusText = $"Loading components for GameObject {target.InstanceID}...";
+        }
+
+        var result = await Task.Run(() =>
+            _connection.Invoke(api => api.GetInspectorComponents(target.InstanceID.ToString())));
+
+        if (result.Ok && result.Data != null)
+        {
+            target.ApplyDetails(result.Data);
+        }
+        else
+        {
+            target.EndDetailsLoad();
+        }
+
+        if (selectionVersion != _selectionVersion || !ReferenceEquals(SelectedObject, target))
+        {
+            return;
+        }
+
+        StatusText = result.Ok
+            ? $"GameObject {target.InstanceID} | {target.ComponentCount} components"
+            : result.Error ?? $"Failed to load GameObject {target.InstanceID}.";
     }
 
     private void RebuildHierarchy()
@@ -410,7 +487,7 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         return new HierarchyItem
         {
             Name = viewModel.Name,
-            Detail = $"Instance ID {source.InstanceID} | {source.Components.Count} components",
+            Detail = $"Instance ID {source.InstanceID} | {source.ComponentCount} components",
             GameObject = viewModel,
             MarkerBrush = new SolidColorBrush(source.ActiveSelf ? Color.FromRgb(226, 172, 73) : Color.FromRgb(110, 105, 95)),
             ForegroundBrush = new SolidColorBrush(source.ActiveInHierarchy ? Color.FromRgb(216, 216, 216) : Color.FromRgb(125, 125, 125)),
@@ -443,7 +520,7 @@ internal sealed class MainViewModel : INotifyPropertyChanged, IDisposable
         }
 
         var objects = _snapshot.Scenes.SelectMany(scene => FlattenObjects(scene.Roots)).ToList();
-        return $"{_snapshot.Scenes.Count} scenes | {objects.Count} GameObjects | {objects.Sum(item => item.Components.Count)} components";
+        return $"{_snapshot.Scenes.Count} scenes | {objects.Count} GameObjects | {objects.Sum(item => item.ComponentCount)} components";
     }
 
     private static IEnumerable<InspectorGameObject> FlattenObjects(IEnumerable<InspectorGameObject> roots)

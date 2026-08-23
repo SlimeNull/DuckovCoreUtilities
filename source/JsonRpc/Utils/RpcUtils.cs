@@ -703,7 +703,7 @@ namespace EleCho.JsonRpc.Utils
                 if (json == null)
                     return null;
 
-                Trace.WriteLine($"ReadPackageAsync: {json}");
+                Trace.WriteLine($"ReadPackageAsync: {json.Length} chars");
                 return JsonSerializer.Deserialize<RpcPackage>(json, JsonUtils.Options);
             }
             catch (IOException)

@@ -199,9 +199,21 @@ namespace SlimeNull.DuckovInterop
 
         public ApiResult<SceneSnapshot> GetSceneSnapshot()
         {
+            return BuildSceneSnapshot(includeFields: true);
+        }
+
+        public ApiResult<SceneSnapshot> GetSceneOverview()
+        {
+            return BuildSceneSnapshot(includeFields: false);
+        }
+
+        private ApiResult<SceneSnapshot> BuildSceneSnapshot(bool includeFields)
+        {
             var requestStopwatch = Stopwatch.StartNew();
             var metrics = new SnapshotMetrics(requestStopwatch);
-            Debug.Log("[DuckovInterop/Snapshot] Request queued for the Unity main thread.");
+            Debug.Log(
+                $"[DuckovInterop/Snapshot] Request queued for the Unity main thread; " +
+                $"fields={(includeFields ? "included" : "deferred")}.");
 
             using (var progressTimer = new Timer(
                 _ => Debug.Log($"[DuckovInterop/Snapshot] Still working: {metrics.Describe()}"),
@@ -218,6 +230,7 @@ namespace SlimeNull.DuckovInterop
 
                     try
                     {
+                        _registry.ResetUnityObjects();
                         var scenes = new List<InspectorScene>();
                         for (var i = 0; i < SceneManager.sceneCount; i++)
                         {
@@ -234,7 +247,7 @@ namespace SlimeNull.DuckovInterop
                             {
                                 Name = scene.name,
                                 BuildIndex = scene.buildIndex,
-                                Roots = roots.Select(root => CreateInspectorGameObject(root, metrics)).ToList()
+                                Roots = roots.Select(root => CreateInspectorGameObject(root, metrics, includeFields)).ToList()
                             });
                             metrics.Scenes++;
                             Debug.Log(
@@ -258,6 +271,42 @@ namespace SlimeNull.DuckovInterop
                     }
                 });
             }
+        }
+
+        public ApiResult<List<InspectorComponent>> GetInspectorComponents(string gameObjectId)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            return _dispatcher.Invoke(() =>
+            {
+                if (!_registry.TryResolve(gameObjectId, out var root, out var error))
+                {
+                    return ApiResult<List<InspectorComponent>>.Failure(error);
+                }
+
+                if (root is not GameObject gameObject)
+                {
+                    return ApiResult<List<InspectorComponent>>.Failure($"Object '{gameObjectId}' is not a GameObject.");
+                }
+
+                var metrics = new SnapshotMetrics(stopwatch);
+                metrics.VisitGameObject(gameObject.name);
+                var unityComponents = gameObject.GetComponents<Component>();
+                foreach (var component in unityComponents)
+                {
+                    if (component != null)
+                    {
+                        _registry.Remember(component);
+                    }
+                }
+
+                var components = unityComponents
+                    .Select(component => CreateInspectorComponent(component, metrics, includeFields: true))
+                    .ToList();
+                Debug.Log(
+                    $"[DuckovInterop/Snapshot] Loaded details for GameObject '{gameObject.name}' in " +
+                    $"{stopwatch.ElapsedMilliseconds} ms: components={metrics.Components}, fields={metrics.Fields}.");
+                return ApiResult<List<InspectorComponent>>.Success(components);
+            });
         }
 
         public ApiResult<List<ComponentInfo>> GetComponents(string gameObjectId)
@@ -679,9 +728,24 @@ namespace SlimeNull.DuckovInterop
                 .ToList();
         }
 
-        private static InspectorGameObject CreateInspectorGameObject(GameObject gameObject, SnapshotMetrics metrics)
+        private InspectorGameObject CreateInspectorGameObject(GameObject gameObject, SnapshotMetrics metrics, bool includeFields)
         {
             metrics.VisitGameObject(gameObject.name);
+            _registry.Remember(gameObject);
+            var components = gameObject.GetComponents<Component>();
+            List<InspectorComponent> inspectorComponents;
+            if (includeFields)
+            {
+                inspectorComponents = components
+                    .Select(component => CreateInspectorComponent(component, metrics, includeFields: true))
+                    .ToList();
+            }
+            else
+            {
+                metrics.VisitComponents(components.Length);
+                inspectorComponents = new List<InspectorComponent>();
+            }
+
             string tag;
             try
             {
@@ -700,16 +764,15 @@ namespace SlimeNull.DuckovInterop
                 ActiveInHierarchy = gameObject.activeInHierarchy,
                 Tag = tag,
                 Layer = gameObject.layer,
-                Components = gameObject.GetComponents<Component>()
-                    .Select(component => CreateInspectorComponent(component, metrics))
-                    .ToList(),
+                ComponentCount = components.Length,
+                Components = inspectorComponents,
                 Children = Enumerable.Range(0, gameObject.transform.childCount)
-                    .Select(i => CreateInspectorGameObject(gameObject.transform.GetChild(i).gameObject, metrics))
+                    .Select(i => CreateInspectorGameObject(gameObject.transform.GetChild(i).gameObject, metrics, includeFields))
                     .ToList()
             };
         }
 
-        private static InspectorComponent CreateInspectorComponent(Component component, SnapshotMetrics metrics)
+        private static InspectorComponent CreateInspectorComponent(Component component, SnapshotMetrics metrics, bool includeFields)
         {
             metrics.VisitComponent(component == null ? "Missing Script" : component.GetType().FullName ?? component.GetType().Name);
             if (component == null)
@@ -726,14 +789,17 @@ namespace SlimeNull.DuckovInterop
                 Enabled = TryGetEnabled(component)
             };
 
-            try
+            if (includeFields)
             {
-                result.Fields = GetSerializedFields(component);
-                metrics.Fields += result.Fields.Count;
-            }
-            catch (Exception ex)
-            {
-                result.Error = ex.GetBaseException().Message;
+                try
+                {
+                    result.Fields = GetSerializedFields(component);
+                    metrics.Fields += result.Fields.Count;
+                }
+                catch (Exception ex)
+                {
+                    result.Error = ex.GetBaseException().Message;
+                }
             }
 
             return result;
@@ -1188,6 +1254,12 @@ namespace SlimeNull.DuckovInterop
                 Components++;
             }
 
+            public void VisitComponents(int count)
+            {
+                Stage = "reading component summaries";
+                Components += count;
+            }
+
             public string Describe()
             {
                 return $"stage={Stage}, elapsed={_stopwatch.ElapsedMilliseconds} ms, scenes={Scenes}, " +
@@ -1229,6 +1301,20 @@ namespace SlimeNull.DuckovInterop
         private sealed class ObjectRegistry
         {
             private readonly Dictionary<string, object> _storedObjects = new Dictionary<string, object>();
+            private readonly Dictionary<int, UnityEngine.Object> _unityObjects = new Dictionary<int, UnityEngine.Object>();
+
+            public void ResetUnityObjects()
+            {
+                _unityObjects.Clear();
+            }
+
+            public void Remember(UnityEngine.Object value)
+            {
+                if (value != null)
+                {
+                    _unityObjects[value.GetInstanceID()] = value;
+                }
+            }
 
             public string Store(object value)
             {
@@ -1259,12 +1345,20 @@ namespace SlimeNull.DuckovInterop
                     return false;
                 }
 
+                if (_unityObjects.TryGetValue(instanceId, out var unityObject) && unityObject != null)
+                {
+                    value = unityObject;
+                    return true;
+                }
+
                 value = Resources.FindObjectsOfTypeAll<UnityEngine.Object>().FirstOrDefault(obj => obj.GetInstanceID() == instanceId);
                 if (value == null)
                 {
                     error = $"Unity object with instance ID {instanceId} was not found.";
                     return false;
                 }
+
+                _unityObjects[instanceId] = (UnityEngine.Object)value;
 
                 return true;
             }
