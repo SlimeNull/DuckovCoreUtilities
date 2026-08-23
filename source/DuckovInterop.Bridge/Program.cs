@@ -181,6 +181,15 @@ namespace SlimeNull.DuckovInterop.HierarchyInspectorBridge
             return _apiClient.Invoke(api => api.GetSceneSnapshot());
         }
 
+        [McpServerTool(Name = "set_game_object_active", ReadOnly = false, Destructive = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<bool>))]
+        [Description("Set a scene GameObject's activeSelf state by instance ID.")]
+        public ApiResult<bool> SetGameObjectActive(
+            [Description("GameObject instance ID.")] string gameObjectId,
+            [Description("The new activeSelf state.")] bool active)
+        {
+            return _apiClient.Invoke(api => api.SetGameObjectActive(gameObjectId, active));
+        }
+
         [McpServerTool(Name = "get_components", ReadOnly = true, UseStructuredContent = true, OutputSchemaType = typeof(ApiResult<List<ComponentInfo>>))]
         [Description("Return all components attached to a GameObject by GameObject instance ID.")]
         public ApiResult<List<ComponentInfo>> GetComponents([Description("GameObject instance ID.")] string gameObjectId)
