@@ -1,6 +1,6 @@
+using SlimeNull.DuckovCoreUtilities.Configuration;
 using SlimeNull.DuckovCoreUtilities.Features;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
-using System.Threading.Tasks;
 using UnityEngine;
 
 namespace SlimeNull.DuckovCoreUtilities
@@ -19,24 +19,49 @@ namespace SlimeNull.DuckovCoreUtilities
             Debug.Log("loading DCU");
 
             _features = new FeatureHost(gameObject);
-            _features.Register(new DisplayPriceFeature());                     // 显示价值
-            _features.Register(new DisplayStorageCount());                     // 显示仓库物品数量
-            _features.Register(new DisplayQualityFeature());                   // 显示物品品质
-            _features.Register(new LootboxOutlineFeature());                   // 显示战利品箱轮廓
-            _features.Register(new InventorySortButtonsFeature());             // 显示仓库排序按钮
-            _features.Register(new AutoCloseBackpackFeature());                // 自动关闭背包
-            _features.Register(new AutoFadeHudWhenAimingFeature());            // 瞄准时 HUD 淡出
-            _features.Register(new BulletCountCrosshairColorFeature());        // 弹药数量准心颜色
-            _features.Register(new MuteAndPauseWhenUnfocusedFeature()
+            var displayPrice = new DisplayPriceFeature();
+            var displayStorageCount = new DisplayStorageCount();
+            var displayQuality = new DisplayQualityFeature();
+            var lootOutline = new LootboxOutlineFeature();
+            var inventorySort = new InventorySortButtonsFeature();
+            var autoCloseBackpack = new AutoCloseBackpackFeature();
+            var fadeHud = new AutoFadeHudWhenAimingFeature();
+            var crosshairColor = new BulletCountCrosshairColorFeature();
+            var unfocused = new MuteAndPauseWhenUnfocusedFeature()
             {
                 // 调试时失去焦点时不暂停游戏
 #if DEBUG
                 PauseWhenUnfocused = false,
 #endif
-            });        // 失去焦点时静音并暂停
-            _features.Register(new LowHealthInnerShadowFeature());             // 低血量内阴影
-            _features.Register(new KillRecordFeature());                       // 击杀记录
-            _features.EnableAll();
+            };
+            var lowHealthShadow = new LowHealthInnerShadowFeature();
+            var killRecord = new KillRecordFeature();
+
+            _features.Register(displayPrice);
+            _features.Register(displayStorageCount);
+            _features.Register(displayQuality);
+            _features.Register(lootOutline);
+            _features.Register(inventorySort);
+            _features.Register(autoCloseBackpack);
+            _features.Register(fadeHud);
+            _features.Register(crosshairColor);
+            _features.Register(unfocused);
+            _features.Register(lowHealthShadow);
+            _features.Register(killRecord);
+
+            var settings = new CoreUtilitiesModSettings(info, _features);
+            settings.Configure(
+                displayPrice,
+                displayStorageCount,
+                displayQuality,
+                lootOutline,
+                inventorySort,
+                autoCloseBackpack,
+                fadeHud,
+                crosshairColor,
+                unfocused,
+                lowHealthShadow,
+                killRecord);
 
             Debug.Log("loaded DCU");
         }

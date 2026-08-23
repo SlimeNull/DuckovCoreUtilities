@@ -1,5 +1,6 @@
 using EleCho.JsonRpc;
 using Jint;
+using ModSetting.Api;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
@@ -31,20 +32,21 @@ namespace SlimeNull.DuckovInterop
         private TcpListener? _listener;
         private Thread? _serverTask;
         private Engine? _jsEngine;
+        private bool _serverEnabled = true;
+        private volatile bool _diagnosticLogging;
+        private string _listenHost = HierarchyInspectorRpcEndpoint.Host;
+        private int _listenPort = HierarchyInspectorRpcEndpoint.Port;
 
         protected override void OnAfterSetup()
         {
             try
             {
                 _jsEngine = new Engine((Options cfg) => cfg.AllowClr());
-
-                _stopping = false;
-                _serverTask = new Thread(RunServerLoop)
+                ConfigureSettings();
+                if (_serverEnabled)
                 {
-                    IsBackground = true
-                };
-
-                _serverTask.Start();
+                    StartServer();
+                }
             }
             catch (Exception ex)
             {
@@ -54,8 +56,93 @@ namespace SlimeNull.DuckovInterop
 
         protected override void OnBeforeDeactivate()
         {
+            StopServer();
+
             _jsEngine?.Dispose();
             _jsEngine = null;
+        }
+
+        private void ConfigureSettings()
+        {
+            var builder = SettingsBuilder.Create(info) ?? throw new InvalidOperationException("ModSetting is not available.");
+            _serverEnabled = Load(builder, "Server.Enabled", _serverEnabled);
+            _diagnosticLogging = Load(builder, "Server.DiagnosticLogging", _diagnosticLogging);
+
+            var savedHost = Load(builder, "Server.Host", _listenHost);
+            if (IPAddress.TryParse(savedHost, out _))
+            {
+                _listenHost = savedHost;
+            }
+            else
+            {
+                Debug.LogError($"[DuckovInterop] Ignoring invalid saved listen address '{savedHost}'.");
+            }
+
+            _listenPort = Load(builder, "Server.Port", _listenPort);
+
+            builder
+                .AddToggle("Server.Enabled", "启用 JSON RPC 服务", _serverEnabled, SetServerEnabled)
+                .AddInput("Server.Host", "监听地址（重新启用服务后生效）", _listenHost, 45, value =>
+                {
+                    if (IPAddress.TryParse(value, out _))
+                    {
+                        _listenHost = value;
+                    }
+                    else
+                    {
+                        Debug.LogError($"[DuckovInterop] Invalid listen address '{value}'.");
+                    }
+                })
+                .AddSlider("Server.Port", "监听端口（重新启用服务后生效）", _listenPort, 1024, 65535, value => _listenPort = value, 5)
+                .AddToggle("Server.DiagnosticLogging", "输出 RPC 诊断日志", _diagnosticLogging, value => _diagnosticLogging = value)
+                .AddGroup("Server.Group", "JSON RPC 服务", new List<string>
+                {
+                    "Server.Enabled",
+                    "Server.Host",
+                    "Server.Port",
+                    "Server.DiagnosticLogging"
+                });
+        }
+
+        private static T Load<T>(SettingsBuilder builder, string key, T fallback)
+        {
+            return builder.GetSavedValue<T>(key, out var value) ? value : fallback;
+        }
+
+        private void SetServerEnabled(bool enabled)
+        {
+            _serverEnabled = enabled;
+            if (enabled)
+            {
+                StartServer();
+            }
+            else
+            {
+                StopServer();
+            }
+        }
+
+        private void StartServer()
+        {
+            if (_serverTask != null)
+            {
+                return;
+            }
+
+            _stopping = false;
+            _serverTask = new Thread(RunServerLoop)
+            {
+                IsBackground = true
+            };
+            _serverTask.Start();
+        }
+
+        private void StopServer()
+        {
+            if (_serverTask == null && _listener == null)
+            {
+                return;
+            }
 
             _stopping = true;
             try
@@ -97,19 +184,21 @@ namespace SlimeNull.DuckovInterop
 
         private void RunServerLoop()
         {
-            Debug.Log($"[DuckovInterop] Enter Server Loop");
+            var host = _listenHost;
+            var port = _listenPort;
+            LogDiagnostic("Enter server loop");
 
             try
             {
-                _listener = new TcpListener(IPAddress.Parse(HierarchyInspectorRpcEndpoint.Host), HierarchyInspectorRpcEndpoint.Port);
+                _listener = new TcpListener(IPAddress.Parse(host), port);
                 _listener.Start();
-                Debug.Log($"[DuckovInterop] RPC TCP listener started at {HierarchyInspectorRpcEndpoint.Host}:{HierarchyInspectorRpcEndpoint.Port}");
+                Debug.Log($"[DuckovInterop] RPC TCP listener started at {host}:{port}");
 
                 while (!_stopping)
                 {
                     var client = _listener.AcceptTcpClient();
                     TrackClient(client);
-                    Debug.Log($"[DuckovInterop] RPC client connected");
+                    LogDiagnostic("RPC client connected");
 
                     var thread = new Thread(() => RunClient(client))
                     {
@@ -132,7 +221,7 @@ namespace SlimeNull.DuckovInterop
             finally
             {
                 _listener = null;
-                Debug.Log($"[DuckovInterop] RPC listener stopped");
+                LogDiagnostic("RPC listener stopped");
             }
         }
 
@@ -144,7 +233,13 @@ namespace SlimeNull.DuckovInterop
                 using (var stream = client.GetStream())
                 using (var server = new RpcServer<IHierarchyInspectorRpc>(stream, this)
                 {
-                    DiagnosticLogger = message => Debug.Log($"[DuckovInterop/RPC] {message}")
+                    DiagnosticLogger = message =>
+                    {
+                        if (_diagnosticLogging)
+                        {
+                            Debug.Log($"[DuckovInterop/RPC] {message}");
+                        }
+                    }
                 })
                 {
                     server.Run();
@@ -160,7 +255,15 @@ namespace SlimeNull.DuckovInterop
             finally
             {
                 UntrackClient(client);
-                Debug.Log($"[DuckovInterop] RPC client disconnected");
+                LogDiagnostic("RPC client disconnected");
+            }
+        }
+
+        private void LogDiagnostic(string message)
+        {
+            if (_diagnosticLogging)
+            {
+                Debug.Log($"[DuckovInterop] {message}");
             }
         }
 
@@ -211,12 +314,12 @@ namespace SlimeNull.DuckovInterop
         {
             var requestStopwatch = Stopwatch.StartNew();
             var metrics = new SnapshotMetrics(requestStopwatch);
-            Debug.Log(
-                $"[DuckovInterop/Snapshot] Request queued for the Unity main thread; " +
+            LogDiagnostic(
+                $"Snapshot request queued for the Unity main thread; " +
                 $"fields={(includeFields ? "included" : "deferred")}.");
 
             using (var progressTimer = new Timer(
-                _ => Debug.Log($"[DuckovInterop/Snapshot] Still working: {metrics.Describe()}"),
+                _ => LogDiagnostic($"Snapshot still working: {metrics.Describe()}"),
                 null,
                 TimeSpan.FromSeconds(5),
                 TimeSpan.FromSeconds(5)))
@@ -224,8 +327,8 @@ namespace SlimeNull.DuckovInterop
                 return _dispatcher.Invoke(() =>
                 {
                     metrics.Stage = "building snapshot";
-                    Debug.Log(
-                        $"[DuckovInterop/Snapshot] Main-thread build started after " +
+                    LogDiagnostic(
+                        $"Snapshot main-thread build started after " +
                         $"{requestStopwatch.ElapsedMilliseconds} ms in the queue.");
 
                     try
@@ -240,7 +343,7 @@ namespace SlimeNull.DuckovInterop
 
                             metrics.Scene = scene.name;
                             metrics.Stage = "reading scene";
-                            Debug.Log($"[DuckovInterop/Snapshot] Reading scene '{scene.name}'.");
+                            LogDiagnostic($"Snapshot reading scene '{scene.name}'.");
 
                             var roots = scene.GetRootGameObjects();
                             scenes.Add(new InspectorScene
@@ -250,13 +353,13 @@ namespace SlimeNull.DuckovInterop
                                 Roots = roots.Select(root => CreateInspectorGameObject(root, metrics, includeFields)).ToList()
                             });
                             metrics.Scenes++;
-                            Debug.Log(
-                                $"[DuckovInterop/Snapshot] Scene '{scene.name}' completed: " +
+                            LogDiagnostic(
+                                $"Snapshot scene '{scene.name}' completed: " +
                                 $"roots={roots.Length}, {metrics.Describe()}.");
                         }
 
                         metrics.Stage = "snapshot built";
-                        Debug.Log($"[DuckovInterop/Snapshot] Build completed: {metrics.Describe()}.");
+                        LogDiagnostic($"Snapshot build completed: {metrics.Describe()}.");
                         return ApiResult<SceneSnapshot>.Success(new SceneSnapshot
                         {
                             CapturedAtUtc = DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture),
@@ -302,8 +405,8 @@ namespace SlimeNull.DuckovInterop
                 var components = unityComponents
                     .Select(component => CreateInspectorComponent(component, metrics, includeFields: true))
                     .ToList();
-                Debug.Log(
-                    $"[DuckovInterop/Snapshot] Loaded details for GameObject '{gameObject.name}' in " +
+                LogDiagnostic(
+                    $"Snapshot loaded details for GameObject '{gameObject.name}' in " +
                     $"{stopwatch.ElapsedMilliseconds} ms: components={metrics.Components}, fields={metrics.Fields}.");
                 return ApiResult<List<InspectorComponent>>.Success(components);
             });
@@ -428,7 +531,7 @@ namespace SlimeNull.DuckovInterop
                 {
                     var sw = System.Diagnostics.Stopwatch.StartNew();
                     var result = _jsEngine!.Evaluate(script);
-                    Debug.Log($"[DuckovInterop] Jint evaluation completed in {sw.ElapsedMilliseconds} ms");
+                    LogDiagnostic($"Jint evaluation completed in {sw.ElapsedMilliseconds} ms");
 
                     if (result is Jint.Runtime.Interop.ObjectWrapper wrapper)
                     {

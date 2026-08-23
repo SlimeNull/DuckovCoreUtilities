@@ -26,6 +26,32 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
             _features.Add(feature);
         }
 
+        public void SetEnabled(FeatureBase feature, bool enabled)
+        {
+            if (!_features.Contains(feature))
+            {
+                throw new InvalidOperationException($"Feature '{feature.Name}' is not registered.");
+            }
+
+            try
+            {
+                if (enabled)
+                {
+                    feature.Enable(_context);
+                }
+                else
+                {
+                    feature.Disable();
+                }
+
+                Debug.Log($"{(enabled ? "enabled" : "disabled")} {feature.Name}");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"failed to {(enabled ? "enable" : "disable")} {feature.Name}, {ex}");
+            }
+        }
+
         public void EnableAll()
         {
             foreach (var feature in _features)
@@ -35,15 +61,7 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
                     continue;
                 }
 
-                try
-                {
-                    feature.Enable(_context);
-                    Debug.Log($"enabled {feature.Name}");
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"failed to enable {feature.Name}, {ex}");
-                }
+                SetEnabled(feature, true);
             }
         }
 
