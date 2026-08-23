@@ -6,6 +6,13 @@
 
 [中文](#中文) | [English](#english)
 
+## 界面预览 / Preview
+
+<p align="center">
+  <a href="images/hierarchy_inspector.png"><img src="images/hierarchy_inspector.png" alt="场景检视器 / Hierarchy Inspector" width="57%"></a>
+  <a href="images/mcp_bridge.png"><img src="images/mcp_bridge.png" alt="MCP Bridge" width="40%"></a>
+</p>
+
 ## 中文
 
 本仓库包含两个游戏模组，以及配套的 Windows 场景检视器和互操作库：
