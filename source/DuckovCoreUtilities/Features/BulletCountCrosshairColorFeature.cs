@@ -13,6 +13,13 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private const string HarmonyCategory = nameof(BulletCountCrosshairColorFeature);
         private static BulletCountCrosshairColorFeature? ActiveFeature;
         private readonly List<CrosshairColorControllerBase> _controllers = new List<CrosshairColorControllerBase>();
+        private CrosshairColorDriver? _driver;
+        private ItemAgent_Gun? _currentGun;
+        private bool _colorDirty = true;
+        private int _lastBulletCount = -1;
+        private int _lastCapacity = -1;
+        private float _lastWarnRatio = -1f;
+        private float _nextFallbackPollTime;
 
         public override string Name => "Bullet count crosshair color";
 
@@ -21,16 +28,32 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         protected override void OnEnable()
         {
             ActiveFeature = this;
+            _colorDirty = true;
             Context.Harmony.PatchCategory(HarmonyCategory);
             LevelManager.OnAfterLevelInitialized += OnAfterLevelInitialized;
+            CharacterMainControl.OnMainCharacterChangeHoldItemAgentEvent += OnMainCharacterChangeHoldItemAgent;
+            ItemAgent_Gun.OnMainCharacterShootEvent += OnMainCharacterShoot;
+            _driver = Context.HostObject.GetComponent<CrosshairColorDriver>() ??
+                Context.HostObject.AddComponent<CrosshairColorDriver>();
+            _driver.Initialize(this);
+            SetCurrentGun(LevelManager.Instance?.MainCharacter?.GetGun());
             AttachToCrosshairs();
         }
 
         protected override void OnDisable()
         {
             LevelManager.OnAfterLevelInitialized -= OnAfterLevelInitialized;
+            CharacterMainControl.OnMainCharacterChangeHoldItemAgentEvent -= OnMainCharacterChangeHoldItemAgent;
+            ItemAgent_Gun.OnMainCharacterShootEvent -= OnMainCharacterShoot;
+            SetCurrentGun(null);
             Context.Harmony.UnpatchCategory(HarmonyCategory);
             DetachControllers();
+            if (_driver != null)
+            {
+                _driver.ClearOwner(this);
+                UnityEngine.Object.Destroy(_driver);
+                _driver = null;
+            }
             if (ReferenceEquals(ActiveFeature, this))
             {
                 ActiveFeature = null;
@@ -39,7 +62,47 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private void OnAfterLevelInitialized()
         {
+            SetCurrentGun(LevelManager.Instance?.MainCharacter?.GetGun());
             AttachToCrosshairs();
+        }
+
+        private void OnMainCharacterChangeHoldItemAgent(CharacterMainControl character, DuckovItemAgent itemAgent)
+        {
+            SetCurrentGun(itemAgent as ItemAgent_Gun);
+        }
+
+        private void OnMainCharacterShoot(ItemAgent_Gun gun)
+        {
+            if (gun == _currentGun)
+            {
+                _colorDirty = true;
+            }
+        }
+
+        private void SetCurrentGun(ItemAgent_Gun? gun)
+        {
+            if (_currentGun == gun)
+            {
+                return;
+            }
+
+            if (_currentGun != null)
+            {
+                _currentGun.OnLoadedEvent -= OnCurrentGunLoaded;
+            }
+
+            _currentGun = gun;
+            if (_currentGun != null)
+            {
+                _currentGun.OnLoadedEvent += OnCurrentGunLoaded;
+            }
+
+            _colorDirty = true;
+        }
+
+        private void OnCurrentGunLoaded()
+        {
+            _colorDirty = true;
         }
 
         private void AttachToCrosshairs()
@@ -92,6 +155,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             if (!_controllers.Contains(controller))
             {
                 _controllers.Add(controller);
+                _colorDirty = true;
             }
         }
 
@@ -109,6 +173,45 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _controllers.Clear();
         }
 
+        private void LateUpdateColors()
+        {
+            var actualGun = LevelManager.Instance?.MainCharacter?.GetGun();
+            if (actualGun != _currentGun)
+            {
+                SetCurrentGun(actualGun);
+            }
+
+            var now = Time.unscaledTime;
+            if (!_colorDirty && now < _nextFallbackPollTime)
+            {
+                return;
+            }
+
+            _nextFallbackPollTime = now + 0.5f;
+            var bulletCount = _currentGun != null ? _currentGun.BulletCount : 0;
+            var capacity = _currentGun != null ? _currentGun.Capacity : 0;
+            var warnRatio = WarnRatio;
+            if (!_colorDirty &&
+                bulletCount == _lastBulletCount &&
+                capacity == _lastCapacity &&
+                Mathf.Approximately(warnRatio, _lastWarnRatio))
+            {
+                return;
+            }
+
+            _colorDirty = false;
+            _lastBulletCount = bulletCount;
+            _lastCapacity = capacity;
+            _lastWarnRatio = warnRatio;
+
+            var color = GetCrosshairColor(bulletCount, capacity, warnRatio);
+            PruneControllers();
+            foreach (var controller in _controllers)
+            {
+                controller.ApplyColor(color);
+            }
+        }
+
         private void PruneControllers()
         {
             for (var i = _controllers.Count - 1; i >= 0; i--)
@@ -120,15 +223,14 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
         }
 
-        private static Color GetCrosshairColor(ItemAgent_Gun gun, float warnRatio)
+        private static Color GetCrosshairColor(int bulletCount, int capacity, float warnRatio)
         {
-            var capacity = gun.Capacity;
             if (capacity <= 0)
             {
                 return Color.white;
             }
 
-            var ratio = Mathf.Clamp01(gun.BulletCount / (float)capacity);
+            var ratio = Mathf.Clamp01(bulletCount / (float)capacity);
             var clampedWarnRatio = Mathf.Clamp01(warnRatio);
 
             if (ratio >= clampedWarnRatio)
@@ -163,19 +265,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 ApplyColor(Color.white);
             }
 
-            protected void LateUpdate()
-            {
-                if (OwnerFeature is null)
-                {
-                    return;
-                }
-
-                var gun = LevelManager.Instance?.MainCharacter?.GetGun();
-                var color = gun == null ? Color.white : GetCrosshairColor(gun, OwnerFeature.WarnRatio);
-                ApplyColor(color);
-            }
-
-            protected abstract void ApplyColor(Color color);
+            public abstract void ApplyColor(Color color);
 
             protected static void ApplyGraphicColor(Graphic? graphic, Color color)
             {
@@ -185,7 +275,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
 
                 var currentColor = graphic.color;
-                graphic.color = new Color(color.r, color.g, color.b, currentColor.a);
+                if (!Mathf.Approximately(currentColor.r, color.r) ||
+                    !Mathf.Approximately(currentColor.g, color.g) ||
+                    !Mathf.Approximately(currentColor.b, color.b))
+                {
+                    graphic.color = new Color(color.r, color.g, color.b, currentColor.a);
+                }
             }
         }
 
@@ -200,7 +295,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return this;
             }
 
-            protected override void ApplyColor(Color color)
+            public override void ApplyColor(Color color)
             {
                 if (_aimMarker?.aimMarkerImages is null)
                 {
@@ -217,34 +312,71 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private sealed class AdsAimMarkerColorController : CrosshairColorControllerBase
         {
             private ADSAimMarker? _adsAimMarker;
+            private readonly List<Graphic> _graphics = new List<Graphic>();
 
             public AdsAimMarkerColorController Initialize(BulletCountCrosshairColorFeature ownerFeature, ADSAimMarker adsAimMarker)
             {
                 InitializeOwner(ownerFeature);
                 _adsAimMarker = adsAimMarker;
+                _graphics.Clear();
+                if (_adsAimMarker.crosshairs is not null)
+                {
+                    foreach (var crosshair in _adsAimMarker.crosshairs)
+                    {
+                        var graphic = crosshair != null ? crosshair.GetComponent<Graphic>() : null;
+                        if (graphic != null)
+                        {
+                            _graphics.Add(graphic);
+                        }
+                    }
+                }
+
+                if (_adsAimMarker.sniperRoundRenderer != null)
+                {
+                    _graphics.Add(_adsAimMarker.sniperRoundRenderer);
+                }
+
+                if (_adsAimMarker.followSniperRoundRenderer != null)
+                {
+                    _graphics.Add(_adsAimMarker.followSniperRoundRenderer);
+                }
                 return this;
             }
 
-            protected override void ApplyColor(Color color)
+            public override void ApplyColor(Color color)
             {
                 if (_adsAimMarker == null)
                 {
                     return;
                 }
 
-                if (_adsAimMarker.crosshairs is not null)
+                foreach (var graphic in _graphics)
                 {
-                    foreach (var crosshair in _adsAimMarker.crosshairs)
-                    {
-                        if (crosshair != null)
-                        {
-                            ApplyGraphicColor(crosshair.GetComponent<Graphic>(), color);
-                        }
-                    }
+                    ApplyGraphicColor(graphic, color);
                 }
+            }
+        }
 
-                ApplyGraphicColor(_adsAimMarker.sniperRoundRenderer, color);
-                ApplyGraphicColor(_adsAimMarker.followSniperRoundRenderer, color);
+        private sealed class CrosshairColorDriver : MonoBehaviour
+        {
+            private BulletCountCrosshairColorFeature? _owner;
+
+            public void Initialize(BulletCountCrosshairColorFeature owner)
+            {
+                _owner = owner;
+            }
+
+            public void ClearOwner(BulletCountCrosshairColorFeature owner)
+            {
+                if (ReferenceEquals(_owner, owner))
+                {
+                    _owner = null;
+                }
+            }
+
+            private void LateUpdate()
+            {
+                _owner?.LateUpdateColors();
             }
         }
 

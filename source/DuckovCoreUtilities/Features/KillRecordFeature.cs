@@ -55,8 +55,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private void OnHealthDead(Health health, DamageInfo damageInfo)
         {
-            Debug.Log($"[KillRecordFeature] Health.OnDead health={health?.name}, team={health?.team.ToString() ?? "null"}, from={damageInfo.fromCharacter?.name ?? "null"}, fromIsMain={damageInfo.fromCharacter?.IsMainCharacter.ToString() ?? "null"}");
-
             if (!IsPlayerKill(health, damageInfo))
             {
                 return;
@@ -83,13 +81,22 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             UpdatePanelHeight();
             _panel.SetActive(true);
             LayoutRebuilder.ForceRebuildLayoutImmediate(_contentRoot);
-            Debug.Log($"[KillRecordFeature] Added kill record: {victimName}, count={_records.Count}");
             Object.Destroy(line, Mathf.Max(0.01f, RecordDuration));
         }
 
         public override void Tick()
         {
+            if (_records.Count <= 0)
+            {
+                return;
+            }
+
+            var previousCount = _records.Count;
             PruneDestroyedRecords();
+            if (_records.Count == previousCount)
+            {
+                return;
+            }
 
             if (_panel != null &&
                 _panel.activeSelf &&
@@ -98,7 +105,10 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 _panel.SetActive(false);
             }
 
-            UpdatePanelHeight();
+            if (_records.Count > 0)
+            {
+                UpdatePanelHeight();
+            }
         }
 
         private static bool IsPlayerKill(Health? health, DamageInfo damageInfo)
@@ -137,7 +147,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             SetupPanelTransform(source.GetComponent<RectTransform>(), cloned.GetComponent<RectTransform>());
             SetupContentRoot(cloned);
-            Debug.Log($"[KillRecordFeature] Created panel under {cloned.transform.parent.name}, sibling={cloned.transform.GetSiblingIndex()}.");
         }
 
         private static GameObject? FindOperationPanel()
