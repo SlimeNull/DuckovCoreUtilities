@@ -27,6 +27,13 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(new AutoCloseBackpackFeature());                // 自动关闭背包
             _features.Register(new AutoFadeHudWhenAimingFeature());            // 瞄准时 HUD 淡出
             _features.Register(new BulletCountCrosshairColorFeature());        // 弹药数量准心颜色
+            _features.Register(new MuteAndPauseWhenUnfocusedFeature()
+            {
+                // 调试时失去焦点时不暂停游戏
+#if DEBUG
+                PauseWhenUnfocused = false,
+#endif
+            });        // 失去焦点时静音并暂停
             _features.Register(new LowHealthInnerShadowFeature());             // 低血量内阴影
             _features.Register(new KillRecordFeature());                       // 击杀记录
             _features.EnableAll();

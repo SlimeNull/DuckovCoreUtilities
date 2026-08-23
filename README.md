@@ -19,6 +19,7 @@ Quality-of-life utilities for *Escape from Duckov*, focused on inventory handlin
 - **Auto close backpack**: closes active loot/inventory view when moving or when hurt.
 - **Fade HUD when aiming**: fades HUD panels while aiming down sights.
 - **Bullet-count crosshair color**: changes crosshair color as magazine ammo gets low.
+- **Mute and pause when unfocused**: mutes the master audio bus and opens the pause menu when the game loses focus.
 - **Low health inner shadow**: draws a configurable red screen-edge vignette at low health.
 
 ## Configuration
