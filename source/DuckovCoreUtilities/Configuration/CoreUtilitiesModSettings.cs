@@ -173,7 +173,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             {
                 feature.RecordFormat = recordFormat;
             }
-            AddEnabled(prefix, "击杀记录", feature);
+            AddEnabled(prefix, "击杀记录", feature, false);
             _builder
                 .AddSlider(prefix + ".Duration", "记录显示时间（秒）", feature.RecordDuration, new Vector2(1f, 30f), value => feature.RecordDuration = value, 1)
                 .AddSlider(prefix + ".MaxCount", "最多显示条数", feature.MaxRecordCount, 1, 20, value => feature.MaxRecordCount = value)
@@ -206,9 +206,9 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             AddGroup(prefix, description, prefix + ".Enabled");
         }
 
-        private void AddEnabled(string prefix, string description, FeatureBase feature)
+        private void AddEnabled(string prefix, string description, FeatureBase feature, bool defaultValue = true)
         {
-            var enabled = Load(prefix + ".Enabled", true);
+            var enabled = Load(prefix + ".Enabled", defaultValue);
             _builder.AddToggle(prefix + ".Enabled", "启用" + description, enabled, value => _host.SetEnabled(feature, value));
             _host.SetEnabled(feature, enabled);
         }
