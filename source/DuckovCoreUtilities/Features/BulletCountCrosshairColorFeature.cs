@@ -238,10 +238,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                     {
                         if (crosshair != null)
                         {
-                            foreach (var graphic in crosshair.GetComponentsInChildren<Graphic>(true))
-                            {
-                                ApplyGraphicColor(graphic, color);
-                            }
+                            ApplyGraphicColor(crosshair.GetComponent<Graphic>(), color);
                         }
                     }
                 }
