@@ -12,6 +12,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private bool _capturedMuteState;
         private bool _muteStateBeforeFocusLoss;
         private bool _focused;
+        private bool _evacuationStarted;
         private float _nextUnfocusedRetryTime;
 
         public override string Name => "Mute and pause when unfocused";
@@ -22,6 +23,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         protected override void OnEnable()
         {
+            _evacuationStarted = false;
+            LevelManager.OnEvacuated += OnEvacuated;
+            LevelManager.OnAfterLevelInitialized += OnAfterLevelInitialized;
             _focusWatcher = Context.HostObject.GetComponent<FocusWatcher>() ?? Context.HostObject.AddComponent<FocusWatcher>();
             _focusWatcher.Initialize(this);
             SetFocused(Application.isFocused, force: true);
@@ -29,8 +33,11 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         protected override void OnDisable()
         {
+            LevelManager.OnAfterLevelInitialized -= OnAfterLevelInitialized;
+            LevelManager.OnEvacuated -= OnEvacuated;
             _focusWatcher?.ClearOwner(this);
             _focusWatcher = null;
+            _evacuationStarted = false;
             RestoreMuteState();
         }
 
@@ -112,19 +119,53 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _capturedMuteState = false;
         }
 
-        private static void EnsurePauseMenuShown()
+        private void EnsurePauseMenuShown()
         {
             if (GameManager.Instance == null ||
                 LevelManager.Instance == null ||
+                !LevelManager.LevelInited ||
                 SceneLoader.IsSceneLoading ||
                 PauseMenu.Instance == null ||
-                PauseMenu.Instance.Shown)
+                PauseMenu.Instance.Shown ||
+                !CanPauseCurrentGameplay())
             {
                 return;
             }
 
-            View.ActiveView?.Close();
             PauseMenu.Show();
+        }
+
+        private bool CanPauseCurrentGameplay()
+        {
+            if (_evacuationStarted || !InputManager.InputActived)
+            {
+                return false;
+            }
+
+            var levelManager = LevelManager.Instance;
+            var mainCharacter = levelManager?.MainCharacter;
+            var controllingCharacter = levelManager?.ControllingCharacter;
+            if (mainCharacter == null ||
+                controllingCharacter == null ||
+                !mainCharacter.gameObject.activeInHierarchy ||
+                !controllingCharacter.gameObject.activeInHierarchy ||
+                mainCharacter.Health == null ||
+                mainCharacter.Health.IsDead)
+            {
+                return false;
+            }
+
+            return controllingCharacter.CanMove();
+        }
+
+        private void OnEvacuated(EvacuationInfo _)
+        {
+            _evacuationStarted = true;
+        }
+
+        private void OnAfterLevelInitialized()
+        {
+            _evacuationStarted = false;
         }
 
         private sealed class FocusWatcher : MonoBehaviour
