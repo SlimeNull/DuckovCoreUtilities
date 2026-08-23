@@ -1,11 +1,11 @@
 using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace EleCho.JsonRpc
 {
     internal abstract record class RpcPackage
     {
-        [JsonProperty("jsonrpc")]
+        [JsonPropertyName("jsonrpc")]
         public string JsonRpc => "2.0";
     }
 
@@ -64,16 +64,16 @@ namespace EleCho.JsonRpc
             Id = id;
         }
 
-        [JsonProperty("method")]
+        [JsonPropertyName("method")]
         public string Method { get; }
 
-        [JsonProperty("params")]
+        [JsonPropertyName("params")]
         public object?[]? Args { get; }
 
-        [JsonProperty("signature")]
+        [JsonPropertyName("signature")]
         public string? Signature { get; }
 
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public RpcPackageId? Id { get; }
     }
 
@@ -87,13 +87,13 @@ namespace EleCho.JsonRpc
             Id = id;
         }
 
-        [JsonProperty("result")]
+        [JsonPropertyName("result")]
         public object? Result { get; }
 
-        [JsonProperty("ref_results")]
+        [JsonPropertyName("ref_results")]
         public object?[]? RefResults { get; }
 
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public RpcPackageId Id { get; }
     }
 
@@ -106,10 +106,10 @@ namespace EleCho.JsonRpc
             Id = id;
         }
 
-        [JsonProperty("error")]
+        [JsonPropertyName("error")]
         public RpcError Error { get; }
 
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public RpcPackageId Id { get; }
     }
 
@@ -127,13 +127,13 @@ namespace EleCho.JsonRpc
             this((int)code, message, data)
         { }
 
-        [JsonProperty("code")]
+        [JsonPropertyName("code")]
         public int Code { get; }
 
-        [JsonProperty("message")]
+        [JsonPropertyName("message")]
         public string Message { get; }
 
-        [JsonProperty("data")]
+        [JsonPropertyName("data")]
         public object? Data { get; }
 
         [JsonIgnore]

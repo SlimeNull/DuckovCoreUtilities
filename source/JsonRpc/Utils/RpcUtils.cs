@@ -5,10 +5,9 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Reflection;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 
 #if NETSTANDARD2_0
 #pragma warning disable CS8604 // 引用类型参数可能为 null。
@@ -104,8 +103,7 @@ namespace EleCho.JsonRpc.Utils
             MethodInfo targetMethod, ParameterInfo[] targetMethodParams,
             object? retOrigin, object?[]? refRetOrigin, ref object?[]? args, out object? ret)
         {
-            ret =
-                retOrigin is JToken jret ? jret.ToObject(targetMethod.ReturnType, JsonUtils.Serializer) : retOrigin;
+            ret = JsonUtils.ConvertToType(retOrigin, targetMethod.ReturnType);
 
             if (refRetOrigin != null && args != null)
             {
@@ -118,11 +116,7 @@ namespace EleCho.JsonRpc.Utils
                         if (paramType.IsByRef)
                             paramType = paramType.GetElementType()!;
 
-                        object? arg = refRetOrigin[i];
-                        if (arg is JToken jarg)
-                            arg = jarg.ToObject(paramType, JsonUtils.Serializer);
-
-                        args[i] = arg;
+                        args[i] = JsonUtils.ConvertToType(refRetOrigin[i], paramType);
                     }
                 }
             }
@@ -339,7 +333,7 @@ namespace EleCho.JsonRpc.Utils
 
                 object?[] convertedArg = new object[source.Length];
                 for (int i = 0; i < convertedArg.Length; i++)
-                    if (source[i] is JToken ele)
+                    if (source[i] is JsonElement element)
                     {
                         Type paramType = parameterInfos[i].ParameterType;
                         if (paramType.IsByRef)
@@ -348,7 +342,7 @@ namespace EleCho.JsonRpc.Utils
                             refArgCount++;
                         }
 
-                        convertedArg[i] = ele.ToObject(paramType, JsonUtils.Serializer);
+                        convertedArg[i] = JsonUtils.ConvertToType(element, paramType);
                     }
                     else
                     {
@@ -608,7 +602,7 @@ namespace EleCho.JsonRpc.Utils
             try
             {
                 writeLock.Wait();
-                string json = JsonConvert.SerializeObject(package, JsonUtils.Settings);
+                string json = JsonUtils.SerializePackage(package);
 
                 writer.WriteLine(json);
 
@@ -628,32 +622,64 @@ namespace EleCho.JsonRpc.Utils
             this StreamWriter writer,
             SemaphoreSlim writeLock,
             RpcPackage package,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default,
+            Action<string>? diagnosticLog = null)
         {
+            var totalStopwatch = Stopwatch.StartNew();
+            var lockTaken = false;
             try
             {
                 Trace.WriteLine($"RPC ? before wait write lock");
                 await writeLock.WaitAsync();
+                lockTaken = true;
 
-                string json = JsonConvert.SerializeObject(package, JsonUtils.Settings);
+                string maxDepth = JsonUtils.Options.MaxDepth == 0
+                    ? "default (64)"
+                    : JsonUtils.Options.MaxDepth.ToString();
+                WriteDiagnostic(diagnosticLog,
+                    $"Serializing {package.GetType().Name} response with maxDepth={maxDepth}.");
+                var serializationStopwatch = Stopwatch.StartNew();
+                string json = JsonUtils.SerializePackage(package);
+                serializationStopwatch.Stop();
+                WriteDiagnostic(diagnosticLog,
+                    $"Serialized {package.GetType().Name}: {json.Length} chars in {serializationStopwatch.ElapsedMilliseconds} ms.");
 
-                Trace.WriteLine($"RPC ? send: {json}");
+                Trace.WriteLine($"RPC send {package.GetType().Name}: {json.Length} chars");
+                var writeStopwatch = Stopwatch.StartNew();
 #if NET6_0_OR_GREATER
                 await writer.WriteLineAsync(json.AsMemory(), cancellationToken);
 #else
                 await writer.WriteLineAsync(json);
 #endif
+                writeStopwatch.Stop();
+                WriteDiagnostic(diagnosticLog,
+                    $"Wrote {package.GetType().Name}: {json.Length} chars in {writeStopwatch.ElapsedMilliseconds} ms " +
+                    $"({totalStopwatch.ElapsedMilliseconds} ms total).");
 
                 return true;
             }
             catch (Exception ex)
             {
                 Trace.WriteLine($"Failed to send package: {ex}");
+                WriteDiagnostic(diagnosticLog,
+                    $"Failed to serialize or write {package.GetType().Name} after {totalStopwatch.ElapsedMilliseconds} ms: {ex}");
                 return false;
             }
             finally
             {
-                writeLock.Release();
+                if (lockTaken)
+                    writeLock.Release();
+            }
+        }
+
+        private static void WriteDiagnostic(Action<string>? diagnosticLog, string message)
+        {
+            try
+            {
+                diagnosticLog?.Invoke(message);
+            }
+            catch
+            {
             }
         }
 
@@ -678,7 +704,7 @@ namespace EleCho.JsonRpc.Utils
                     return null;
 
                 Trace.WriteLine($"ReadPackageAsync: {json}");
-                return JsonConvert.DeserializeObject<RpcPackage>(json, JsonUtils.Settings);
+                return JsonSerializer.Deserialize<RpcPackage>(json, JsonUtils.Options);
             }
             catch (IOException)
             {

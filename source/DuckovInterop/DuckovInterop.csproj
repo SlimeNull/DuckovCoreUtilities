@@ -13,6 +13,7 @@
   <ItemGroup>
     <PackageReference Include="Jint" Version="4.10.1" />
     <PackageReference Include="Lib.Harmony" Version="2.4.2" />
+    <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
@@ -116,4 +117,11 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <!-- STJ targets netstandard2.0 and needs the matching IAsyncDisposable/ValueTask identity on Unity Mono. -->
+  <Target Name="UseNetStandard20AsyncInterfaces" AfterTargets="CopyFilesToOutputDirectory">
+    <Copy
+      SourceFiles="$(PkgMicrosoft_Bcl_AsyncInterfaces)\lib\netstandard2.0\Microsoft.Bcl.AsyncInterfaces.dll"
+      DestinationFiles="$(TargetDir)Microsoft.Bcl.AsyncInterfaces.dll" />
+  </Target>
 </Project>

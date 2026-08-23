@@ -5,7 +5,7 @@ using System.IO;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.Text.Json;
 
 #if NET6_0_OR_GREATER
 using System.Threading.Tasks.Dataflow;

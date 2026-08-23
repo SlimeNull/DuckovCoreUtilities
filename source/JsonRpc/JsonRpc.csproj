@@ -38,10 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>$(ManagedPath)\Newtonsoft.Json.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
+    <PackageReference Include="System.Text.Json" Version="8.0.6" />
   </ItemGroup>
 
 </Project>
