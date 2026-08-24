@@ -286,6 +286,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private sealed class AimMarkerColorController : CrosshairColorControllerBase
         {
+            [SerializeField]
             private AimMarker? _aimMarker;
 
             public AimMarkerColorController Initialize(BulletCountCrosshairColorFeature ownerFeature, AimMarker aimMarker)
@@ -311,6 +312,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private sealed class AdsAimMarkerColorController : CrosshairColorControllerBase
         {
+            [SerializeField]
             private ADSAimMarker? _adsAimMarker;
             private readonly List<Graphic> _graphics = new List<Graphic>();
 

@@ -582,6 +582,12 @@ namespace SlimeNull.DuckovInterop
                     {
                         return ApiResult<ValueInfo>.Failure("The target path is not assignable.");
                     }
+
+                    if (root is UnityEngine.UI.Graphic graphic &&
+                        (string.Equals(path, "m_Color", StringComparison.Ordinal) || path.StartsWith("m_Color.", StringComparison.Ordinal)))
+                    {
+                        graphic.SetVerticesDirty();
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -1062,7 +1068,8 @@ namespace SlimeNull.DuckovInterop
 
         private static bool IsUnitySerializableType(Type type)
         {
-            if (type.IsPrimitive || type.IsEnum || type == typeof(string) || typeof(UnityEngine.Object).IsAssignableFrom(type))
+            if (type.IsPrimitive || type.IsEnum || type == typeof(string) ||
+                typeof(UnityEngine.Object).IsAssignableFrom(type) || IsSupportedUnityStruct(type))
             {
                 return true;
             }
@@ -1078,6 +1085,15 @@ namespace SlimeNull.DuckovInterop
             }
 
             return type.IsSerializable;
+        }
+
+        private static bool IsSupportedUnityStruct(Type type)
+        {
+            return type == typeof(Vector2) ||
+                type == typeof(Vector3) ||
+                type == typeof(Vector4) ||
+                type == typeof(Quaternion) ||
+                type == typeof(Color);
         }
 
         private static SerializedFieldInfo CreateValueField(string name, string displayName, Type declaredType, object? value, string path, int depth, HashSet<object> visited, bool canWrite = true)
@@ -1581,7 +1597,7 @@ namespace SlimeNull.DuckovInterop
                 var name = match.Groups["name"].Value;
                 var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
                 var property = currentType.GetProperty(name, flags);
-                var field = currentType.GetField(name, flags);
+                var field = FindFieldInHierarchy(currentType, name, flags);
 
                 object? value;
                 Type? valueType;
@@ -1646,6 +1662,20 @@ namespace SlimeNull.DuckovInterop
                 }
 
                 return new PathAccess { Success = true, Value = value, MemberType = valueType, SetValue = setter };
+            }
+
+            private static FieldInfo? FindFieldInHierarchy(Type type, string name, BindingFlags flags)
+            {
+                for (Type? current = type; current != null; current = current.BaseType)
+                {
+                    var field = current.GetField(name, flags | BindingFlags.DeclaredOnly);
+                    if (field != null)
+                    {
+                        return field;
+                    }
+                }
+
+                return null;
             }
 
             private static bool TryGetIndexed(object target, string indexToken, out object? value, out Type? valueType, out Func<object?, bool> setter, out string error)
@@ -1837,11 +1867,7 @@ namespace SlimeNull.DuckovInterop
             {
                 return IsSupportedPrimitive(type) ||
                     typeof(UnityEngine.Object).IsAssignableFrom(type) ||
-                    type == typeof(Vector2) ||
-                    type == typeof(Vector3) ||
-                    type == typeof(Vector4) ||
-                    type == typeof(Quaternion) ||
-                    type == typeof(Color);
+                    IsSupportedUnityStruct(type);
             }
 
             public static bool IsSupportedPrimitive(Type type)

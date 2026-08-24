@@ -56,7 +56,7 @@ public sealed class InspectorFieldView : ContentControl
     }
 
     private static bool IsCompound(InspectorFieldViewModel field) =>
-        field.Kind is "Array" or "Object" || field.Children.Count > 0 && field.Kind is not ("Vector2" or "Vector3" or "Vector4" or "Quaternion");
+        field.Kind is "Array" or "Object" || field.Children.Count > 0 && field.Kind is not ("Vector2" or "Vector3" or "Vector4" or "Quaternion" or "Color");
 
     private static FrameworkElement CreateCompound(InspectorFieldViewModel field)
     {
@@ -233,9 +233,12 @@ public sealed class InspectorFieldView : ContentControl
         var swatch = new Border
         {
             Margin = new Thickness(0, 1, 5, 1),
-            Background = ParseColor(field.Value),
             Style = ThemeStyle("InspectorColorSwatchStyle")
         };
+        swatch.SetBinding(Border.BackgroundProperty, new Binding(nameof(InspectorFieldViewModel.Value))
+        {
+            Converter = ColorBrushConverter.Instance
+        });
         panel.Children.Add(swatch);
         var channels = (Grid)CreateVectorEditor(field);
         Grid.SetColumn(channels, 1);
@@ -252,6 +255,15 @@ public sealed class InspectorFieldView : ContentControl
             return new SolidColorBrush(Color.FromArgb((byte)(parsed[3] * 255), (byte)(parsed[0] * 255), (byte)(parsed[1] * 255), (byte)(parsed[2] * 255)));
         }
         return Brushes.Transparent;
+    }
+
+    private sealed class ColorBrushConverter : IValueConverter
+    {
+        public static readonly ColorBrushConverter Instance = new();
+
+        public object Convert(object value, Type targetType, object parameter, CultureInfo culture) => ParseColor(value as string);
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => Binding.DoNothing;
     }
 
     private static FrameworkElement CreateObjectReference(InspectorFieldViewModel field)
