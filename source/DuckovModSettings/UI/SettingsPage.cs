@@ -95,7 +95,10 @@ namespace SlimeNull.DuckovModSettings.UI
 
             var templateHeight = Mathf.Max(0f, _layoutTemplate.rect.height);
             var minimumHeight = Mathf.Max(0f, LayoutUtility.GetMinHeight(_layoutTemplate));
-            var preferredHeight = Mathf.Max(templateHeight, LayoutUtility.GetPreferredHeight(_layoutTemplate));
+            var preferredHeight = Mathf.Max(
+                templateHeight,
+                LayoutUtility.GetPreferredHeight(_layoutTemplate),
+                GetAvailablePageHeight());
             if (preferredHeight <= 0f)
             {
                 return;
@@ -104,6 +107,39 @@ namespace SlimeNull.DuckovModSettings.UI
             _pageLayout.minHeight = Mathf.Min(minimumHeight, preferredHeight);
             _pageLayout.preferredHeight = preferredHeight;
             _pageLayout.flexibleHeight = Mathf.Max(0f, LayoutUtility.GetFlexibleHeight(_layoutTemplate));
+        }
+
+        private float GetAvailablePageHeight()
+        {
+            if (!gameObject.activeInHierarchy ||
+                transform.parent is not RectTransform content ||
+                content.parent is not RectTransform viewport)
+            {
+                return 0f;
+            }
+
+            var availableHeight = viewport.rect.height;
+            var layout = content.GetComponent<VerticalLayoutGroup>();
+            if (layout == null)
+            {
+                return Mathf.Max(0f, availableHeight);
+            }
+
+            availableHeight -= layout.padding.top + layout.padding.bottom;
+            var activeSiblings = 0;
+            for (var i = 0; i < content.childCount; i++)
+            {
+                var child = content.GetChild(i) as RectTransform;
+                if (child == null || child == transform || !child.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                activeSiblings++;
+                availableHeight -= Mathf.Max(0f, LayoutUtility.GetPreferredHeight(child));
+            }
+            availableHeight -= activeSiblings * layout.spacing;
+            return Mathf.Max(0f, availableHeight);
         }
 
         private void OnDestroy()
@@ -125,7 +161,13 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void Update()
         {
-            if (_rebuildRequested && gameObject.activeInHierarchy)
+            if (!gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            RefreshPageLayout();
+            if (_rebuildRequested)
             {
                 _rebuildRequested = false;
                 RebuildNavigation();
