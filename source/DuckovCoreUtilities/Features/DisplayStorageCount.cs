@@ -2,14 +2,18 @@
 using HarmonyLib;
 using ItemStatsSystem;
 using SlimeNull.DuckovCoreUtilities.Features.Abstraction;
+using SodaCraft.Localizations;
 using System.Collections.Generic;
 using System.Linq;
+using UnityEngine;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal sealed class DisplayStorageCount : ItemInfoDisplayFeature
     {
         private const string PatchCatagory = nameof(DisplayStorageCount);
+        private const string CarryLocalizationKey = "SlimeNull.DuckovCoreUtilities.StorageCount.Carry";
+        private const string RepositoryLocalizationKey = "SlimeNull.DuckovCoreUtilities.StorageCount.Repository";
         private record struct ItemStorageNameAndCount(string StorageName, int ItemCount);
 
         private readonly List<ItemStorageNameAndCount> _storageCountCache = new List<ItemStorageNameAndCount>();
@@ -30,6 +34,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             base.OnEnable();
 
+            LocalizationManager.OnSetLanguage += UpdateLocalizedStorageNames;
+            UpdateLocalizedStorageNames(LocalizationManager.CurrentLanguage);
             Context.Harmony.PatchCategory(PatchCatagory);
         }
 
@@ -37,7 +43,20 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             base.OnDisable();
 
+            LocalizationManager.OnSetLanguage -= UpdateLocalizedStorageNames;
+            LocalizationManager.RemoveOverrideText(CarryLocalizationKey);
+            LocalizationManager.RemoveOverrideText(RepositoryLocalizationKey);
             Context.Harmony.UnpatchCategory(PatchCatagory);
+        }
+
+        private static void UpdateLocalizedStorageNames(SystemLanguage language)
+        {
+            bool isChinese = language == SystemLanguage.Chinese ||
+                language == SystemLanguage.ChineseSimplified ||
+                language == SystemLanguage.ChineseTraditional;
+
+            LocalizationManager.SetOverrideText(CarryLocalizationKey, isChinese ? "携带" : "Carry");
+            LocalizationManager.SetOverrideText(RepositoryLocalizationKey, isChinese ? "库存" : "Repo");
         }
 
         private int GetItemCountInInventory(Inventory? inventoryToSearch, int itemTypeID)
@@ -91,9 +110,13 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _storageCountCache.Clear();
 
             if (DisplayItemCountInBackpack)
-                _storageCountCache.Add(new ItemStorageNameAndCount("Carry", GetItemCountInBackpack(item)));
+                _storageCountCache.Add(new ItemStorageNameAndCount(
+                    LocalizationManager.GetPlainText(CarryLocalizationKey),
+                    GetItemCountInBackpack(item)));
             if (DisplayItemCountInRepository)
-                _storageCountCache.Add(new ItemStorageNameAndCount("Repo", GetItemCountInRepository(item)));
+                _storageCountCache.Add(new ItemStorageNameAndCount(
+                    LocalizationManager.GetPlainText(RepositoryLocalizationKey),
+                    GetItemCountInRepository(item)));
 
             return string.Join(", ", _storageCountCache.Select(kv => $"{kv.StorageName}: {kv.ItemCount}"));
         }
