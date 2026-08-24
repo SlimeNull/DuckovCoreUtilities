@@ -144,6 +144,7 @@ public sealed class InspectorComponentViewModel : INotifyPropertyChanged
     public InspectorComponent Source { get; }
     public string Name => Source.Name ?? "Component";
     public string ShortType => (Source.Type ?? string.Empty).Split('.').LastOrDefault() ?? string.Empty;
+    public int InstanceID => Source.InstanceID;
     public bool? Enabled
     {
         get => _enabled;

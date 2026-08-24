@@ -183,8 +183,11 @@
                                                                     <ColumnDefinition Width="Auto" />
                                                                 </Grid.ColumnDefinitions>
                                                                 <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                                                <TextBlock Grid.Column="2" Text="{Binding ShortType}" Foreground="{StaticResource MutedTextBrush}"
-                                            FontSize="10" VerticalAlignment="Center" Margin="10,0,8,0" />
+                                                                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="10,0,8,0">
+                                                                    <TextBlock Text="{Binding ShortType}" Foreground="{StaticResource MutedTextBrush}" FontSize="10" />
+                                                                    <TextBlock Text="{Binding InstanceID, StringFormat=ID: {0}}" Foreground="{StaticResource MutedTextBrush}"
+                                                                               FontSize="10" Margin="8,0,0,0" />
+                                                                </StackPanel>
                                                             </Grid>
                                                         </Expander.Header>
                                                         <StackPanel Margin="8,2,8,9">
