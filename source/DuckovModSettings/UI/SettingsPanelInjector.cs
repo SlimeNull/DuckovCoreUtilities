@@ -101,7 +101,7 @@ namespace SlimeNull.DuckovModSettings.UI
             var tabLabel = buttonObject.GetComponentInChildren<TMP_Text>(includeInactive: true);
             if (tabLabel != null)
             {
-                tabLabel.text = "模组";
+                tabLabel.text = "模组设置";
             }
 
             var pageObject = new GameObject("DuckovModSettings_Content", typeof(RectTransform));
