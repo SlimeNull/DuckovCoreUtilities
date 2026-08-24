@@ -100,7 +100,8 @@ namespace SlimeNull.DuckovModSettings.UI
             Color? foreground = null)
         {
             var rect = Rect(name, parent);
-            var image = AddImage(rect.gameObject, background ?? RaisedBackground, ControlRadius);
+            rect.gameObject.SetActive(false);
+            var image = AddImage(rect.gameObject, Color.white, ControlRadius);
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             button.colors = ButtonColors(background ?? RaisedBackground);
@@ -112,6 +113,7 @@ namespace SlimeNull.DuckovModSettings.UI
 
             var text = Text("Label", rect, font, label, 20f, foreground ?? TextPrimary, alignment);
             Stretch(text.rectTransform, 12f, 2f, 12f, 2f);
+            rect.gameObject.SetActive(true);
             return button;
         }
 
@@ -210,12 +212,15 @@ namespace SlimeNull.DuckovModSettings.UI
             AddImage(fill.gameObject, SecondaryAccent, 3f);
 
             var handleArea = Rect("Handle Slide Area", root);
-            Stretch(handleArea, 8f, 0f, 8f, 0f);
+            handleArea.anchorMin = new Vector2(0f, 0.5f);
+            handleArea.anchorMax = new Vector2(1f, 0.5f);
+            handleArea.offsetMin = new Vector2(8f, -8f);
+            handleArea.offsetMax = new Vector2(-8f, 8f);
             var handle = Rect("Handle", handleArea);
-            handle.anchorMin = new Vector2(0f, 0.5f);
-            handle.anchorMax = new Vector2(0f, 0.5f);
+            handle.anchorMin = new Vector2(0f, 0f);
+            handle.anchorMax = new Vector2(0f, 1f);
             handle.pivot = new Vector2(0.5f, 0.5f);
-            handle.sizeDelta = new Vector2(16f, 16f);
+            handle.sizeDelta = new Vector2(16f, 8f);
             var handleImage = AddImage(handle.gameObject, InputBackground, 8f);
 
             slider.fillRect = fill;

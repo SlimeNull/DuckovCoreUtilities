@@ -308,6 +308,18 @@ namespace SlimeNull.DuckovModSettings.UI
                 return;
             }
 
+            if (_selectedMod?.Components.Count == 1)
+            {
+                foreach (var node in component.Nodes)
+                {
+                    if (NodeMatches(node, query))
+                    {
+                        RenderNode(_settingsContent, node, query, forceChildren: DirectMatch(node, query));
+                    }
+                }
+                return;
+            }
+
             var group = CreateGroupShell(
                 _settingsContent,
                 component.ComponentKey,
@@ -635,7 +647,6 @@ namespace SlimeNull.DuckovModSettings.UI
             {
                 var selected = _selectedMod?.Id == pair.Key;
                 var background = selected ? UiFactory.SelectedBackground : UiFactory.RaisedBackground;
-                pair.Value.Button.targetGraphic.color = background;
                 pair.Value.Button.colors = UiFactory.ButtonColors(background);
                 pair.Value.Marker.color = selected ? Color.white : Color.clear;
             }
