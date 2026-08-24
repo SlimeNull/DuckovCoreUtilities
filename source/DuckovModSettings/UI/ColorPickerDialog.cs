@@ -9,6 +9,7 @@ namespace SlimeNull.DuckovModSettings.UI
 {
     internal sealed class ColorPickerDialog : MonoBehaviour
     {
+        private static ColorPickerDialog? _current;
         private readonly Slider[] _sliders = new Slider[4];
         private readonly TMP_InputField[] _inputs = new TMP_InputField[4];
         private SettingsPage? _page;
@@ -16,22 +17,36 @@ namespace SlimeNull.DuckovModSettings.UI
         private TMP_FontAsset? _font;
         private Image? _preview;
         private TMP_InputField? _hexInput;
+        private bool _closing;
         private bool _updating;
 
         public static void Show(SettingsPage page, SettingNode node, TMP_FontAsset? font)
         {
-            var existing = page.transform.Find("Color Picker Overlay");
-            if (existing != null)
+            if (_current != null)
             {
-                existing.gameObject.SetActive(false);
-                Destroy(existing.gameObject);
+                _current.Close();
             }
 
-            var overlay = UiFactory.Rect("Color Picker Overlay", page.transform);
+            var rootCanvas = page.GetComponentInParent<Canvas>()?.rootCanvas;
+            var overlayParent = rootCanvas != null ? rootCanvas.transform : page.transform.root;
+            var overlay = UiFactory.Rect("DuckovModSettings Color Picker Overlay", overlayParent);
+            overlay.gameObject.SetActive(false);
             UiFactory.Stretch(overlay);
             overlay.SetAsLastSibling();
+
+            if (rootCanvas != null)
+            {
+                var overlayCanvas = overlay.gameObject.AddComponent<Canvas>();
+                overlayCanvas.overrideSorting = true;
+                overlayCanvas.sortingLayerID = rootCanvas.sortingLayerID;
+                overlayCanvas.sortingOrder = rootCanvas.sortingOrder + 100;
+                overlay.gameObject.AddComponent<GraphicRaycaster>();
+            }
+
             var dialog = overlay.gameObject.AddComponent<ColorPickerDialog>();
+            _current = dialog;
             dialog.Initialize(page, node, font);
+            overlay.gameObject.SetActive(true);
         }
 
         private void Initialize(SettingsPage page, SettingNode node, TMP_FontAsset? font)
@@ -40,9 +55,10 @@ namespace SlimeNull.DuckovModSettings.UI
             _node = node;
             _font = font;
 
-            var blocker = UiFactory.AddImage(gameObject, new Color(0f, 0f, 0f, 0.72f));
+            var blocker = UiFactory.AddImage(gameObject, new Color(0f, 0f, 0f, 0.72f), 0f);
             var blockerButton = gameObject.AddComponent<Button>();
             blockerButton.targetGraphic = blocker;
+            blockerButton.transition = Selectable.Transition.None;
             blockerButton.onClick.AddListener(Close);
 
             var panel = UiFactory.Rect("Dialog", transform);
@@ -51,7 +67,7 @@ namespace SlimeNull.DuckovModSettings.UI
             panel.pivot = new Vector2(0.5f, 0.5f);
             panel.sizeDelta = new Vector2(560f, 510f);
             panel.anchoredPosition = Vector2.zero;
-            UiFactory.AddImage(panel.gameObject, UiFactory.PanelBackground);
+            UiFactory.AddImage(panel.gameObject, UiFactory.PanelBackground, UiFactory.PanelRadius);
             var panelBlocker = panel.gameObject.AddComponent<Button>();
             panelBlocker.targetGraphic = panel.GetComponent<Image>();
             panelBlocker.transition = Selectable.Transition.None;
@@ -82,7 +98,7 @@ namespace SlimeNull.DuckovModSettings.UI
             closeLayout.preferredWidth = 42f;
 
             var previewRect = UiFactory.Rect("Preview", panel);
-            _preview = UiFactory.AddImage(previewRect.gameObject, GetColor());
+            _preview = UiFactory.AddImage(previewRect.gameObject, GetColor(), UiFactory.ControlRadius);
             var previewLayout = previewRect.gameObject.AddComponent<LayoutElement>();
             previewLayout.minHeight = 58f;
             previewLayout.preferredHeight = 58f;
@@ -231,10 +247,35 @@ namespace SlimeNull.DuckovModSettings.UI
             }
         }
 
+        private void Update()
+        {
+            if (_page == null || !_page.gameObject.activeInHierarchy)
+            {
+                Close();
+            }
+        }
+
         private void Close()
         {
+            if (_closing)
+            {
+                return;
+            }
+            _closing = true;
+            if (_current == this)
+            {
+                _current = null;
+            }
             gameObject.SetActive(false);
             Destroy(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            if (_current == this)
+            {
+                _current = null;
+            }
         }
     }
 }

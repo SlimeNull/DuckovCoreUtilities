@@ -158,13 +158,9 @@ namespace SlimeNull.DuckovModSettings.UI
             navigationVertical.childForceExpandHeight = false;
             navigationVertical.childForceExpandWidth = true;
 
-            var navTitle = UiFactory.Text("Title", navigation, _font, "模组设置", 27f, UiFactory.TextPrimary);
-            var navTitleLayout = navTitle.gameObject.AddComponent<LayoutElement>();
-            navTitleLayout.minHeight = 42f;
-            navTitleLayout.preferredHeight = 42f;
             UiFactory.ScrollView("Mods", navigation, out _navigationContent);
 
-            _search = UiFactory.Input("Search", navigation, _font, string.Empty, "搜索设置", 42f);
+            _search = UiFactory.Input("Search", navigation, _font, string.Empty, "搜索设置", 36f);
             _search.onValueChanged.AddListener(_ => RebuildSettings());
 
             _resetButton = UiFactory.Button(
@@ -173,7 +169,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 _font,
                 "恢复默认",
                 ResetSelectedMod,
-                42f,
+                36f,
                 UiFactory.SecondaryAccent,
                 TextAlignmentOptions.Center,
                 UiFactory.InputText);
@@ -471,8 +467,9 @@ namespace SlimeNull.DuckovModSettings.UI
 
             var control = UiFactory.Rect("Control", row);
             var controlLayout = control.gameObject.AddComponent<LayoutElement>();
-            controlLayout.minWidth = 310f;
-            controlLayout.preferredWidth = 380f;
+            var compactColor = node.Kind == SettingNodeKind.Color;
+            controlLayout.minWidth = compactColor ? 220f : 310f;
+            controlLayout.preferredWidth = compactColor ? 240f : 380f;
             controlLayout.flexibleWidth = 0f;
             CreateEditor(control, node, multiline, editorHeight);
             AttachTooltip(row.gameObject, node.Tooltip);
@@ -549,7 +546,7 @@ namespace SlimeNull.DuckovModSettings.UI
             var color = GetColor(node);
             var button = UiFactory.Button("Color", parent, _font, "#" + ColorUtility.ToHtmlStringRGBA(color),
                 () => ColorPickerDialog.Show(this, node, _font), 40f, UiFactory.InputBackground,
-                TextAlignmentOptions.MidlineRight, UiFactory.InputText);
+                TextAlignmentOptions.MidlineLeft, UiFactory.InputText);
             UiFactory.Stretch((RectTransform)button.transform);
             var swatch = UiFactory.Rect("Swatch", button.transform);
             swatch.anchorMin = new Vector2(0f, 0.5f);
