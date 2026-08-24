@@ -267,20 +267,25 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             public abstract void ApplyColor(Color color);
 
-            protected static void ApplyGraphicColor(Graphic? graphic, Color color)
+            protected static void ApplyGraphicTint(Graphic? graphic, Color color)
             {
                 if (graphic == null)
                 {
                     return;
                 }
 
-                var currentColor = graphic.color;
-                if (!Mathf.Approximately(currentColor.r, color.r) ||
-                    !Mathf.Approximately(currentColor.g, color.g) ||
-                    !Mathf.Approximately(currentColor.b, color.b))
+                var tintEffect = graphic.GetComponent<CrosshairTintEffect>();
+                if (tintEffect == null)
                 {
-                    graphic.color = new Color(color.r, color.g, color.b, currentColor.a);
+                    if (CrosshairTintEffect.IsDefaultTint(color))
+                    {
+                        return;
+                    }
+
+                    tintEffect = graphic.gameObject.AddComponent<CrosshairTintEffect>();
                 }
+
+                tintEffect.SetTint(color);
             }
         }
 
@@ -305,7 +310,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                 foreach (var image in _aimMarker.aimMarkerImages)
                 {
-                    ApplyGraphicColor(image, color);
+                    ApplyGraphicTint(image, color);
                 }
             }
         }
@@ -354,8 +359,77 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
                 foreach (var graphic in _graphics)
                 {
-                    ApplyGraphicColor(graphic, color);
+                    ApplyGraphicTint(graphic, color);
                 }
+            }
+        }
+
+        [DisallowMultipleComponent]
+        [RequireComponent(typeof(Graphic))]
+        private sealed class CrosshairTintEffect : BaseMeshEffect
+        {
+            private Color _tint = Color.white;
+
+            public static bool IsDefaultTint(Color color)
+            {
+                return Mathf.Approximately(color.r, 1f) &&
+                    Mathf.Approximately(color.g, 1f) &&
+                    Mathf.Approximately(color.b, 1f);
+            }
+
+            public void SetTint(Color color)
+            {
+                var nextTint = new Color(color.r, color.g, color.b, 1f);
+                var shouldEnable = !IsDefaultTint(nextTint);
+                if (Approximately(_tint, nextTint) && enabled == shouldEnable)
+                {
+                    return;
+                }
+
+                _tint = nextTint;
+                if (enabled != shouldEnable)
+                {
+                    enabled = shouldEnable;
+                    return;
+                }
+
+                if (graphic != null)
+                {
+                    graphic.SetVerticesDirty();
+                }
+            }
+
+            public override void ModifyMesh(VertexHelper vertexHelper)
+            {
+                if (!IsActive())
+                {
+                    return;
+                }
+
+                var tint = (Color32)_tint;
+                var vertex = default(UIVertex);
+                for (var i = 0; i < vertexHelper.currentVertCount; i++)
+                {
+                    vertexHelper.PopulateUIVertex(ref vertex, i);
+                    vertex.color = new Color32(
+                        Multiply(vertex.color.r, tint.r),
+                        Multiply(vertex.color.g, tint.g),
+                        Multiply(vertex.color.b, tint.b),
+                        vertex.color.a);
+                    vertexHelper.SetUIVertex(vertex, i);
+                }
+            }
+
+            private static byte Multiply(byte value, byte tint)
+            {
+                return (byte)((value * tint + 127) / 255);
+            }
+
+            private static bool Approximately(Color left, Color right)
+            {
+                return Mathf.Approximately(left.r, right.r) &&
+                    Mathf.Approximately(left.g, right.g) &&
+                    Mathf.Approximately(left.b, right.b);
             }
         }
 
