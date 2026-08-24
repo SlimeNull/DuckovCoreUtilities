@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Core Utilities</title>
+  <defs>
+    <linearGradient id="core-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#66719d"/>
+      <stop offset="0.48" stop-color="#465176"/>
+      <stop offset="1" stop-color="#2d344f"/>
+    </linearGradient>
+    <linearGradient id="core-metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#faf9f5"/>
+      <stop offset="0.42" stop-color="#d5d3cf"/>
+      <stop offset="0.72" stop-color="#96959a"/>
+      <stop offset="1" stop-color="#f0efeb"/>
+    </linearGradient>
+    <linearGradient id="core-handle" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#7b86ba"/>
+      <stop offset="0.55" stop-color="#566292"/>
+      <stop offset="1" stop-color="#343c63"/>
+    </linearGradient>
+    <radialGradient id="core-well" cx="42%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#4f5a84"/>
+      <stop offset="1" stop-color="#252c45"/>
+    </radialGradient>
+    <filter id="core-object-shadow" x="-40%" y="-40%" width="180%" height="190%">
+      <feDropShadow dx="0" dy="4" stdDeviation="3" flood-color="#11131f" flood-opacity="0.65"/>
+    </filter>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#core-bg)"/>
+
+  <circle cx="128" cy="126" r="86" fill="url(#core-well)" stroke="#252c47" stroke-width="5" opacity="0.82"/>
+  <circle cx="128" cy="126" r="78" fill="none" stroke="#8390bd" stroke-opacity="0.28" stroke-width="2"/>
+  <path d="M128 50L197 90V168L128 208L59 168V90Z" fill="none" stroke="#93a0ca" stroke-opacity="0.18" stroke-width="2"/>
+  <path d="M76 73L180 179M180 73L76 179M50 126H206M128 48V207" fill="none" stroke="#9eabd1" stroke-opacity="0.11" stroke-width="2"/>
+  <g fill="#a8b4df" opacity="0.28">
+    <circle cx="128" cy="50" r="3"/>
+    <circle cx="196" cy="90" r="3"/>
+    <circle cx="196" cy="168" r="3"/>
+    <circle cx="128" cy="207" r="3"/>
+    <circle cx="59" cy="168" r="3"/>
+    <circle cx="59" cy="90" r="3"/>
+  </g>
+
+  <g filter="url(#core-object-shadow)">
+    <path d="M43 45C58 43 73 51 80 64C84 72 85 82 82 90L147 155L130 173L64 107C54 108 44 105 36 99C23 89 19 72 25 58L42 76L55 73L61 60Z"
+          fill="url(#core-metal)" stroke="#55545d" stroke-width="2.4" stroke-linejoin="round"/>
+    <path d="M54 100L133 179" fill="none" stroke="#ffffff" stroke-opacity="0.34" stroke-width="3" stroke-linecap="round"/>
+
+    <g transform="rotate(44 128 128)">
+      <path d="M121 76H135V194L128 207L121 194Z" fill="url(#core-metal)" stroke="#50515a" stroke-width="2"/>
+      <rect x="106" y="28" width="44" height="63" rx="15" fill="url(#core-handle)" stroke="#303754" stroke-width="3"/>
+      <path d="M116 43V75M128 39V78M140 43V75" fill="none" stroke="#2f385f" stroke-width="5" stroke-linecap="round" opacity="0.8"/>
+      <path d="M112 35Q128 26 144 35" fill="none" stroke="#c3caec" stroke-opacity="0.45" stroke-width="2"/>
+    </g>
+
+    <g transform="translate(165 166)">
+      <g fill="url(#core-metal)" stroke="#57575f" stroke-width="2.2">
+        <rect x="-8" y="-51" width="16" height="30" rx="3"/>
+        <rect x="-8" y="-51" width="16" height="30" rx="3" transform="rotate(45)"/>
+        <rect x="-8" y="-51" width="16" height="30" rx="3" transform="rotate(90)"/>
+        <rect x="-8" y="-51" width="16" height="30" rx="3" transform="rotate(135)"/>
+        <rect x="-8" y="-51" width="16" height="30" rx="3" transform="rotate(180)"/>
+        <rect x="-8" y="-51" width="16" height="30" rx="3" transform="rotate(225)"/>
+        <rect x="-8" y="-51" width="16" height="30" rx="3" transform="rotate(270)"/>
+        <rect x="-8" y="-51" width="16" height="30" rx="3" transform="rotate(315)"/>
+        <circle r="37"/>
+      </g>
+      <circle r="23" fill="#4b4e59" stroke="#f1f0ec" stroke-width="5"/>
+      <circle r="14" fill="#283149" stroke="#6f7690" stroke-width="2"/>
+      <path d="M-23-21A31 31 0 0 1 21-22" fill="none" stroke="#ffffff" stroke-opacity="0.45" stroke-width="2"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Dockov Party</title>
+  <defs>
+    <linearGradient id="party-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#745c88"/>
+      <stop offset="0.5" stop-color="#574366"/>
+      <stop offset="1" stop-color="#352a43"/>
+    </linearGradient>
+    <linearGradient id="party-purple" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b395cc"/>
+      <stop offset="1" stop-color="#76578d"/>
+    </linearGradient>
+    <linearGradient id="party-blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#b9e3ff"/>
+      <stop offset="0.55" stop-color="#82b9df"/>
+      <stop offset="1" stop-color="#5d86b1"/>
+    </linearGradient>
+    <radialGradient id="party-well" cx="44%" cy="35%" r="70%">
+      <stop offset="0" stop-color="#624d75"/>
+      <stop offset="1" stop-color="#2d2539"/>
+    </radialGradient>
+    <filter id="party-object-shadow" x="-40%" y="-40%" width="180%" height="190%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#17101f" flood-opacity="0.68"/>
+    </filter>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#party-bg)"/>
+
+  <circle cx="128" cy="126" r="88" fill="url(#party-well)" stroke="#2a2135" stroke-width="5"/>
+  <circle cx="128" cy="126" r="80" fill="none" stroke="#a47bc1" stroke-opacity="0.65" stroke-width="2"/>
+  <path d="M52 126C74 84 102 63 128 50C154 63 182 84 204 126C182 168 154 190 128 204C102 190 74 168 52 126Z" fill="none" stroke="#ae83cb" stroke-opacity="0.5" stroke-width="2"/>
+  <path d="M58 88C91 112 165 112 198 88M58 164C91 140 165 140 198 164M128 47C97 82 92 168 128 205M128 47C159 82 164 168 128 205" fill="none" stroke="#a77fc4" stroke-opacity="0.5" stroke-width="2"/>
+  <g fill="#9872b7" stroke="#392b48" stroke-width="2">
+    <circle cx="128" cy="47" r="8"/>
+    <circle cx="128" cy="205" r="8"/>
+    <circle cx="49" cy="126" r="8"/>
+    <circle cx="207" cy="126" r="8"/>
+  </g>
+
+  <g filter="url(#party-object-shadow)">
+    <g>
+      <circle cx="78" cy="112" r="20" fill="url(#party-purple)" stroke="#33283f" stroke-width="3"/>
+      <path d="M45 171C47 144 59 130 78 130C97 130 108 144 111 171C93 183 64 183 45 171Z" fill="url(#party-purple)" stroke="#33283f" stroke-width="3"/>
+      <path d="M62 101A18 18 0 0 1 88 95" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2"/>
+    </g>
+    <g>
+      <circle cx="178" cy="112" r="20" fill="url(#party-purple)" stroke="#33283f" stroke-width="3"/>
+      <path d="M145 171C148 144 159 130 178 130C197 130 209 144 211 171C192 183 163 183 145 171Z" fill="url(#party-purple)" stroke="#33283f" stroke-width="3"/>
+      <path d="M162 101A18 18 0 0 1 188 95" fill="none" stroke="#ffffff" stroke-opacity="0.25" stroke-width="2"/>
+    </g>
+    <g>
+      <circle cx="128" cy="94" r="26" fill="url(#party-blue)" stroke="#293448" stroke-width="4"/>
+      <path d="M84 191C88 154 103 136 128 136C153 136 168 154 172 191C149 207 107 207 84 191Z" fill="url(#party-blue)" stroke="#293448" stroke-width="4"/>
+      <path d="M108 82A24 24 0 0 1 142 72" fill="none" stroke="#ffffff" stroke-opacity="0.44" stroke-width="3"/>
+      <path d="M98 176C112 185 144 185 158 176" fill="none" stroke="#d8eeff" stroke-opacity="0.25" stroke-width="2"/>
+    </g>
+  </g>
+</svg>

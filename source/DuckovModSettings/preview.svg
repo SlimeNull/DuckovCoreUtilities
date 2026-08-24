@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Duckov Mod Settings</title>
+  <defs>
+    <linearGradient id="settings-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d7cdc5"/>
+      <stop offset="0.5" stop-color="#b9aaa0"/>
+      <stop offset="1" stop-color="#8c7d74"/>
+    </linearGradient>
+    <linearGradient id="settings-metal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#eee8e3"/>
+      <stop offset="0.5" stop-color="#b8aba2"/>
+      <stop offset="1" stop-color="#887b74"/>
+    </linearGradient>
+    <linearGradient id="settings-panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d1c4bc"/>
+      <stop offset="1" stop-color="#a09289"/>
+    </linearGradient>
+    <radialGradient id="settings-knob" cx="35%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#f3efeb"/>
+      <stop offset="1" stop-color="#a99c94"/>
+    </radialGradient>
+    <filter id="settings-object-shadow" x="-40%" y="-40%" width="180%" height="190%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#3a302b" flood-opacity="0.55"/>
+    </filter>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#settings-bg)"/>
+
+  <g transform="translate(128 90)" filter="url(#settings-object-shadow)">
+    <g fill="url(#settings-metal)" stroke="#685f59" stroke-width="2.5">
+      <rect x="-9" y="-55" width="18" height="31" rx="4"/>
+      <rect x="-9" y="-55" width="18" height="31" rx="4" transform="rotate(45)"/>
+      <rect x="-9" y="-55" width="18" height="31" rx="4" transform="rotate(90)"/>
+      <rect x="-9" y="-55" width="18" height="31" rx="4" transform="rotate(135)"/>
+      <rect x="-9" y="-55" width="18" height="31" rx="4" transform="rotate(180)"/>
+      <rect x="-9" y="-55" width="18" height="31" rx="4" transform="rotate(225)"/>
+      <rect x="-9" y="-55" width="18" height="31" rx="4" transform="rotate(270)"/>
+      <rect x="-9" y="-55" width="18" height="31" rx="4" transform="rotate(315)"/>
+      <circle r="42"/>
+    </g>
+    <circle r="25" fill="#5f5752" stroke="#d8cec7" stroke-width="5"/>
+    <circle r="14" fill="#3f3936"/>
+    <path d="M-27-26A37 37 0 0 1 26-27" fill="none" stroke="#ffffff" stroke-opacity="0.42" stroke-width="2"/>
+  </g>
+
+  <g filter="url(#settings-object-shadow)">
+    <rect x="43" y="104" width="170" height="111" rx="20" fill="url(#settings-panel)" stroke="#665d57" stroke-width="3"/>
+    <rect x="47" y="108" width="162" height="103" rx="16" fill="none" stroke="#f7f1ec" stroke-opacity="0.36" stroke-width="2"/>
+    <g stroke="#574d49" stroke-width="8" stroke-linecap="round">
+      <path d="M68 137H188"/>
+      <path d="M68 162H188"/>
+      <path d="M68 187H188"/>
+    </g>
+    <g stroke="#e5dcd6" stroke-opacity="0.4" stroke-width="2" stroke-linecap="round">
+      <path d="M69 134H187"/>
+      <path d="M69 159H187"/>
+      <path d="M69 184H187"/>
+    </g>
+
+    <g>
+      <circle cx="112" cy="137" r="14" fill="#a56853" stroke="#5d4941" stroke-width="3"/>
+      <circle cx="108" cy="133" r="5" fill="#d9a08a" fill-opacity="0.55"/>
+      <circle cx="151" cy="162" r="14" fill="url(#settings-knob)" stroke="#625a55" stroke-width="3"/>
+      <circle cx="147" cy="158" r="5" fill="#ffffff" fill-opacity="0.58"/>
+      <circle cx="126" cy="187" r="14" fill="#5a5b66" stroke="#46464f" stroke-width="3"/>
+      <circle cx="122" cy="183" r="5" fill="#a9aaba" fill-opacity="0.45"/>
+    </g>
+  </g>
+</svg>
