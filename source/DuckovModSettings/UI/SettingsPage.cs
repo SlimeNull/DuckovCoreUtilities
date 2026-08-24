@@ -13,12 +13,12 @@ namespace SlimeNull.DuckovModSettings.UI
     internal sealed class SettingsPage : MonoBehaviour
     {
         private readonly Dictionary<string, bool> _foldoutStates = new Dictionary<string, bool>(StringComparer.Ordinal);
+        private readonly Dictionary<string, Sprite> _previewSprites = new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private SettingsCatalog? _catalog;
         private Action? _onPageClosing;
         private TMP_FontAsset? _font;
         private RectTransform? _navigationContent;
         private RectTransform? _settingsContent;
-        private TextMeshProUGUI? _title;
         private TextMeshProUGUI? _emptyState;
         private TextMeshProUGUI? _tooltip;
         private TMP_InputField? _search;
@@ -113,6 +113,14 @@ namespace SlimeNull.DuckovModSettings.UI
                 _catalog.StructureChanged -= OnStructureChanged;
                 _catalog.ValueChanged -= OnValueChanged;
             }
+            foreach (var sprite in _previewSprites.Values)
+            {
+                if (sprite != null)
+                {
+                    Destroy(sprite);
+                }
+            }
+            _previewSprites.Clear();
         }
 
         private void Update()
@@ -120,13 +128,13 @@ namespace SlimeNull.DuckovModSettings.UI
             if (_rebuildRequested && gameObject.activeInHierarchy)
             {
                 _rebuildRequested = false;
-                RebuildSettings();
+                RebuildNavigation();
             }
         }
 
         private void BuildShell()
         {
-            UiFactory.AddImage(gameObject, UiFactory.PageBackground);
+            UiFactory.AddImage(gameObject, UiFactory.PageBackground, UiFactory.PanelRadius);
             var root = UiFactory.Rect("Layout", transform);
             UiFactory.Stretch(root, 16f, 16f, 16f, 16f);
             var horizontal = root.gameObject.AddComponent<HorizontalLayoutGroup>();
@@ -137,7 +145,7 @@ namespace SlimeNull.DuckovModSettings.UI
             horizontal.childForceExpandWidth = false;
 
             var navigation = UiFactory.Rect("Mod Navigation", root);
-            UiFactory.AddImage(navigation.gameObject, UiFactory.PanelBackground);
+            UiFactory.AddImage(navigation.gameObject, UiFactory.PanelBackground, UiFactory.PanelRadius);
             var navigationLayout = navigation.gameObject.AddComponent<LayoutElement>();
             navigationLayout.minWidth = 250f;
             navigationLayout.preferredWidth = 270f;
@@ -156,44 +164,29 @@ namespace SlimeNull.DuckovModSettings.UI
             navTitleLayout.preferredHeight = 42f;
             UiFactory.ScrollView("Mods", navigation, out _navigationContent);
 
+            _search = UiFactory.Input("Search", navigation, _font, string.Empty, "搜索设置", 42f);
+            _search.onValueChanged.AddListener(_ => RebuildSettings());
+
+            _resetButton = UiFactory.Button(
+                "Reset",
+                navigation,
+                _font,
+                "恢复默认",
+                ResetSelectedMod,
+                42f,
+                UiFactory.SecondaryAccent,
+                TextAlignmentOptions.Center,
+                UiFactory.InputText);
+
             var main = UiFactory.Rect("Settings", root);
             var mainLayout = main.gameObject.AddComponent<LayoutElement>();
             mainLayout.flexibleWidth = 1f;
             var mainVertical = main.gameObject.AddComponent<VerticalLayoutGroup>();
-            mainVertical.spacing = 10f;
+            mainVertical.spacing = 0f;
             mainVertical.childControlHeight = true;
             mainVertical.childControlWidth = true;
             mainVertical.childForceExpandHeight = false;
             mainVertical.childForceExpandWidth = true;
-
-            var toolbar = UiFactory.Rect("Toolbar", main);
-            var toolbarLayout = toolbar.gameObject.AddComponent<LayoutElement>();
-            toolbarLayout.minHeight = 48f;
-            toolbarLayout.preferredHeight = 48f;
-            toolbarLayout.flexibleHeight = 0f;
-            var toolbarHorizontal = toolbar.gameObject.AddComponent<HorizontalLayoutGroup>();
-            toolbarHorizontal.spacing = 10f;
-            toolbarHorizontal.childAlignment = TextAnchor.MiddleCenter;
-            toolbarHorizontal.childControlHeight = true;
-            toolbarHorizontal.childControlWidth = true;
-            toolbarHorizontal.childForceExpandHeight = true;
-            toolbarHorizontal.childForceExpandWidth = false;
-
-            _title = UiFactory.Text("Selected Mod", toolbar, _font, string.Empty, 25f, UiFactory.TextPrimary);
-            var titleLayout = _title.gameObject.AddComponent<LayoutElement>();
-            titleLayout.flexibleWidth = 1f;
-
-            _search = UiFactory.Input("Search", toolbar, _font, string.Empty, "搜索设置", 42f);
-            var searchLayout = _search.GetComponent<LayoutElement>();
-            searchLayout.minWidth = 260f;
-            searchLayout.preferredWidth = 330f;
-            searchLayout.flexibleWidth = 0f;
-            _search.onValueChanged.AddListener(_ => RebuildSettings());
-
-            _resetButton = UiFactory.Button("Reset", toolbar, _font, "恢复默认", ResetSelectedMod, 42f, UiFactory.RaisedBackground);
-            var resetLayout = _resetButton.GetComponent<LayoutElement>();
-            resetLayout.minWidth = 128f;
-            resetLayout.preferredWidth = 128f;
 
             _settingsScroll = UiFactory.ScrollView("Setting Tree", main, out _settingsContent);
 
@@ -209,7 +202,7 @@ namespace SlimeNull.DuckovModSettings.UI
             tooltipRect.pivot = new Vector2(1f, 0f);
             tooltipRect.offsetMin = new Vector2(0f, 8f);
             tooltipRect.offsetMax = new Vector2(-22f, 44f);
-            UiFactory.AddImage(tooltipRect.gameObject, new Color(0.02f, 0.02f, 0.02f, 0.96f));
+            UiFactory.AddImage(tooltipRect.gameObject, UiFactory.PageBackground, UiFactory.ControlRadius);
             _tooltip = UiFactory.Text("Text", tooltipRect, _font, string.Empty, 16f, UiFactory.TextPrimary);
             UiFactory.Stretch(_tooltip.rectTransform, 12f, 2f, 12f, 2f);
             tooltipRect.gameObject.SetActive(false);
@@ -243,16 +236,22 @@ namespace SlimeNull.DuckovModSettings.UI
                     _font,
                     mod.DisplayName,
                     () => SelectMod(captured),
-                    48f,
-                    selected ? new Color(0.12f, 0.28f, 0.22f, 1f) : UiFactory.RaisedBackground,
+                    58f,
+                    selected ? UiFactory.SelectedBackground : UiFactory.RaisedBackground,
                     TextAlignmentOptions.MidlineLeft);
+                var label = button.GetComponentInChildren<TMP_Text>();
+                if (label != null)
+                {
+                    label.rectTransform.offsetMin = new Vector2(58f, label.rectTransform.offsetMin.y);
+                }
+                AddModPreview(button.transform, mod);
                 var marker = UiFactory.Rect("Selection", button.transform);
                 marker.anchorMin = new Vector2(0f, 0f);
                 marker.anchorMax = new Vector2(0f, 1f);
                 marker.pivot = new Vector2(0f, 0.5f);
-                marker.sizeDelta = new Vector2(4f, 0f);
+                marker.sizeDelta = new Vector2(5f, -12f);
                 marker.anchoredPosition = Vector2.zero;
-                UiFactory.AddImage(marker.gameObject, selected ? UiFactory.Accent : Color.clear);
+                UiFactory.AddImage(marker.gameObject, selected ? Color.white : Color.clear, 2.5f);
             }
 
             RebuildSettings();
@@ -267,10 +266,6 @@ namespace SlimeNull.DuckovModSettings.UI
             ClearChildren(_settingsContent);
             ShowTooltip(string.Empty);
 
-            if (_title != null)
-            {
-                _title.text = _selectedMod?.DisplayName ?? "模组设置";
-            }
             if (_resetButton != null)
             {
                 _resetButton.interactable = _selectedMod != null;
@@ -390,7 +385,7 @@ namespace SlimeNull.DuckovModSettings.UI
                     RebuildSettings();
                 },
                 42f,
-                UiFactory.RaisedBackground,
+                UiFactory.GroupBackground,
                 TextAlignmentOptions.MidlineLeft);
             AttachTooltip(foldoutButton.gameObject, tooltip);
 
@@ -430,7 +425,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 ? Mathf.Clamp(node.TextArea!.MinimumLines, 2, 8) * 24f + 16f
                 : 40f;
             var row = UiFactory.Rect("Setting " + node.MemberPath, parent);
-            UiFactory.AddImage(row.gameObject, new Color(1f, 1f, 1f, 0.025f));
+            UiFactory.AddImage(row.gameObject, UiFactory.RaisedBackground, UiFactory.ControlRadius);
             var rowLayout = row.gameObject.AddComponent<LayoutElement>();
             rowLayout.minHeight = multiline ? editorHeight + 12f : 48f;
             rowLayout.preferredHeight = multiline ? editorHeight + 12f : 48f;
@@ -527,7 +522,8 @@ namespace SlimeNull.DuckovModSettings.UI
         {
             var color = GetColor(node);
             var button = UiFactory.Button("Color", parent, _font, "#" + ColorUtility.ToHtmlStringRGBA(color),
-                () => ColorPickerDialog.Show(this, node, _font), 40f, UiFactory.InputBackground, TextAlignmentOptions.MidlineRight);
+                () => ColorPickerDialog.Show(this, node, _font), 40f, UiFactory.InputBackground,
+                TextAlignmentOptions.MidlineRight, UiFactory.InputText);
             UiFactory.Stretch((RectTransform)button.transform);
             var swatch = UiFactory.Rect("Swatch", button.transform);
             swatch.anchorMin = new Vector2(0f, 0.5f);
@@ -612,6 +608,61 @@ namespace SlimeNull.DuckovModSettings.UI
         {
             _selectedMod = mod;
             RebuildNavigation();
+        }
+
+        private void AddModPreview(Transform parent, ModSettingsModel mod)
+        {
+            var preview = UiFactory.Rect("Preview", parent);
+            preview.anchorMin = new Vector2(0f, 0.5f);
+            preview.anchorMax = new Vector2(0f, 0.5f);
+            preview.pivot = new Vector2(0f, 0.5f);
+            preview.anchoredPosition = new Vector2(10f, 0f);
+            preview.sizeDelta = new Vector2(38f, 38f);
+
+            var sprite = GetPreviewSprite(mod);
+            var image = UiFactory.AddImage(
+                preview.gameObject,
+                sprite != null ? Color.white : UiFactory.GroupBackground,
+                UiFactory.SmallRadius);
+            if (sprite != null)
+            {
+                image.sprite = sprite;
+                image.preserveAspect = true;
+                return;
+            }
+
+            var fallback = UiFactory.Text(
+                "Fallback",
+                preview,
+                _font,
+                string.IsNullOrEmpty(mod.DisplayName) ? "?" : mod.DisplayName.Substring(0, 1).ToUpperInvariant(),
+                18f,
+                UiFactory.TextPrimary,
+                TextAlignmentOptions.Center);
+            UiFactory.Stretch(fallback.rectTransform);
+        }
+
+        private Sprite? GetPreviewSprite(ModSettingsModel mod)
+        {
+            if (_previewSprites.TryGetValue(mod.Id, out var cached))
+            {
+                return cached;
+            }
+
+            var texture = mod.Info.preview;
+            if (texture == null)
+            {
+                return null;
+            }
+
+            var sprite = Sprite.Create(
+                texture,
+                new Rect(0f, 0f, texture.width, texture.height),
+                new Vector2(0.5f, 0.5f),
+                100f);
+            sprite.name = "DuckovModSettings Preview " + mod.Info.name;
+            _previewSprites[mod.Id] = sprite;
+            return sprite;
         }
 
         private void ResetSelectedMod()

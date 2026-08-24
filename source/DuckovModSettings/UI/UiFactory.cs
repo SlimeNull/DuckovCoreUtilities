@@ -3,20 +3,30 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using UnityEngine.UI.ProceduralImage;
 
 namespace SlimeNull.DuckovModSettings.UI
 {
     internal static class UiFactory
     {
-        public static readonly Color PageBackground = new Color(0.055f, 0.06f, 0.065f, 0.98f);
-        public static readonly Color PanelBackground = new Color(0.09f, 0.095f, 0.10f, 0.98f);
-        public static readonly Color RaisedBackground = new Color(0.14f, 0.145f, 0.15f, 1f);
-        public static readonly Color InputBackground = new Color(0.075f, 0.08f, 0.085f, 1f);
-        public static readonly Color Accent = new Color(0.20f, 0.72f, 0.50f, 1f);
-        public static readonly Color SecondaryAccent = new Color(0.94f, 0.62f, 0.23f, 1f);
-        public static readonly Color TextPrimary = new Color(0.95f, 0.96f, 0.95f, 1f);
-        public static readonly Color TextSecondary = new Color(0.68f, 0.70f, 0.69f, 1f);
-        public static readonly Color Divider = new Color(1f, 1f, 1f, 0.08f);
+        public const float PanelRadius = 9f;
+        public const float ControlRadius = 7f;
+        public const float SmallRadius = 5f;
+
+        public static readonly Color PageBackground = new Color32(4, 24, 38, 238);
+        public static readonly Color PanelBackground = new Color32(17, 55, 73, 248);
+        public static readonly Color TreeBackground = new Color32(8, 31, 44, 242);
+        public static readonly Color RaisedBackground = new Color32(66, 166, 216, 255);
+        public static readonly Color GroupBackground = new Color32(39, 105, 139, 255);
+        public static readonly Color SelectedBackground = new Color32(87, 195, 247, 255);
+        public static readonly Color InputBackground = new Color32(224, 240, 247, 255);
+        public static readonly Color SliderTrack = new Color32(43, 113, 148, 255);
+        public static readonly Color Accent = new Color32(81, 190, 244, 255);
+        public static readonly Color SecondaryAccent = new Color32(255, 174, 99, 255);
+        public static readonly Color TextPrimary = new Color32(250, 253, 255, 255);
+        public static readonly Color TextSecondary = new Color32(184, 215, 228, 255);
+        public static readonly Color InputText = new Color32(48, 65, 74, 255);
+        public static readonly Color Divider = new Color32(192, 228, 243, 80);
 
         public static RectTransform Rect(string name, Transform parent)
         {
@@ -34,9 +44,24 @@ namespace SlimeNull.DuckovModSettings.UI
             rect.offsetMax = new Vector2(-right, -top);
         }
 
-        public static Image AddImage(GameObject target, Color color)
+        public static Image AddImage(GameObject target, Color color, float cornerRadius = ControlRadius)
         {
-            var image = target.GetComponent<Image>() ?? target.AddComponent<Image>();
+            var image = target.GetComponent<Image>();
+            if (image == null)
+            {
+                var procedural = target.AddComponent<ProceduralImage>();
+                procedural.ModifierType = typeof(UniformModifier);
+                image = procedural;
+            }
+            if (image is ProceduralImage proceduralImage)
+            {
+                proceduralImage.ModifierType = typeof(UniformModifier);
+                var modifier = target.GetComponent<UniformModifier>();
+                if (modifier != null)
+                {
+                    modifier.Radius = Mathf.Max(0f, cornerRadius);
+                }
+            }
             image.color = color;
             return image;
         }
@@ -71,10 +96,11 @@ namespace SlimeNull.DuckovModSettings.UI
             UnityAction onClick,
             float height = 42f,
             Color? background = null,
-            TextAlignmentOptions alignment = TextAlignmentOptions.Center)
+            TextAlignmentOptions alignment = TextAlignmentOptions.Center,
+            Color? foreground = null)
         {
             var rect = Rect(name, parent);
-            var image = AddImage(rect.gameObject, background ?? RaisedBackground);
+            var image = AddImage(rect.gameObject, background ?? RaisedBackground, ControlRadius);
             var button = rect.gameObject.AddComponent<Button>();
             button.targetGraphic = image;
             button.colors = ButtonColors(background ?? RaisedBackground);
@@ -84,7 +110,7 @@ namespace SlimeNull.DuckovModSettings.UI
             layout.minHeight = height;
             layout.preferredHeight = height;
 
-            var text = Text("Label", rect, font, label, 20f, TextPrimary, alignment);
+            var text = Text("Label", rect, font, label, 20f, foreground ?? TextPrimary, alignment);
             Stretch(text.rectTransform, 12f, 2f, 12f, 2f);
             return button;
         }
@@ -99,11 +125,15 @@ namespace SlimeNull.DuckovModSettings.UI
             bool multiline = false)
         {
             var root = Rect(name, parent);
-            var background = AddImage(root.gameObject, InputBackground);
+            root.gameObject.SetActive(false);
+            var background = AddImage(root.gameObject, InputBackground, ControlRadius);
             var field = root.gameObject.AddComponent<TMP_InputField>();
             field.targetGraphic = background;
             field.lineType = multiline ? TMP_InputField.LineType.MultiLineNewline : TMP_InputField.LineType.SingleLine;
             field.richText = false;
+            field.customCaretColor = true;
+            field.caretColor = InputText;
+            field.selectionColor = new Color(Accent.r, Accent.g, Accent.b, 0.45f);
 
             var layout = root.gameObject.AddComponent<LayoutElement>();
             layout.minHeight = height;
@@ -114,12 +144,12 @@ namespace SlimeNull.DuckovModSettings.UI
             var mask = viewport.gameObject.AddComponent<RectMask2D>();
             mask.padding = Vector4.zero;
 
-            var text = Text("Text", viewport, font, value, 18f, TextPrimary);
+            var text = Text("Text", viewport, font, value, 18f, InputText);
             Stretch(text.rectTransform);
             text.enableWordWrapping = multiline;
             text.overflowMode = multiline ? TextOverflowModes.Masking : TextOverflowModes.Ellipsis;
 
-            var hint = Text("Placeholder", viewport, font, placeholder, 18f, TextSecondary);
+            var hint = Text("Placeholder", viewport, font, placeholder, 18f, new Color32(92, 116, 127, 255));
             Stretch(hint.rectTransform);
             hint.fontStyle = FontStyles.Italic;
 
@@ -127,6 +157,7 @@ namespace SlimeNull.DuckovModSettings.UI
             field.textComponent = text;
             field.placeholder = hint;
             field.text = value;
+            root.gameObject.SetActive(true);
             return field;
         }
 
@@ -141,10 +172,10 @@ namespace SlimeNull.DuckovModSettings.UI
 
             var backgroundRect = Rect("Background", root);
             Stretch(backgroundRect, 2f, 2f, 2f, 2f);
-            var background = AddImage(backgroundRect.gameObject, InputBackground);
+            var background = AddImage(backgroundRect.gameObject, InputBackground, SmallRadius);
             var checkRect = Rect("Checkmark", backgroundRect);
             Stretch(checkRect, 6f, 6f, 6f, 6f);
-            var check = AddImage(checkRect.gameObject, Accent);
+            var check = AddImage(checkRect.gameObject, new Color32(22, 128, 160, 255), 3f);
 
             var toggle = root.gameObject.AddComponent<Toggle>();
             toggle.targetGraphic = background;
@@ -167,7 +198,7 @@ namespace SlimeNull.DuckovModSettings.UI
             backgroundRect.anchorMin = new Vector2(0f, 0.5f);
             backgroundRect.anchorMax = new Vector2(1f, 0.5f);
             backgroundRect.sizeDelta = new Vector2(0f, 6f);
-            AddImage(backgroundRect.gameObject, InputBackground);
+            AddImage(backgroundRect.gameObject, SliderTrack, 3f);
 
             var fillArea = Rect("Fill Area", root);
             fillArea.anchorMin = new Vector2(0f, 0.5f);
@@ -176,13 +207,13 @@ namespace SlimeNull.DuckovModSettings.UI
             fillArea.offsetMax = new Vector2(-4f, 3f);
             var fill = Rect("Fill", fillArea);
             Stretch(fill);
-            AddImage(fill.gameObject, Accent);
+            AddImage(fill.gameObject, SecondaryAccent, 3f);
 
             var handleArea = Rect("Handle Slide Area", root);
             Stretch(handleArea, 8f, 0f, 8f, 0f);
             var handle = Rect("Handle", handleArea);
             handle.sizeDelta = new Vector2(18f, 18f);
-            var handleImage = AddImage(handle.gameObject, TextPrimary);
+            var handleImage = AddImage(handle.gameObject, InputBackground, 9f);
 
             slider.fillRect = fill;
             slider.handleRect = handle;
@@ -198,16 +229,16 @@ namespace SlimeNull.DuckovModSettings.UI
         public static TMP_Dropdown Dropdown(string name, Transform parent, TMP_FontAsset? font, string[] options, int selected)
         {
             var root = Rect(name, parent);
-            var image = AddImage(root.gameObject, InputBackground);
+            var image = AddImage(root.gameObject, InputBackground, ControlRadius);
             var dropdown = root.gameObject.AddComponent<TMP_Dropdown>();
             dropdown.targetGraphic = image;
             var layout = root.gameObject.AddComponent<LayoutElement>();
             layout.minHeight = 40f;
             layout.preferredHeight = 40f;
 
-            var label = Text("Label", root, font, string.Empty, 18f, TextPrimary);
+            var label = Text("Label", root, font, string.Empty, 18f, InputText);
             Stretch(label.rectTransform, 12f, 2f, 34f, 2f);
-            var arrow = Text("Arrow", root, font, "v", 16f, TextSecondary, TextAlignmentOptions.Center);
+            var arrow = Text("Arrow", root, font, "v", 16f, InputText, TextAlignmentOptions.Center);
             arrow.rectTransform.anchorMin = new Vector2(1f, 0f);
             arrow.rectTransform.anchorMax = new Vector2(1f, 1f);
             arrow.rectTransform.pivot = new Vector2(1f, 0.5f);
@@ -228,14 +259,14 @@ namespace SlimeNull.DuckovModSettings.UI
         public static ScrollRect ScrollView(string name, Transform parent, out RectTransform content)
         {
             var root = Rect(name, parent);
-            AddImage(root.gameObject, PanelBackground);
+            AddImage(root.gameObject, TreeBackground, PanelRadius);
             var layout = root.gameObject.AddComponent<LayoutElement>();
             layout.flexibleHeight = 1f;
             layout.flexibleWidth = 1f;
 
             var viewport = Rect("Viewport", root);
             Stretch(viewport, 2f, 2f, 2f, 2f);
-            AddImage(viewport.gameObject, new Color(0f, 0f, 0f, 0.01f));
+            AddImage(viewport.gameObject, new Color(0f, 0f, 0f, 0.01f), PanelRadius - 2f);
             viewport.gameObject.AddComponent<RectMask2D>();
 
             content = Rect("Content", viewport);
@@ -287,7 +318,7 @@ namespace SlimeNull.DuckovModSettings.UI
             template.pivot = new Vector2(0.5f, 1f);
             template.anchoredPosition = new Vector2(0f, -2f);
             template.sizeDelta = new Vector2(0f, 220f);
-            AddImage(template.gameObject, RaisedBackground);
+            AddImage(template.gameObject, InputBackground, ControlRadius);
 
             var scrollRect = template.gameObject.AddComponent<ScrollRect>();
             scrollRect.horizontal = false;
@@ -295,7 +326,7 @@ namespace SlimeNull.DuckovModSettings.UI
 
             var viewport = Rect("Viewport", template);
             Stretch(viewport, 2f, 2f, 2f, 2f);
-            AddImage(viewport.gameObject, new Color(0f, 0f, 0f, 0.01f));
+            AddImage(viewport.gameObject, new Color(0f, 0f, 0f, 0.01f), ControlRadius - 1f);
             viewport.gameObject.AddComponent<Mask>().showMaskGraphic = false;
 
             var content = Rect("Content", viewport);
@@ -308,7 +339,7 @@ namespace SlimeNull.DuckovModSettings.UI
             item.anchorMin = new Vector2(0f, 0.5f);
             item.anchorMax = new Vector2(1f, 0.5f);
             item.sizeDelta = new Vector2(0f, 34f);
-            var itemBackground = AddImage(item.gameObject, new Color(1f, 1f, 1f, 0.02f));
+            var itemBackground = AddImage(item.gameObject, new Color32(205, 230, 240, 255), SmallRadius);
             var toggle = item.gameObject.AddComponent<Toggle>();
             toggle.targetGraphic = itemBackground;
 
@@ -320,7 +351,7 @@ namespace SlimeNull.DuckovModSettings.UI
             var checkImage = AddImage(check.gameObject, Accent);
             toggle.graphic = checkImage;
 
-            itemText = Text("Item Label", item, font, "Option", 17f, TextPrimary);
+            itemText = Text("Item Label", item, font, "Option", 17f, InputText);
             Stretch(itemText.rectTransform, 20f, 1f, 8f, 1f);
 
             scrollRect.viewport = viewport;

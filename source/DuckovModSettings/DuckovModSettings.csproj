@@ -20,6 +20,10 @@
       <HintPath>$(ManagedPath)\Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="Plugins">
+      <HintPath>$(ManagedPath)\Plugins.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="TeamSoda.Duckov.Core">
       <HintPath>$(ManagedPath)\TeamSoda.Duckov.Core.dll</HintPath>
       <Private>false</Private>
