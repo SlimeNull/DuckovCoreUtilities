@@ -15,11 +15,12 @@
 
 ## 中文
 
-本仓库包含两个游戏模组，以及配套的 Windows 场景检视器和互操作库：
+本仓库包含三个游戏模组，以及配套的 Windows 场景检视器和互操作库：
 
 | 项目 | 说明 |
 | --- | --- |
 | **DuckovCoreUtilities** | 面向日常游玩的综合实用功能模组。 |
+| **DockovParty** | 为游戏添加服主权威的双人合作联机。 |
 | **DuckovInterop** | 在游戏内提供本地 JSON RPC 服务，让外部程序可以读取和操作游戏状态。 |
 | **DockovInterop.HierarchyInspector** | 基于 WPF 的场景检视器，用于浏览和编辑正在运行的游戏场景。 |
 | **DuckovInterop.Bridge** | 将 DuckovInterop RPC 接口转换为 stdio MCP 工具的桥接程序。 |
@@ -42,6 +43,24 @@ Core Utilities 提供一组可以在 ModSetting 界面中独立启用和配置�
 - 低生命值时显示可配置的屏幕边缘阴影。
 - 在 HUD 中显示近期击杀记录。
 - 在关卡内的时间与风暴信息下方显示可配置的圆角小地图，支持固定方向、跟随玩家朝向、透明度和快捷键缩放。
+
+### DockovParty
+
+DockovParty 是面向当前游戏版本的实验性双人联机模组。玩家从主菜单继续自己的存档时会直接监听联机；另一名玩家点击新增的“加入游戏”按钮后，使用 ModSetting 中保存的地址连接，不会出现额外配置弹窗。
+
+当前实现包括：
+
+- 基于 `Stream` 的可替换长连接传输层，提供 `Listen`、`AcceptAsync` 与 `ConnectAsync` 接口；默认使用启用 keepalive 的 TCP Stream。
+- 带魔数、版本、消息类型、长度上限和心跳超时的二进制帧协议。
+- 双方选择同一目标后才提交的场景闸门；阵亡玩家由仍存活的一方带回基地。
+- 玩家位置、朝向、生命、角色物品树和远端角色副本同步，并阻止同阵营友军伤害。
+- 服主权威的 NPC 状态与伤害处理，以及共享容器租约、版本冲突纠正、地面物品认领和动态战利品箱同步。
+- 客户端角色、共享仓库和战利品写入服主存档；客户端会话期间禁止写入其本地存档，并在返回主菜单时重新载入原缓存。
+- 阵亡后持续观战另一名玩家，直到队伍返回基地；双方同时阵亡时由服主统一提交回基地。
+
+所有可调配置均位于 ModSetting：联机昵称、监听地址、加入地址、端口、状态同步频率、插值延迟和诊断日志。默认端口为 `37622`。
+
+这是 Alpha 实现，目前固定为两名玩家，不支持主机迁移，也没有加密、账号认证或 NAT 穿透。任务、商店、基地建设、时间和其他全局系统尚未全部网络化；请仅在可信局域网或受信任的组网/VPN 中测试。详细设计和边界见 [`source/DockovParty/README.md`](source/DockovParty/README.md)。
 
 ### DuckovInterop 与场景检视器
 
@@ -93,17 +112,25 @@ dotnet build .\source\DuckovCoreUtilities.slnx
 
 ```powershell
 dotnet build .\source\DuckovCoreUtilities\DuckovCoreUtilities.csproj
+dotnet build .\source\DockovParty\DockovParty.csproj
 dotnet build .\source\DuckovInterop\DuckovInterop.csproj
 dotnet build .\source\DockovInterop.HierarchyInspector\DockovInterop.HierarchyInspector.csproj
 ```
 
+运行 DockovParty 的协议与 TCP 回环测试：
+
+```powershell
+dotnet test .\source\DockovParty.Tests\DockovParty.Tests.csproj
+```
+
 ## English
 
-This repository contains two *Escape from Duckov* mods, a companion Windows hierarchy inspector, and the libraries used for external interoperability.
+This repository contains three *Escape from Duckov* mods, a companion Windows hierarchy inspector, and the libraries used for external interoperability.
 
 | Project | Description |
 | --- | --- |
 | **DuckovCoreUtilities** | A configurable collection of quality-of-life features for regular gameplay. |
+| **DockovParty** | Adds host-authoritative two-player cooperative multiplayer. |
 | **DuckovInterop** | Hosts a local JSON RPC service inside the game so external applications can inspect and modify game state. |
 | **DockovInterop.HierarchyInspector** | A WPF hierarchy inspector for browsing and editing the running game scene. |
 | **DuckovInterop.Bridge** | A bridge that exposes the DuckovInterop RPC interface as stdio MCP tools. |
@@ -126,6 +153,24 @@ Core Utilities provides individually configurable features through the ModSettin
 - Display a configurable screen-edge shadow at low health.
 - Show recent kill records on the HUD.
 - Show a configurable rounded minimap below the time and storm information while in raid levels, with fixed or player-relative orientation, opacity, and keyboard zoom controls.
+
+### DockovParty
+
+DockovParty is an experimental two-player multiplayer mod for the current game build. Continuing a local save immediately starts listening for a peer. The second player uses the new Join Game button, which connects to the address stored in ModSetting without opening another configuration dialog.
+
+The current implementation provides:
+
+- A replaceable, long-lived `Stream` transport with `Listen`, `AcceptAsync`, and `ConnectAsync`; TCP Streams with keepalive are the default implementation.
+- A binary framed protocol with a magic value, version, message kind, payload limit, keepalive, and connection timeout.
+- A scene barrier that commits a transition only after both living players choose the same destination; a dead player follows the surviving player back to base.
+- Player transform, health, character item-tree, and remote replica synchronization with same-team friendly-fire prevention.
+- Host-authoritative NPC state and damage, shared-container leases with version correction, ground-item claims, and dynamically spawned loot containers.
+- Host-side persistence for the client character, shared storage, and loot. Client disk writes are suppressed for the session and its original local cache is reloaded on return to the main menu.
+- Spectating after death until the party returns to base, including a host-coordinated party-wipe transition.
+
+Every adjustable value lives in ModSetting: player name, listen address, join address, port, state rate, interpolation delay, and diagnostic logging. The default port is `37622`.
+
+This is an alpha implementation. It is fixed to two players and does not provide host migration, encryption, account authentication, or NAT traversal. Quests, merchants, base construction, time, and other global systems are not all networked yet. Test only on a trusted LAN or trusted overlay/VPN. See [`source/DockovParty/README.md`](source/DockovParty/README.md) for the detailed design and current boundaries.
 
 ### DuckovInterop and Hierarchy Inspector
 
@@ -177,8 +222,15 @@ Or build individual projects:
 
 ```powershell
 dotnet build .\source\DuckovCoreUtilities\DuckovCoreUtilities.csproj
+dotnet build .\source\DockovParty\DockovParty.csproj
 dotnet build .\source\DuckovInterop\DuckovInterop.csproj
 dotnet build .\source\DockovInterop.HierarchyInspector\DockovInterop.HierarchyInspector.csproj
+```
+
+Run DockovParty protocol and TCP loopback tests:
+
+```powershell
+dotnet test .\source\DockovParty.Tests\DockovParty.Tests.csproj
 ```
 
 Source repository: https://github.com/SlimeNull/DuckovMods
