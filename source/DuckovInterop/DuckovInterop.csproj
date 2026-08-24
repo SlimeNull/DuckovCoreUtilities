@@ -16,10 +16,6 @@
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="ModSetting">
-      <HintPath>$(ModSettingPath)\ModSetting.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>$(ManagedPath)\Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>

@@ -16,10 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="ModSetting">
-      <HintPath>$(ModSettingPath)\ModSetting.dll</HintPath>
-      <Private>false</Private>
-    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>$(ManagedPath)\Assembly-CSharp.dll</HintPath>
       <Private>false</Private>

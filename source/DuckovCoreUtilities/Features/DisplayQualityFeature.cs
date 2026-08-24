@@ -12,6 +12,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal sealed class DisplayQualityFeature : ItemDecorateFeature
     {
+        private DecorateMode _mode = DecorateMode.Border;
+
         public override string Name => "Display quality";
 
         private AccessTools.FieldRef<ItemDisplay, GameObject> backgroundRingOfItemDisplay =
@@ -19,9 +21,34 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         public enum DecorateMode
         {
+            [InspectorName("边框")]
             Border,
+            [InspectorName("角标")]
             Corner,
+            [InspectorName("背景")]
             Background
+        }
+
+        public DecorateMode Mode
+        {
+            get => _mode;
+            set
+            {
+                if (_mode == value)
+                {
+                    return;
+                }
+
+                _mode = value;
+                foreach (var component in Resources.FindObjectsOfTypeAll<QualityDisplayComponent>())
+                {
+                    if (component != null)
+                    {
+                        component.Mode = value;
+                        component.Refresh(force: true);
+                    }
+                }
+            }
         }
 
         protected override void DecorateItemDisplay(ItemDisplay itemDisplay)
@@ -48,6 +75,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             var backgroundRing = backgroundRingOfItemDisplay.Invoke(itemDisplay).GetComponent<Graphic>();
             var qualityDisplayComponent = itemDisplay.gameObject.GetOrAddComponent<QualityDisplayComponent>();
+            qualityDisplayComponent.Mode = Mode;
             qualityDisplayComponent.Initialize(itemDisplay, backgroundRing, display);
         }
 
@@ -77,10 +105,10 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 Refresh();
             }
 
-            public void Refresh()
+            public void Refresh(bool force = false)
             {
                 if (_target is not null &&
-                    (_target.Target != _lastItem || _target.Target?.Inspected != _lastInspected))
+                    (force || _target.Target != _lastItem || _target.Target?.Inspected != _lastInspected))
                 {
                     if (_target.Target is { } item &&
                         item.StackCount > 0 &&

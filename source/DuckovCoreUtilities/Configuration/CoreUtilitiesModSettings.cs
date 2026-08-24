@@ -1,273 +1,463 @@
-using Duckov.Modding;
-using ModSetting.Api;
 using SlimeNull.DuckovCoreUtilities.Features;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using System;
-using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.Serialization;
 
 namespace SlimeNull.DuckovCoreUtilities.Configuration
 {
-    internal sealed class CoreUtilitiesModSettings
+    internal sealed class CoreUtilitiesModSettings : MonoBehaviour
     {
-        private readonly SettingsBuilder _builder;
-        private readonly FeatureHost _host;
-
-        public CoreUtilitiesModSettings(ModInfo modInfo, FeatureHost host)
+        [Serializable]
+        private sealed class DisplayPriceOptions
         {
-            _builder = SettingsBuilder.Create(modInfo) ?? throw new InvalidOperationException("ModSetting is not available.");
+            [InspectorName("启用")]
+            [FormerlySerializedAs("DisplayPrice.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("价格类型")]
+            [FormerlySerializedAs("DisplayPrice.Mode")]
+            public DisplayPriceFeature.DisplayMode Mode = DisplayPriceFeature.DisplayMode.SellPrice;
+        }
+
+        [Serializable]
+        private sealed class StorageCountOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("DisplayStorageCount.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("显示背包内数量")]
+            [FormerlySerializedAs("DisplayStorageCount.Backpack")]
+            public bool Backpack = true;
+
+            [InspectorName("显示仓库内数量")]
+            [FormerlySerializedAs("DisplayStorageCount.Repository")]
+            public bool Repository = true;
+        }
+
+        [Serializable]
+        private sealed class DisplayQualityOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("DisplayQuality.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("显示方式")]
+            public DisplayQualityFeature.DecorateMode Mode = DisplayQualityFeature.DecorateMode.Border;
+        }
+
+        [Serializable]
+        private sealed class LootOutlineOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("LootOutline.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("显示战利品箱轮廓")]
+            [FormerlySerializedAs("LootOutline.Lootboxes")]
+            public bool Lootboxes = true;
+
+            [InspectorName("显示地面物品轮廓")]
+            [FormerlySerializedAs("LootOutline.GroundItems")]
+            public bool GroundItems = true;
+
+            [InspectorName("使用物品品质颜色")]
+            [FormerlySerializedAs("LootOutline.QualityColor")]
+            public bool QualityColor = true;
+
+            [InspectorName("战利品箱呼吸效果")]
+            [FormerlySerializedAs("LootOutline.LootboxBreathing")]
+            public bool LootboxBreathing = true;
+
+            [InspectorName("地面物品呼吸效果")]
+            [FormerlySerializedAs("LootOutline.GroundItemBreathing")]
+            public bool GroundItemBreathing = true;
+
+            [InspectorName("呼吸周期")]
+            [Tooltip("轮廓完成一次明暗变化所需的秒数")]
+            [Range(0.1f, 5f)]
+            [FormerlySerializedAs("LootOutline.BreathingPeriod")]
+            public float BreathingPeriod = 1.5f;
+
+            [InspectorName("最低透明度")]
+            [Range(0f, 1f)]
+            [FormerlySerializedAs("LootOutline.BreathingMinAlpha")]
+            public float BreathingMinAlpha = 0.35f;
+        }
+
+        [Serializable]
+        private sealed class InventorySortOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("InventorySort.Enabled")]
+            public bool Enabled = true;
+        }
+
+        [Serializable]
+        private sealed class AutoCloseOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("AutoCloseBackpack.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("移动时关闭")]
+            [FormerlySerializedAs("AutoCloseBackpack.WhenMove")]
+            public bool WhenMove = true;
+
+            [InspectorName("受伤时关闭")]
+            [FormerlySerializedAs("AutoCloseBackpack.WhenHurt")]
+            public bool WhenHurt = true;
+        }
+
+        [Serializable]
+        private sealed class FadeHudOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("FadeHud.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("瞄准时透明度")]
+            [Range(0f, 1f)]
+            [FormerlySerializedAs("FadeHud.TargetAlpha")]
+            public float TargetAlpha = 0.3f;
+
+            [InspectorName("淡入淡出时间")]
+            [Range(0.01f, 1f)]
+            [FormerlySerializedAs("FadeHud.SmoothTime")]
+            public float SmoothTime = 0.1f;
+        }
+
+        [Serializable]
+        private sealed class CrosshairColorOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("CrosshairColor.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("开始警告比例")]
+            [Tooltip("弹匣剩余比例低于此值时，准星开始变色")]
+            [Range(0f, 1f)]
+            [FormerlySerializedAs("CrosshairColor.WarnRatio")]
+            public float WarnRatio = 0.5f;
+
+            [InspectorName("最终警告颜色")]
+            [Tooltip("弹匣耗尽时的准星颜色")]
+            [FormerlySerializedAs("CrosshairColor.FinalWarningColor")]
+            public Color FinalWarningColor = Color.red;
+
+            [InspectorName("开始警告颜色")]
+            [Tooltip("刚进入低弹药警告区间时的准星颜色")]
+            [FormerlySerializedAs("CrosshairColor.StartWarningColor")]
+            public Color StartWarningColor = Color.yellow;
+        }
+
+        [Serializable]
+        private sealed class UnfocusedOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("Unfocused.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("失去焦点时静音")]
+            [FormerlySerializedAs("Unfocused.Mute")]
+            public bool Mute = true;
+
+            [InspectorName("失去焦点时暂停")]
+            [FormerlySerializedAs("Unfocused.Pause")]
+#if DEBUG
+            public bool Pause = false;
+#else
+            public bool Pause = true;
+#endif
+        }
+
+        [Serializable]
+        private sealed class LowHealthShadowOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("LowHealthShadow.Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("阴影颜色")]
+            [FormerlySerializedAs("LowHealthShadow.Color")]
+            public Color Color = new Color(1f, 0f, 0f, 0.5f);
+
+            [InspectorName("阴影宽度")]
+            [Range(0f, 400f)]
+            [FormerlySerializedAs("LowHealthShadow.Distance")]
+            public float Distance = 150f;
+
+            [InspectorName("开始显示比例")]
+            [Range(0f, 1f)]
+            [FormerlySerializedAs("LowHealthShadow.UpperThreshold")]
+            public float UpperThreshold = 0.6f;
+
+            [InspectorName("最深效果比例")]
+            [Range(0f, 1f)]
+            [FormerlySerializedAs("LowHealthShadow.LowerThreshold")]
+            public float LowerThreshold = 0.2f;
+        }
+
+        [Serializable]
+        private sealed class KillRecordOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("KillRecord.Enabled")]
+            public bool Enabled = false;
+
+            [InspectorName("显示时间")]
+            [Range(1f, 30f)]
+            [FormerlySerializedAs("KillRecord.Duration")]
+            public float Duration = 5f;
+
+            [InspectorName("最多显示条数")]
+            [Range(1, 20)]
+            [FormerlySerializedAs("KillRecord.MaxCount")]
+            public int MaxCount = 5;
+
+            [InspectorName("文本格式")]
+            [Tooltip("{0} 会替换为目标名称")]
+            [FormerlySerializedAs("KillRecord.Format")]
+            public string Format = "击杀 {0}";
+        }
+
+        [Serializable]
+        private sealed class MinimapOptions
+        {
+            [InspectorName("启用")]
+            [FormerlySerializedAs("Minimap.Enabled")]
+            public bool Enabled = false;
+
+            [InspectorName("显示尺寸")]
+            [Range(100f, 600f)]
+            [FormerlySerializedAs("Minimap.DisplaySize")]
+            public float DisplaySize = 260f;
+
+            [InspectorName("缩放系数")]
+            [Range(MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom)]
+            [FormerlySerializedAs("Minimap.Zoom")]
+            public float Zoom = 1f;
+
+            [InspectorName("地图方向")]
+            [FormerlySerializedAs("Minimap.Mode")]
+            public MinimapFeature.OrientationMode Mode = MinimapFeature.OrientationMode.FixedAngle;
+
+            [InspectorName("缩小按键")]
+            [FormerlySerializedAs("Minimap.ZoomOutKey")]
+            public Key ZoomOutKey = MinimapFeature.DefaultZoomOutKey;
+
+            [InspectorName("放大按键")]
+            [FormerlySerializedAs("Minimap.ZoomInKey")]
+            public Key ZoomInKey = MinimapFeature.DefaultZoomInKey;
+
+            [InspectorName("不透明度")]
+            [Range(0f, 1f)]
+            [FormerlySerializedAs("Minimap.Opacity")]
+            public float Opacity = 0.7f;
+        }
+
+        [SerializeField, InspectorName("显示物品价格")]
+        private DisplayPriceOptions displayPrice = new DisplayPriceOptions();
+
+        [SerializeField, InspectorName("显示库存数量")]
+        private StorageCountOptions storageCount = new StorageCountOptions();
+
+        [SerializeField, InspectorName("显示物品品质")]
+        private DisplayQualityOptions displayQuality = new DisplayQualityOptions();
+
+        [SerializeField, InspectorName("战利品轮廓")]
+        private LootOutlineOptions lootOutline = new LootOutlineOptions();
+
+        [SerializeField, InspectorName("仓库排序按钮")]
+        private InventorySortOptions inventorySort = new InventorySortOptions();
+
+        [SerializeField, InspectorName("自动关闭背包")]
+        private AutoCloseOptions autoCloseBackpack = new AutoCloseOptions();
+
+        [SerializeField, InspectorName("瞄准时淡出 HUD")]
+        private FadeHudOptions fadeHud = new FadeHudOptions();
+
+        [SerializeField, InspectorName("弹药量准星颜色")]
+        private CrosshairColorOptions crosshairColor = new CrosshairColorOptions();
+
+        [SerializeField, InspectorName("游戏失去焦点时")]
+        private UnfocusedOptions unfocused = new UnfocusedOptions();
+
+        [SerializeField, InspectorName("低生命值屏幕阴影")]
+        private LowHealthShadowOptions lowHealthShadow = new LowHealthShadowOptions();
+
+        [SerializeField, InspectorName("击杀记录")]
+        private KillRecordOptions killRecord = new KillRecordOptions();
+
+        [SerializeField, InspectorName("小地图")]
+        private MinimapOptions minimap = new MinimapOptions();
+
+        private FeatureHost? _host;
+        private DisplayPriceFeature? _displayPriceFeature;
+        private DisplayStorageCount? _storageCountFeature;
+        private DisplayQualityFeature? _displayQualityFeature;
+        private LootboxOutlineFeature? _lootOutlineFeature;
+        private InventorySortButtonsFeature? _inventorySortFeature;
+        private AutoCloseBackpackFeature? _autoCloseFeature;
+        private AutoFadeHudWhenAimingFeature? _fadeHudFeature;
+        private BulletCountCrosshairColorFeature? _crosshairFeature;
+        private MuteAndPauseWhenUnfocusedFeature? _unfocusedFeature;
+        private LowHealthInnerShadowFeature? _lowHealthFeature;
+        private KillRecordFeature? _killRecordFeature;
+        private MinimapFeature? _minimapFeature;
+
+        public void Initialize(
+            FeatureHost host,
+            DisplayPriceFeature displayPriceFeature,
+            DisplayStorageCount storageCountFeature,
+            DisplayQualityFeature displayQualityFeature,
+            LootboxOutlineFeature lootOutlineFeature,
+            InventorySortButtonsFeature inventorySortFeature,
+            AutoCloseBackpackFeature autoCloseFeature,
+            AutoFadeHudWhenAimingFeature fadeHudFeature,
+            BulletCountCrosshairColorFeature crosshairFeature,
+            MuteAndPauseWhenUnfocusedFeature unfocusedFeature,
+            LowHealthInnerShadowFeature lowHealthFeature,
+            KillRecordFeature killRecordFeature,
+            MinimapFeature minimapFeature)
+        {
             _host = host;
+            _displayPriceFeature = displayPriceFeature;
+            _storageCountFeature = storageCountFeature;
+            _displayQualityFeature = displayQualityFeature;
+            _lootOutlineFeature = lootOutlineFeature;
+            _inventorySortFeature = inventorySortFeature;
+            _autoCloseFeature = autoCloseFeature;
+            _fadeHudFeature = fadeHudFeature;
+            _crosshairFeature = crosshairFeature;
+            _unfocusedFeature = unfocusedFeature;
+            _lowHealthFeature = lowHealthFeature;
+            _killRecordFeature = killRecordFeature;
+            _minimapFeature = minimapFeature;
+            _minimapFeature.ZoomChangedByInput += OnMinimapZoomChanged;
+            OnValidate();
         }
 
-        public void Configure(
-            DisplayPriceFeature displayPrice,
-            DisplayStorageCount displayStorageCount,
-            DisplayQualityFeature displayQuality,
-            LootboxOutlineFeature lootOutline,
-            InventorySortButtonsFeature inventorySort,
-            AutoCloseBackpackFeature autoCloseBackpack,
-            AutoFadeHudWhenAimingFeature fadeHud,
-            BulletCountCrosshairColorFeature crosshairColor,
-            MuteAndPauseWhenUnfocusedFeature unfocused,
-            LowHealthInnerShadowFeature lowHealthShadow,
-            KillRecordFeature killRecord,
-            MinimapFeature minimap)
+        private void OnValidate()
         {
-            ConfigureDisplayPrice(displayPrice);
-            ConfigureStorageCount(displayStorageCount);
-            ConfigureFeatureOnly("DisplayQuality", "显示物品品质", displayQuality);
-            ConfigureLootOutline(lootOutline);
-            ConfigureFeatureOnly("InventorySort", "仓库排序按钮", inventorySort);
-            ConfigureAutoCloseBackpack(autoCloseBackpack);
-            ConfigureFadeHud(fadeHud);
-            ConfigureCrosshairColor(crosshairColor);
-            ConfigureUnfocused(unfocused);
-            ConfigureLowHealthShadow(lowHealthShadow);
-            ConfigureKillRecord(killRecord);
-            ConfigureMinimap(minimap);
-        }
-
-        private void ConfigureDisplayPrice(DisplayPriceFeature feature)
-        {
-            const string prefix = "DisplayPrice";
-            var mode = Load(prefix + ".Mode", feature.Mode.ToString());
-            if (Enum.TryParse(mode, out DisplayPriceFeature.DisplayMode parsedMode))
+            ClampValues();
+            if (_host == null)
             {
-                feature.Mode = parsedMode;
+                return;
             }
 
-            AddEnabled(prefix, "显示物品价格", feature);
-            _builder.AddDropdownList(prefix + ".Mode", "价格类型",
-                new List<string> { nameof(DisplayPriceFeature.DisplayMode.SellPrice), nameof(DisplayPriceFeature.DisplayMode.RawPrice) },
-                feature.Mode.ToString(), value =>
-                {
-                    if (Enum.TryParse(value, out DisplayPriceFeature.DisplayMode parsed))
-                    {
-                        feature.Mode = parsed;
-                    }
-                });
-            AddGroup(prefix, "显示物品价格", prefix + ".Enabled", prefix + ".Mode");
+            _displayPriceFeature!.Mode = displayPrice.Mode;
+            _host.SetEnabled(_displayPriceFeature, displayPrice.Enabled);
+
+            _storageCountFeature!.DisplayItemCountInBackpack = storageCount.Backpack;
+            _storageCountFeature.DisplayItemCountInRepository = storageCount.Repository;
+            _host.SetEnabled(_storageCountFeature, storageCount.Enabled);
+
+            _displayQualityFeature!.Mode = displayQuality.Mode;
+            _host.SetEnabled(_displayQualityFeature, displayQuality.Enabled);
+
+            _lootOutlineFeature!.EnableLootboxOutline = lootOutline.Lootboxes;
+            _lootOutlineFeature.EnableGroundItemOutline = lootOutline.GroundItems;
+            _lootOutlineFeature.UseQualityColor = lootOutline.QualityColor;
+            _lootOutlineFeature.LootboxBreathingEffect = lootOutline.LootboxBreathing;
+            _lootOutlineFeature.GroundItemBreathingEffect = lootOutline.GroundItemBreathing;
+            _lootOutlineFeature.BreathingPeriod = lootOutline.BreathingPeriod;
+            _lootOutlineFeature.BreathingMinAlpha = lootOutline.BreathingMinAlpha;
+            _host.SetEnabled(_lootOutlineFeature, lootOutline.Enabled);
+
+            _host.SetEnabled(_inventorySortFeature!, inventorySort.Enabled);
+
+            _autoCloseFeature!.WhenMove = autoCloseBackpack.WhenMove;
+            _autoCloseFeature.WhenHurt = autoCloseBackpack.WhenHurt;
+            _host.SetEnabled(_autoCloseFeature, autoCloseBackpack.Enabled);
+
+            _fadeHudFeature!.TargetAlpha = fadeHud.TargetAlpha;
+            _fadeHudFeature.SmoothTime = fadeHud.SmoothTime;
+            _host.SetEnabled(_fadeHudFeature, fadeHud.Enabled);
+
+            _crosshairFeature!.WarnRatio = crosshairColor.WarnRatio;
+            _crosshairFeature.FinalWarningColor = crosshairColor.FinalWarningColor;
+            _crosshairFeature.StartWarningColor = crosshairColor.StartWarningColor;
+            _host.SetEnabled(_crosshairFeature, crosshairColor.Enabled);
+
+            _unfocusedFeature!.MuteWhenUnfocused = unfocused.Mute;
+            _unfocusedFeature.PauseWhenUnfocused = unfocused.Pause;
+            _host.SetEnabled(_unfocusedFeature, unfocused.Enabled);
+
+            _lowHealthFeature!.ShadowColor = lowHealthShadow.Color;
+            _lowHealthFeature.ShadowDistance = lowHealthShadow.Distance;
+            _lowHealthFeature.HealthThresholdUpper = lowHealthShadow.UpperThreshold;
+            _lowHealthFeature.HealthThresholdLower = lowHealthShadow.LowerThreshold;
+            _host.SetEnabled(_lowHealthFeature, lowHealthShadow.Enabled);
+
+            _killRecordFeature!.RecordDuration = killRecord.Duration;
+            _killRecordFeature.MaxRecordCount = killRecord.MaxCount;
+            _killRecordFeature.RecordFormat = killRecord.Format;
+            _host.SetEnabled(_killRecordFeature, killRecord.Enabled);
+
+            _minimapFeature!.DisplaySize = minimap.DisplaySize;
+            _minimapFeature.Zoom = minimap.Zoom;
+            _minimapFeature.Mode = minimap.Mode;
+            _minimapFeature.ZoomOutKey = minimap.ZoomOutKey;
+            _minimapFeature.ZoomInKey = minimap.ZoomInKey;
+            _minimapFeature.Opacity = minimap.Opacity;
+            _host.SetEnabled(_minimapFeature, minimap.Enabled);
         }
 
-        private void ConfigureStorageCount(DisplayStorageCount feature)
+        private void DuckovModSettingsUpdated()
         {
-            const string prefix = "DisplayStorageCount";
-            feature.DisplayItemCountInBackpack = Load(prefix + ".Backpack", feature.DisplayItemCountInBackpack);
-            feature.DisplayItemCountInRepository = Load(prefix + ".Repository", feature.DisplayItemCountInRepository);
-            AddEnabled(prefix, "显示库存数量", feature);
-            _builder
-                .AddToggle(prefix + ".Backpack", "显示背包内数量", feature.DisplayItemCountInBackpack, value => feature.DisplayItemCountInBackpack = value)
-                .AddToggle(prefix + ".Repository", "显示仓库内数量", feature.DisplayItemCountInRepository, value => feature.DisplayItemCountInRepository = value);
-            AddGroup(prefix, "显示库存数量", prefix + ".Enabled", prefix + ".Backpack", prefix + ".Repository");
+            OnValidate();
         }
 
-        private void ConfigureLootOutline(LootboxOutlineFeature feature)
+        private void OnDestroy()
         {
-            const string prefix = "LootOutline";
-            feature.EnableLootboxOutline = Load(prefix + ".Lootboxes", feature.EnableLootboxOutline);
-            feature.EnableGroundItemOutline = Load(prefix + ".GroundItems", feature.EnableGroundItemOutline);
-            feature.UseQualityColor = Load(prefix + ".QualityColor", feature.UseQualityColor);
-            feature.LootboxBreathingEffect = Load(prefix + ".LootboxBreathing", feature.LootboxBreathingEffect);
-            feature.GroundItemBreathingEffect = Load(prefix + ".GroundItemBreathing", feature.GroundItemBreathingEffect);
-            feature.BreathingPeriod = Load(prefix + ".BreathingPeriod", feature.BreathingPeriod);
-            feature.BreathingMinAlpha = Load(prefix + ".BreathingMinAlpha", feature.BreathingMinAlpha);
-
-            AddEnabled(prefix, "战利品轮廓", feature);
-            _builder
-                .AddToggle(prefix + ".Lootboxes", "显示战利品箱轮廓", feature.EnableLootboxOutline, value => feature.EnableLootboxOutline = value)
-                .AddToggle(prefix + ".GroundItems", "显示地面物品轮廓", feature.EnableGroundItemOutline, value => feature.EnableGroundItemOutline = value)
-                .AddToggle(prefix + ".QualityColor", "使用物品品质颜色", feature.UseQualityColor, value => feature.UseQualityColor = value)
-                .AddToggle(prefix + ".LootboxBreathing", "战利品箱呼吸效果", feature.LootboxBreathingEffect, value => feature.LootboxBreathingEffect = value)
-                .AddToggle(prefix + ".GroundItemBreathing", "地面物品呼吸效果", feature.GroundItemBreathingEffect, value => feature.GroundItemBreathingEffect = value)
-                .AddSlider(prefix + ".BreathingPeriod", "呼吸周期（秒）", feature.BreathingPeriod, new Vector2(0.1f, 5f), value => feature.BreathingPeriod = value, 2)
-                .AddSlider(prefix + ".BreathingMinAlpha", "呼吸效果最低透明度", feature.BreathingMinAlpha, new Vector2(0f, 1f), value => feature.BreathingMinAlpha = value, 2);
-            AddGroup(prefix, "战利品轮廓", prefix + ".Enabled", prefix + ".Lootboxes", prefix + ".GroundItems",
-                prefix + ".QualityColor", prefix + ".LootboxBreathing", prefix + ".GroundItemBreathing",
-                prefix + ".BreathingPeriod", prefix + ".BreathingMinAlpha");
-        }
-
-        private void ConfigureAutoCloseBackpack(AutoCloseBackpackFeature feature)
-        {
-            const string prefix = "AutoCloseBackpack";
-            feature.WhenMove = Load(prefix + ".WhenMove", feature.WhenMove);
-            feature.WhenHurt = Load(prefix + ".WhenHurt", feature.WhenHurt);
-            AddEnabled(prefix, "自动关闭背包", feature);
-            _builder
-                .AddToggle(prefix + ".WhenMove", "移动时关闭", feature.WhenMove, value => feature.WhenMove = value)
-                .AddToggle(prefix + ".WhenHurt", "受伤时关闭", feature.WhenHurt, value => feature.WhenHurt = value);
-            AddGroup(prefix, "自动关闭背包", prefix + ".Enabled", prefix + ".WhenMove", prefix + ".WhenHurt");
-        }
-
-        private void ConfigureFadeHud(AutoFadeHudWhenAimingFeature feature)
-        {
-            const string prefix = "FadeHud";
-            feature.TargetAlpha = Load(prefix + ".TargetAlpha", feature.TargetAlpha);
-            feature.SmoothTime = Load(prefix + ".SmoothTime", feature.SmoothTime);
-            AddEnabled(prefix, "瞄准时淡出 HUD", feature);
-            _builder
-                .AddSlider(prefix + ".TargetAlpha", "瞄准时 HUD 透明度", feature.TargetAlpha, new Vector2(0f, 1f), value => feature.TargetAlpha = value, 2)
-                .AddSlider(prefix + ".SmoothTime", "淡入淡出时间（秒）", feature.SmoothTime, new Vector2(0.01f, 1f), value => feature.SmoothTime = value, 2);
-            AddGroup(prefix, "瞄准时淡出 HUD", prefix + ".Enabled", prefix + ".TargetAlpha", prefix + ".SmoothTime");
-        }
-
-        private void ConfigureCrosshairColor(BulletCountCrosshairColorFeature feature)
-        {
-            const string prefix = "CrosshairColor";
-            feature.WarnRatio = Load(prefix + ".WarnRatio", feature.WarnRatio);
-            AddEnabled(prefix, "弹药量准星颜色", feature);
-            _builder.AddSlider(prefix + ".WarnRatio", "低弹药警告比例", feature.WarnRatio, new Vector2(0f, 1f), value => feature.WarnRatio = value, 2);
-            AddGroup(prefix, "弹药量准星颜色", prefix + ".Enabled", prefix + ".WarnRatio");
-        }
-
-        private void ConfigureUnfocused(MuteAndPauseWhenUnfocusedFeature feature)
-        {
-            const string prefix = "Unfocused";
-            feature.MuteWhenUnfocused = Load(prefix + ".Mute", feature.MuteWhenUnfocused);
-            feature.PauseWhenUnfocused = Load(prefix + ".Pause", feature.PauseWhenUnfocused);
-            AddEnabled(prefix, "游戏失去焦点时", feature);
-            _builder
-                .AddToggle(prefix + ".Mute", "游戏失去焦点时静音", feature.MuteWhenUnfocused, value => feature.MuteWhenUnfocused = value)
-                .AddToggle(prefix + ".Pause", "游戏失去焦点时暂停", feature.PauseWhenUnfocused, value => feature.PauseWhenUnfocused = value);
-            AddGroup(prefix, "游戏失去焦点时", prefix + ".Enabled", prefix + ".Mute", prefix + ".Pause");
-        }
-
-        private void ConfigureLowHealthShadow(LowHealthInnerShadowFeature feature)
-        {
-            const string prefix = "LowHealthShadow";
-            feature.ShadowDistance = Load(prefix + ".Distance", feature.ShadowDistance);
-            feature.HealthThresholdUpper = Load(prefix + ".UpperThreshold", feature.HealthThresholdUpper);
-            feature.HealthThresholdLower = Load(prefix + ".LowerThreshold", feature.HealthThresholdLower);
-            AddEnabled(prefix, "低生命值屏幕阴影", feature);
-            _builder
-                .AddSlider(prefix + ".Distance", "阴影宽度", feature.ShadowDistance, new Vector2(0f, 400f), value => feature.ShadowDistance = value, 0, 4)
-                .AddSlider(prefix + ".UpperThreshold", "开始显示的生命比例", feature.HealthThresholdUpper, new Vector2(0f, 1f), value => feature.HealthThresholdUpper = value, 2)
-                .AddSlider(prefix + ".LowerThreshold", "达到最深效果的生命比例", feature.HealthThresholdLower, new Vector2(0f, 1f), value => feature.HealthThresholdLower = value, 2);
-            AddGroup(prefix, "低生命值屏幕阴影", prefix + ".Enabled", prefix + ".Distance", prefix + ".UpperThreshold", prefix + ".LowerThreshold");
-        }
-
-        private void ConfigureKillRecord(KillRecordFeature feature)
-        {
-            const string prefix = "KillRecord";
-            feature.RecordDuration = Load(prefix + ".Duration", feature.RecordDuration);
-            feature.MaxRecordCount = Load(prefix + ".MaxCount", feature.MaxRecordCount);
-            var recordFormat = Load(prefix + ".Format", feature.RecordFormat);
-            if (IsValidRecordFormat(recordFormat))
+            if (_minimapFeature != null)
             {
-                feature.RecordFormat = recordFormat;
+                _minimapFeature.ZoomChangedByInput -= OnMinimapZoomChanged;
             }
-            AddEnabled(prefix, "击杀记录", feature, false);
-            _builder
-                .AddSlider(prefix + ".Duration", "记录显示时间（秒）", feature.RecordDuration, new Vector2(1f, 30f), value => feature.RecordDuration = value, 1)
-                .AddSlider(prefix + ".MaxCount", "最多显示条数", feature.MaxRecordCount, 1, 20, value => feature.MaxRecordCount = value)
-                .AddInput(prefix + ".Format", "记录文本格式，{0} 代表目标名称", feature.RecordFormat, 80, value =>
-                {
-                    if (IsValidRecordFormat(value))
-                    {
-                        feature.RecordFormat = value;
-                    }
-                });
-            AddGroup(prefix, "击杀记录", prefix + ".Enabled", prefix + ".Duration", prefix + ".MaxCount", prefix + ".Format");
         }
 
-        private static bool IsValidRecordFormat(string value)
+        private void OnMinimapZoomChanged(float value)
+        {
+            minimap.Zoom = Mathf.Clamp(value, MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);
+        }
+
+        private void ClampValues()
+        {
+            lootOutline.BreathingPeriod = Mathf.Clamp(lootOutline.BreathingPeriod, 0.1f, 5f);
+            lootOutline.BreathingMinAlpha = Mathf.Clamp01(lootOutline.BreathingMinAlpha);
+            fadeHud.TargetAlpha = Mathf.Clamp01(fadeHud.TargetAlpha);
+            fadeHud.SmoothTime = Mathf.Clamp(fadeHud.SmoothTime, 0.01f, 1f);
+            crosshairColor.WarnRatio = Mathf.Clamp01(crosshairColor.WarnRatio);
+            crosshairColor.FinalWarningColor.a = 1f;
+            crosshairColor.StartWarningColor.a = 1f;
+            lowHealthShadow.Distance = Mathf.Clamp(lowHealthShadow.Distance, 0f, 400f);
+            lowHealthShadow.UpperThreshold = Mathf.Clamp01(lowHealthShadow.UpperThreshold);
+            lowHealthShadow.LowerThreshold = Mathf.Clamp01(lowHealthShadow.LowerThreshold);
+            killRecord.Duration = Mathf.Clamp(killRecord.Duration, 1f, 30f);
+            killRecord.MaxCount = Mathf.Clamp(killRecord.MaxCount, 1, 20);
+            if (!IsValidRecordFormat(killRecord.Format))
+            {
+                killRecord.Format = "击杀 {0}";
+            }
+            minimap.DisplaySize = Mathf.Clamp(minimap.DisplaySize, 100f, 600f);
+            minimap.Zoom = Mathf.Clamp(minimap.Zoom, MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);
+            minimap.Opacity = Mathf.Clamp01(minimap.Opacity);
+        }
+
+        private static bool IsValidRecordFormat(string? value)
         {
             try
             {
-                string.Format(value, "target");
-                return true;
+                string.Format(value ?? string.Empty, "target");
+                return !string.IsNullOrEmpty(value);
             }
             catch (FormatException)
             {
                 return false;
             }
-        }
-
-        private void ConfigureMinimap(MinimapFeature feature)
-        {
-            const string prefix = "Minimap";
-            const string fixedAngleOption = "固定角度";
-            const string followPlayerOption = "跟随玩家角度";
-            feature.DisplaySize = Mathf.Clamp(Load(prefix + ".DisplaySize", feature.DisplaySize), 100f, 600f);
-            feature.Zoom = Mathf.Clamp(Load(prefix + ".Zoom", feature.Zoom), MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);
-            feature.Opacity = Mathf.Clamp01(Load(prefix + ".Opacity", feature.Opacity));
-
-            var mode = Load(prefix + ".Mode", feature.Mode.ToString());
-            if (mode == followPlayerOption)
-            {
-                feature.Mode = MinimapFeature.OrientationMode.FollowPlayerHeading;
-            }
-            else if (mode == fixedAngleOption)
-            {
-                feature.Mode = MinimapFeature.OrientationMode.FixedAngle;
-            }
-            else if (Enum.TryParse(mode, out MinimapFeature.OrientationMode parsedMode))
-            {
-                feature.Mode = parsedMode;
-            }
-
-            feature.ZoomChangedByInput += value => _builder.SetValue(prefix + ".Zoom", value);
-
-            AddEnabled(prefix, "小地图", feature, false);
-            _builder
-                .AddSlider(prefix + ".DisplaySize", "小地图显示尺寸", feature.DisplaySize, new Vector2(100f, 600f), value => feature.DisplaySize = value, 0, 4)
-                .AddSlider(prefix + ".Zoom", "缩放系数（[ 缩小，] 放大）", feature.Zoom, new Vector2(MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom), value => feature.Zoom = value, 2)
-                .AddDropdownList(prefix + ".Mode", "地图方向",
-                    new List<string>
-                    {
-                        fixedAngleOption,
-                        followPlayerOption,
-                    },
-                    feature.Mode == MinimapFeature.OrientationMode.FollowPlayerHeading ? followPlayerOption : fixedAngleOption, value =>
-                    {
-                        feature.Mode = value == followPlayerOption
-                            ? MinimapFeature.OrientationMode.FollowPlayerHeading
-                            : MinimapFeature.OrientationMode.FixedAngle;
-                    })
-                .AddSlider(prefix + ".Opacity", "小地图不透明度", feature.Opacity, new Vector2(0f, 1f), value => feature.Opacity = value, 2);
-            AddGroup(prefix, "小地图", prefix + ".Enabled", prefix + ".DisplaySize", prefix + ".Zoom", prefix + ".Mode", prefix + ".Opacity");
-        }
-
-        private void ConfigureFeatureOnly(string prefix, string description, FeatureBase feature)
-        {
-            AddEnabled(prefix, description, feature);
-            AddGroup(prefix, description, prefix + ".Enabled");
-        }
-
-        private void AddEnabled(string prefix, string description, FeatureBase feature, bool defaultValue = true)
-        {
-            var enabled = Load(prefix + ".Enabled", defaultValue);
-            _builder.AddToggle(prefix + ".Enabled", "启用" + description, enabled, value => _host.SetEnabled(feature, value));
-            _host.SetEnabled(feature, enabled);
-        }
-
-        private void AddGroup(string key, string description, params string[] children)
-        {
-            _builder.AddGroup(key + ".Group", description, new List<string>(children), open: false);
-        }
-
-        private T Load<T>(string key, T fallback)
-        {
-            return _builder.GetSavedValue<T>(key, out var value) ? value : fallback;
         }
     }
 }

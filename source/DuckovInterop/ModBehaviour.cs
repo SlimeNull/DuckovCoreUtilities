@@ -1,8 +1,8 @@
 using EleCho.JsonRpc;
 using Jint;
-using ModSetting.Api;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using SlimeNull.DuckovInterop.Configuration;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -32,6 +32,7 @@ namespace SlimeNull.DuckovInterop
         private TcpListener? _listener;
         private Thread? _serverTask;
         private Engine? _jsEngine;
+        private InteropSettings? _settings;
         private bool _serverEnabled = true;
         private volatile bool _diagnosticLogging;
         private string _listenHost = HierarchyInspectorRpcEndpoint.Host;
@@ -42,7 +43,8 @@ namespace SlimeNull.DuckovInterop
             try
             {
                 _jsEngine = new Engine((Options cfg) => cfg.AllowClr());
-                ConfigureSettings();
+                _settings = gameObject.GetComponent<InteropSettings>() ?? gameObject.AddComponent<InteropSettings>();
+                _settings.Initialize(this);
                 if (_serverEnabled)
                 {
                     StartServer();
@@ -58,55 +60,28 @@ namespace SlimeNull.DuckovInterop
         {
             StopServer();
 
+            if (_settings != null)
+            {
+                Destroy(_settings);
+                _settings = null;
+            }
+
             _jsEngine?.Dispose();
             _jsEngine = null;
         }
 
-        private void ConfigureSettings()
+        internal void ApplySettings(InteropSettings settings)
         {
-            var builder = SettingsBuilder.Create(info) ?? throw new InvalidOperationException("ModSetting is not available.");
-            _serverEnabled = Load(builder, "Server.Enabled", _serverEnabled);
-            _diagnosticLogging = Load(builder, "Server.DiagnosticLogging", _diagnosticLogging);
+            var enabledChanged = _serverEnabled != settings.ServerEnabled;
+            _serverEnabled = settings.ServerEnabled;
+            _diagnosticLogging = settings.DiagnosticLogging;
+            _listenHost = settings.ListenHost;
+            _listenPort = settings.ListenPort;
 
-            var savedHost = Load(builder, "Server.Host", _listenHost);
-            if (IPAddress.TryParse(savedHost, out _))
+            if (enabledChanged && _jsEngine != null)
             {
-                _listenHost = savedHost;
+                SetServerEnabled(_serverEnabled);
             }
-            else
-            {
-                Debug.LogError($"[DuckovInterop] Ignoring invalid saved listen address '{savedHost}'.");
-            }
-
-            _listenPort = Load(builder, "Server.Port", _listenPort);
-
-            builder
-                .AddToggle("Server.Enabled", "启用 JSON RPC 服务", _serverEnabled, SetServerEnabled)
-                .AddInput("Server.Host", "监听地址（重新启用服务后生效）", _listenHost, 45, value =>
-                {
-                    if (IPAddress.TryParse(value, out _))
-                    {
-                        _listenHost = value;
-                    }
-                    else
-                    {
-                        Debug.LogError($"[DuckovInterop] Invalid listen address '{value}'.");
-                    }
-                })
-                .AddSlider("Server.Port", "监听端口（重新启用服务后生效）", _listenPort, 1024, 65535, value => _listenPort = value, 5)
-                .AddToggle("Server.DiagnosticLogging", "输出 RPC 诊断日志", _diagnosticLogging, value => _diagnosticLogging = value)
-                .AddGroup("Server.Group", "JSON RPC 服务", new List<string>
-                {
-                    "Server.Enabled",
-                    "Server.Host",
-                    "Server.Port",
-                    "Server.DiagnosticLogging"
-                });
-        }
-
-        private static T Load<T>(SettingsBuilder builder, string key, T fallback)
-        {
-            return builder.GetSavedValue<T>(key, out var value) ? value : fallback;
         }
 
         private void SetServerEnabled(bool enabled)

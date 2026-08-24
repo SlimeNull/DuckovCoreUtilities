@@ -1,76 +1,87 @@
-using ModSetting.Api;
 using System;
-using System.Collections.Generic;
 using System.Net;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace SlimeNull.DockovParty.Configuration
 {
-    internal sealed class PartySettings
+    internal sealed class PartySettings : MonoBehaviour
     {
-        public string ListenAddress { get; private set; } = "0.0.0.0";
-        public string JoinAddress { get; private set; } = "127.0.0.1";
-        public int Port { get; private set; } = 37622;
-        public string PlayerName { get; private set; } = "玩家";
-        public int StateRate { get; private set; } = 15;
-        public float InterpolationDelay { get; private set; } = 0.1f;
-        public bool DiagnosticLogging { get; private set; }
-
-        public void Configure(Duckov.Modding.ModInfo modInfo)
+        [Serializable]
+        private sealed class IdentityOptions
         {
-            var builder = SettingsBuilder.Create(modInfo) ??
-                throw new InvalidOperationException("ModSetting is not available.");
+            [InspectorName("联机昵称")]
+            [Tooltip("其他玩家在联机游戏中看到的名称")]
+            [FormerlySerializedAs("Identity.PlayerName")]
+            public string PlayerName = "玩家";
+        }
 
-            ListenAddress = Load(builder, "Network.ListenAddress", ListenAddress);
-            JoinAddress = Load(builder, "Network.JoinAddress", JoinAddress);
-            Port = Mathf.Clamp(Load(builder, "Network.Port", Port), 1024, 65535);
-            PlayerName = NormalizePlayerName(Load(builder, "Identity.PlayerName", PlayerName));
-            StateRate = Mathf.Clamp(Load(builder, "Network.StateRate", StateRate), 5, 30);
-            InterpolationDelay = Mathf.Clamp(Load(builder, "Network.InterpolationDelay", InterpolationDelay), 0.03f, 0.3f);
-            DiagnosticLogging = Load(builder, "Network.DiagnosticLogging", DiagnosticLogging);
+        [Serializable]
+        private sealed class NetworkOptions
+        {
+            [InspectorName("服主监听地址")]
+            [Tooltip("下次开服时生效")]
+            [FormerlySerializedAs("Network.ListenAddress")]
+            public string ListenAddress = "0.0.0.0";
 
-            builder
-                .AddInput("Identity.PlayerName", "联机昵称", PlayerName, 24,
-                    value => PlayerName = NormalizePlayerName(value))
-                .AddGroup("Identity.Group", "玩家", new List<string>
-                {
-                    "Identity.PlayerName",
-                })
-                .AddInput("Network.ListenAddress", "服主监听地址（下次开服生效）", ListenAddress, 45, value =>
-                {
-                    if (IPAddress.TryParse(value, out _))
-                    {
-                        ListenAddress = value;
-                    }
-                    else
-                    {
-                        Debug.LogError($"[DockovParty] 无效监听地址: {value}");
-                    }
-                })
-                .AddInput("Network.JoinAddress", "加入游戏地址", JoinAddress, 255, value =>
-                {
-                    if (!string.IsNullOrWhiteSpace(value))
-                    {
-                        JoinAddress = value.Trim();
-                    }
-                })
-                .AddSlider("Network.Port", "端口", Port, 1024, 65535,
-                    value => Port = value, 5)
-                .AddSlider("Network.StateRate", "状态同步频率", StateRate, 5, 30,
-                    value => StateRate = value)
-                .AddSlider("Network.InterpolationDelay", "插值延迟（秒）", InterpolationDelay,
-                    new Vector2(0.03f, 0.3f), value => InterpolationDelay = value, 2)
-                .AddToggle("Network.DiagnosticLogging", "输出联机诊断日志", DiagnosticLogging,
-                    value => DiagnosticLogging = value)
-                .AddGroup("Network.Group", "网络", new List<string>
-                {
-                    "Network.ListenAddress",
-                    "Network.JoinAddress",
-                    "Network.Port",
-                    "Network.StateRate",
-                    "Network.InterpolationDelay",
-                    "Network.DiagnosticLogging",
-                });
+            [InspectorName("加入游戏地址")]
+            [FormerlySerializedAs("Network.JoinAddress")]
+            public string JoinAddress = "127.0.0.1";
+
+            [InspectorName("端口")]
+            [Range(1024, 65535)]
+            [FormerlySerializedAs("Network.Port")]
+            public int Port = 37622;
+
+            [InspectorName("状态同步频率")]
+            [Tooltip("每秒发送的玩家状态数量")]
+            [Range(5, 30)]
+            [FormerlySerializedAs("Network.StateRate")]
+            public int StateRate = 15;
+
+            [InspectorName("插值延迟")]
+            [Tooltip("远程玩家移动的插值缓冲时间（秒）")]
+            [Range(0.03f, 0.3f)]
+            [FormerlySerializedAs("Network.InterpolationDelay")]
+            public float InterpolationDelay = 0.1f;
+
+            [InspectorName("诊断日志")]
+            [Tooltip("将联机协议收发信息写入游戏日志")]
+            [FormerlySerializedAs("Network.DiagnosticLogging")]
+            public bool DiagnosticLogging = false;
+        }
+
+        [SerializeField]
+        [InspectorName("玩家")]
+        private IdentityOptions identity = new IdentityOptions();
+
+        [SerializeField]
+        [InspectorName("网络")]
+        private NetworkOptions network = new NetworkOptions();
+
+        public string ListenAddress => network.ListenAddress;
+        public string JoinAddress => network.JoinAddress;
+        public int Port => network.Port;
+        public string PlayerName => identity.PlayerName;
+        public int StateRate => network.StateRate;
+        public float InterpolationDelay => network.InterpolationDelay;
+        public bool DiagnosticLogging => network.DiagnosticLogging;
+
+        private void OnValidate()
+        {
+            identity.PlayerName = NormalizePlayerName(identity.PlayerName);
+            network.ListenAddress = NormalizeListenAddress(network.ListenAddress);
+            network.JoinAddress = string.IsNullOrWhiteSpace(network.JoinAddress)
+                ? "127.0.0.1"
+                : network.JoinAddress.Trim();
+            network.Port = Mathf.Clamp(network.Port, 1024, 65535);
+            network.StateRate = Mathf.Clamp(network.StateRate, 5, 30);
+            network.InterpolationDelay = Mathf.Clamp(network.InterpolationDelay, 0.03f, 0.3f);
+        }
+
+        private void DuckovModSettingsUpdated()
+        {
+            OnValidate();
         }
 
         private static string NormalizePlayerName(string? value)
@@ -78,9 +89,16 @@ namespace SlimeNull.DockovParty.Configuration
             return string.IsNullOrWhiteSpace(value) ? "玩家" : value.Trim();
         }
 
-        private static T Load<T>(SettingsBuilder builder, string key, T fallback)
+        private static string NormalizeListenAddress(string? value)
         {
-            return builder.GetSavedValue<T>(key, out var value) ? value : fallback;
+            value = value?.Trim();
+            if (!string.IsNullOrEmpty(value) && IPAddress.TryParse(value, out _))
+            {
+                return value;
+            }
+
+            Debug.LogWarning($"[DockovParty] 无效监听地址 '{value}'，已恢复为 0.0.0.0。");
+            return "0.0.0.0";
         }
     }
 }

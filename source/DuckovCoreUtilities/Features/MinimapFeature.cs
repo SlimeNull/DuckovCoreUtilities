@@ -11,12 +11,16 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         public enum OrientationMode
         {
+            [InspectorName("固定角度")]
             FixedAngle,
+            [InspectorName("跟随玩家角度")]
             FollowPlayerHeading,
         }
 
         public const float MinimumZoom = 0.25f;
         public const float MaximumZoom = 4f;
+        public const Key DefaultZoomOutKey = Key.LeftBracket;
+        public const Key DefaultZoomInKey = Key.RightBracket;
 
         private const string HudCanvasName = "HUDCanvas";
         private const string TimeOfDayDisplayName = "TimeOfDayDisplay";
@@ -50,6 +54,10 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         public float Opacity { get; set; } = 0.7f;
 
         public OrientationMode Mode { get; set; } = OrientationMode.FixedAngle;
+
+        public Key ZoomOutKey { get; set; } = DefaultZoomOutKey;
+
+        public Key ZoomInKey { get; set; } = DefaultZoomInKey;
 
         public event Action<float>? ZoomChangedByInput;
 
@@ -225,11 +233,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return;
             }
 
-            if (Keyboard.current.leftBracketKey.wasPressedThisFrame)
+            var keyboard = Keyboard.current;
+            if (ZoomOutKey != Key.None && keyboard[ZoomOutKey].wasPressedThisFrame)
             {
                 SetZoomFromInput(Zoom / ZoomStep);
             }
-            else if (Keyboard.current.rightBracketKey.wasPressedThisFrame)
+            else if (ZoomInKey != Key.None && keyboard[ZoomInKey].wasPressedThisFrame)
             {
                 SetZoomFromInput(Zoom * ZoomStep);
             }

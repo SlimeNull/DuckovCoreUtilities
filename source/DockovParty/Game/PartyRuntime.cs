@@ -63,10 +63,10 @@ namespace SlimeNull.DockovParty.Game
         public string InitialHostSceneId { get; private set; } = string.Empty;
         public string InitialHostSceneName { get; private set; } = string.Empty;
         public bool LocalPlayerAlive => CharacterMainControl.Main == null || !CharacterMainControl.Main.Health.IsDead;
-        public bool RemotePlayerAlive { get; set; } = true;
+        public bool RemotePlayerAlive { get; internal set; } = true;
         public SceneCoordinator? Scenes => _scenes;
-        public SpectatorController? Spectator { get; set; }
-        public CharacterMainControl? RemoteCharacter { get; set; }
+        public SpectatorController? Spectator { get; internal set; }
+        public CharacterMainControl? RemoteCharacter { get; internal set; }
         public string CurrentSceneId => Duckov.Scenes.MultiSceneCore.MainScene.HasValue ?
             Duckov.Scenes.MultiSceneCore.MainSceneID ?? string.Empty :
             SceneInfoCollection.GetSceneID(SceneManager.GetActiveScene().buildIndex) ?? string.Empty;

@@ -15,11 +15,12 @@
 
 ## 中文
 
-本仓库包含三个游戏模组，以及配套的 Windows 场景检视器和互操作库：
+本仓库包含四个游戏模组，以及配套的 Windows 场景检视器和互操作库：
 
 | 项目 | 说明 |
 | --- | --- |
 | **DuckovCoreUtilities** | 面向日常游玩的综合实用功能模组。 |
+| **DuckovModSettings** | 自动发现 MonoBehaviour 设置并提供分层设置界面。 |
 | **DockovParty** | 为游戏添加服主权威的双人合作联机。 |
 | **DuckovInterop** | 在游戏内提供本地 JSON RPC 服务，让外部程序可以读取和操作游戏状态。 |
 | **DockovInterop.HierarchyInspector** | 基于 WPF 的场景检视器，用于浏览和编辑正在运行的游戏场景。 |
@@ -29,7 +30,7 @@
 
 ### DuckovCoreUtilities
 
-Core Utilities 提供一组可以在 ModSetting 界面中独立启用和配置的功能：
+Core Utilities 提供一组可以在 Duckov Mod Settings 界面中独立启用和配置的功能：
 
 - 在物品界面显示出售价格或原始价格。
 - 显示背包和仓库中同类物品的数量。
@@ -46,7 +47,7 @@ Core Utilities 提供一组可以在 ModSetting 界面中独立启用和配置�
 
 ### DockovParty
 
-DockovParty 是面向当前游戏版本的实验性双人联机模组。玩家从主菜单继续自己的存档时会直接监听联机；另一名玩家点击新增的“加入游戏”按钮后，使用 ModSetting 中保存的地址连接，不会出现额外配置弹窗。
+DockovParty 是面向当前游戏版本的实验性双人联机模组。玩家从主菜单继续自己的存档时会直接监听联机；另一名玩家点击新增的“加入游戏”按钮后，使用 Duckov Mod Settings 中保存的地址连接，不会出现额外配置弹窗。
 
 当前实现包括：
 
@@ -58,7 +59,7 @@ DockovParty 是面向当前游戏版本的实验性双人联机模组。玩家�
 - 客户端角色、共享仓库和战利品写入服主存档；客户端会话期间禁止写入其本地存档，并在返回主菜单时重新载入原缓存。
 - 阵亡后持续观战另一名玩家，直到队伍返回基地；双方同时阵亡时由服主统一提交回基地。
 
-所有可调配置均位于 ModSetting：联机昵称、监听地址、加入地址、端口、状态同步频率、插值延迟和诊断日志。默认端口为 `37622`。
+所有可调配置均位于 Duckov Mod Settings：联机昵称、监听地址、加入地址、端口、状态同步频率、插值延迟和诊断日志。默认端口为 `37622`。
 
 这是 Alpha 实现，目前固定为两名玩家，不支持主机迁移，也没有加密、账号认证或 NAT 穿透。任务、商店、基地建设、时间和其他全局系统尚未全部网络化；请仅在可信局域网或受信任的组网/VPN 中测试。详细设计和边界见 [`source/DockovParty/README.md`](source/DockovParty/README.md)。
 
@@ -74,7 +75,7 @@ DuckovInterop 不限定于 MCP。它在游戏进程内运行一个本地 TCP JSO
 - 修改结构类型的成员时自动回写完整结构，例如 `transform.position.x`。
 - 调用实例或静态方法，并可保存返回的对象引用以供后续请求使用。
 - 在游戏主线程执行 Jint JavaScript，用于高级查询和互操作。
-- 通过 ModSetting 配置 RPC 服务开关、监听地址、端口和诊断日志。
+- 通过 Duckov Mod Settings 配置 RPC 服务开关、监听地址、端口和诊断日志。
 
 `DockovInterop.HierarchyInspector` 提供接近 Unity Hierarchy 与 Inspector 的桌面界面：
 
@@ -87,7 +88,9 @@ DuckovInterop 不限定于 MCP。它在游戏进程内运行一个本地 TCP JSO
 
 ### 安装与配置
 
-从 Steam 创意工坊安装模组时，Steam 会自动安装前置模组 ModSetting。进入游戏的 ModSetting 页面后，可以调整 Core Utilities 的各项功能以及 DuckovInterop 的服务配置。
+安装 DuckovModSettings 后，主菜单和游戏内设置面板会出现“模组”标签页。它会自动读取模组根对象上同程序集 MonoBehaviour 的公开字段、公开可读写属性，以及带 `[SerializeField]` 的非公开字段；其他模组不需要引用或调用设置 API。未安装 DuckovModSettings 时，Core Utilities、DockovParty 和 DuckovInterop 仍会按默认配置运行。
+
+设置支持 Unity 的 `[HideInInspector]`、`[Header]`、`[Tooltip]`、`[Range]`、`[TextArea]`、`[InspectorName]` 和 `[FormerlySerializedAs]` 特性。用户修改设置并关闭页面后，设置组件所在对象会收到 `DuckovModSettingsUpdated` Unity 消息。
 
 场景检视器是独立的 Windows 应用。启动游戏并启用 DuckovInterop 后，再运行 `DockovInterop.HierarchyInspector.exe` 进行连接。
 
@@ -98,9 +101,8 @@ DuckovInterop 不限定于 MCP。它在游戏进程内运行一个本地 TCP JSO
 - Windows
 - .NET 10 SDK
 - 已安装《逃离鸭科夫》
-- 已通过 Steam 创意工坊安装 ModSetting
 
-游戏和 ModSetting 的默认路径位于 [`source/Global.props`](source/Global.props)。如安装位置不同，可通过 MSBuild 属性 `DuckovPath` 和 `ModSettingPath` 覆盖。
+游戏的默认路径位于 [`source/Global.props`](source/Global.props)。如安装位置不同，可通过 MSBuild 属性 `DuckovPath` 覆盖。
 
 构建整个解决方案：
 
@@ -112,6 +114,7 @@ dotnet build .\source\DuckovCoreUtilities.slnx
 
 ```powershell
 dotnet build .\source\DuckovCoreUtilities\DuckovCoreUtilities.csproj
+dotnet build .\source\DuckovModSettings\DuckovModSettings.csproj
 dotnet build .\source\DockovParty\DockovParty.csproj
 dotnet build .\source\DuckovInterop\DuckovInterop.csproj
 dotnet build .\source\DockovInterop.HierarchyInspector\DockovInterop.HierarchyInspector.csproj
@@ -125,11 +128,12 @@ dotnet test .\source\DockovParty.Tests\DockovParty.Tests.csproj
 
 ## English
 
-This repository contains three *Escape from Duckov* mods, a companion Windows hierarchy inspector, and the libraries used for external interoperability.
+This repository contains four *Escape from Duckov* mods, a companion Windows hierarchy inspector, and the libraries used for external interoperability.
 
 | Project | Description |
 | --- | --- |
 | **DuckovCoreUtilities** | A configurable collection of quality-of-life features for regular gameplay. |
+| **DuckovModSettings** | Automatically discovers MonoBehaviour settings and presents a hierarchical settings UI. |
 | **DockovParty** | Adds host-authoritative two-player cooperative multiplayer. |
 | **DuckovInterop** | Hosts a local JSON RPC service inside the game so external applications can inspect and modify game state. |
 | **DockovInterop.HierarchyInspector** | A WPF hierarchy inspector for browsing and editing the running game scene. |
@@ -139,7 +143,7 @@ This repository contains three *Escape from Duckov* mods, a companion Windows hi
 
 ### DuckovCoreUtilities
 
-Core Utilities provides individually configurable features through the ModSetting interface:
+Core Utilities provides individually configurable features through Duckov Mod Settings:
 
 - Show sell price or raw price in item interfaces.
 - Show matching item counts in the backpack and storage.
@@ -156,7 +160,7 @@ Core Utilities provides individually configurable features through the ModSettin
 
 ### DockovParty
 
-DockovParty is an experimental two-player multiplayer mod for the current game build. Continuing a local save immediately starts listening for a peer. The second player uses the new Join Game button, which connects to the address stored in ModSetting without opening another configuration dialog.
+DockovParty is an experimental two-player multiplayer mod for the current game build. Continuing a local save immediately starts listening for a peer. The second player uses the new Join Game button, which connects to the address stored in Duckov Mod Settings without opening another configuration dialog.
 
 The current implementation provides:
 
@@ -168,7 +172,7 @@ The current implementation provides:
 - Host-side persistence for the client character, shared storage, and loot. Client disk writes are suppressed for the session and its original local cache is reloaded on return to the main menu.
 - Spectating after death until the party returns to base, including a host-coordinated party-wipe transition.
 
-Every adjustable value lives in ModSetting: player name, listen address, join address, port, state rate, interpolation delay, and diagnostic logging. The default port is `37622`.
+Every adjustable value lives in Duckov Mod Settings: player name, listen address, join address, port, state rate, interpolation delay, and diagnostic logging. The default port is `37622`.
 
 This is an alpha implementation. It is fixed to two players and does not provide host migration, encryption, account authentication, or NAT traversal. Quests, merchants, base construction, time, and other global systems are not all networked yet. Test only on a trusted LAN or trusted overlay/VPN. See [`source/DockovParty/README.md`](source/DockovParty/README.md) for the detailed design and current boundaries.
 
@@ -184,7 +188,7 @@ Its main capabilities include:
 - Write back complete value types when editing nested members such as `transform.position.x`.
 - Invoke instance or static methods and retain returned object references for later requests.
 - Execute Jint JavaScript on the game main thread for advanced queries and interoperability.
-- Configure the RPC service, listen address, port, and diagnostic logging through ModSetting.
+- Configure the RPC service, listen address, port, and diagnostic logging through Duckov Mod Settings.
 
 `DockovInterop.HierarchyInspector` provides a desktop interface modeled after the Unity Hierarchy and Inspector:
 
@@ -197,7 +201,9 @@ The service listens on `127.0.0.1:37620` by default. DuckovInterop exposes refle
 
 ### Installation and configuration
 
-When the mods are installed from Steam Workshop, Steam automatically installs the ModSetting prerequisite. Use the ModSetting page in game to configure Core Utilities features and DuckovInterop service options.
+With DuckovModSettings installed, a Mods tab is added to both the main-menu and in-game options panels. It automatically reads public fields, public read/write properties, and non-public `[SerializeField]` fields from same-assembly MonoBehaviours on each mod root; other mods do not reference or call a settings API. Core Utilities, DockovParty, and DuckovInterop still run with defaults when DuckovModSettings is absent.
+
+The UI understands Unity's `[HideInInspector]`, `[Header]`, `[Tooltip]`, `[Range]`, `[TextArea]`, `[InspectorName]`, and `[FormerlySerializedAs]` attributes. After edited settings are closed, the owning GameObject receives the `DuckovModSettingsUpdated` Unity message.
 
 The hierarchy inspector is a separate Windows application. Start the game with DuckovInterop enabled, then launch `DockovInterop.HierarchyInspector.exe` to connect.
 
@@ -208,9 +214,8 @@ Requirements:
 - Windows
 - .NET 10 SDK
 - *Escape from Duckov* installed
-- ModSetting installed from Steam Workshop
 
-Default game and ModSetting paths are defined in [`source/Global.props`](source/Global.props). Override the `DuckovPath` and `ModSettingPath` MSBuild properties when using different installation locations.
+The default game path is defined in [`source/Global.props`](source/Global.props). Override the `DuckovPath` MSBuild property when using a different installation location.
 
 Build the complete solution:
 
@@ -222,6 +227,7 @@ Or build individual projects:
 
 ```powershell
 dotnet build .\source\DuckovCoreUtilities\DuckovCoreUtilities.csproj
+dotnet build .\source\DuckovModSettings\DuckovModSettings.csproj
 dotnet build .\source\DockovParty\DockovParty.csproj
 dotnet build .\source\DuckovInterop\DuckovInterop.csproj
 dotnet build .\source\DockovInterop.HierarchyInspector\DockovInterop.HierarchyInspector.csproj

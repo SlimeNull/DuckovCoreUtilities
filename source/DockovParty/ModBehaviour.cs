@@ -11,16 +11,16 @@ namespace SlimeNull.DockovParty
         private const string HarmonyId = "SlimeNull.DockovParty";
         private Harmony? _harmony;
         private PartyRuntime? _runtime;
+        private PartySettings? _settings;
 
         protected override void OnAfterSetup()
         {
             try
             {
-                var settings = new PartySettings();
-                settings.Configure(info);
+                _settings = gameObject.GetComponent<PartySettings>() ?? gameObject.AddComponent<PartySettings>();
 
                 _runtime = gameObject.AddComponent<PartyRuntime>();
-                _runtime.Initialize(settings);
+                _runtime.Initialize(_settings);
 
                 _harmony = new Harmony(HarmonyId);
                 _harmony.PatchAll(typeof(ModBehaviour).Assembly);
@@ -35,7 +35,13 @@ namespace SlimeNull.DockovParty
                     Destroy(_runtime);
                 }
 
+                if (_settings != null)
+                {
+                    Destroy(_settings);
+                }
+
                 _runtime = null;
+                _settings = null;
                 _harmony = null;
             }
         }
@@ -49,7 +55,13 @@ namespace SlimeNull.DockovParty
                 Destroy(_runtime);
             }
 
+            if (_settings != null)
+            {
+                Destroy(_settings);
+            }
+
             _runtime = null;
+            _settings = null;
             _harmony = null;
         }
     }

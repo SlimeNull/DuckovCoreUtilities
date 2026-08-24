@@ -33,6 +33,11 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
                 throw new InvalidOperationException($"Feature '{feature.Name}' is not registered.");
             }
 
+            if (feature.IsEnabled == enabled)
+            {
+                return;
+            }
+
             try
             {
                 if (enabled)

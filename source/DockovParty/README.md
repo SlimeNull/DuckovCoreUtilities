@@ -5,14 +5,14 @@ DockovParty is an experimental, host-authoritative two-player co-op mod for *Esc
 ## Player Flow
 
 1. The host selects a save and clicks Continue Game. The mod calls `Listen` immediately and the original save-loading flow continues.
-2. The client sets the host address in ModSetting and clicks Join Game. No extra connection dialog is shown.
+2. The client sets the host address in Duckov Mod Settings and clicks Join Game. No extra connection dialog is shown.
 3. The host validates the protocol and game versions, then assigns the client character stored inside the host save.
 4. Both players remain in the same scene. A normal transition is committed only when both living players select the same destination.
 5. A dead player spectates the survivor until the survivor returns to base. A party wipe is committed to base by the host.
 
 ## Configuration
 
-All configuration is registered through ModSetting.
+Configuration is exposed as ordinary serialized MonoBehaviour fields. DuckovModSettings discovers it automatically, so DockovParty has no settings-API dependency.
 
 | Setting | Default | Purpose |
 | --- | --- | --- |

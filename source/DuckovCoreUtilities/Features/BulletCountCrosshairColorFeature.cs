@@ -20,10 +20,58 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         private int _lastCapacity = -1;
         private float _lastWarnRatio = -1f;
         private float _nextFallbackPollTime;
+        private float _warnRatio = 0.5f;
+        private Color _finalWarningColor = Color.red;
+        private Color _startWarningColor = Color.yellow;
 
         public override string Name => "Bullet count crosshair color";
 
-        public float WarnRatio { get; set; } = 0.5f;
+        public float WarnRatio
+        {
+            get => _warnRatio;
+            set
+            {
+                if (Mathf.Approximately(_warnRatio, value))
+                {
+                    return;
+                }
+
+                _warnRatio = value;
+                _colorDirty = true;
+            }
+        }
+
+        public Color FinalWarningColor
+        {
+            get => _finalWarningColor;
+            set
+            {
+                value.a = 1f;
+                if (ApproximatelyRgb(_finalWarningColor, value))
+                {
+                    return;
+                }
+
+                _finalWarningColor = value;
+                _colorDirty = true;
+            }
+        }
+
+        public Color StartWarningColor
+        {
+            get => _startWarningColor;
+            set
+            {
+                value.a = 1f;
+                if (ApproximatelyRgb(_startWarningColor, value))
+                {
+                    return;
+                }
+
+                _startWarningColor = value;
+                _colorDirty = true;
+            }
+        }
 
         protected override void OnEnable()
         {
@@ -204,7 +252,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _lastCapacity = capacity;
             _lastWarnRatio = warnRatio;
 
-            var color = GetCrosshairColor(bulletCount, capacity, warnRatio);
+            var color = GetCrosshairColor(
+                bulletCount,
+                capacity,
+                warnRatio,
+                FinalWarningColor,
+                StartWarningColor);
             PruneControllers();
             foreach (var controller in _controllers)
             {
@@ -223,7 +276,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
         }
 
-        private static Color GetCrosshairColor(int bulletCount, int capacity, float warnRatio)
+        private static Color GetCrosshairColor(
+            int bulletCount,
+            int capacity,
+            float warnRatio,
+            Color finalWarningColor,
+            Color startWarningColor)
         {
             if (capacity <= 0)
             {
@@ -240,10 +298,17 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             if (clampedWarnRatio <= 0f)
             {
-                return ratio <= 0f ? Color.red : Color.white;
+                return ratio <= 0f ? finalWarningColor : Color.white;
             }
 
-            return Color.Lerp(Color.red, Color.yellow, ratio / clampedWarnRatio);
+            return Color.Lerp(finalWarningColor, startWarningColor, ratio / clampedWarnRatio);
+        }
+
+        private static bool ApproximatelyRgb(Color left, Color right)
+        {
+            return Mathf.Approximately(left.r, right.r) &&
+                Mathf.Approximately(left.g, right.g) &&
+                Mathf.Approximately(left.b, right.b);
         }
 
         private abstract class CrosshairColorControllerBase : MonoBehaviour
@@ -372,16 +437,14 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             public static bool IsDefaultTint(Color color)
             {
-                return Mathf.Approximately(color.r, 1f) &&
-                    Mathf.Approximately(color.g, 1f) &&
-                    Mathf.Approximately(color.b, 1f);
+                return ApproximatelyRgb(color, Color.white);
             }
 
             public void SetTint(Color color)
             {
                 var nextTint = new Color(color.r, color.g, color.b, 1f);
                 var shouldEnable = !IsDefaultTint(nextTint);
-                if (Approximately(_tint, nextTint) && enabled == shouldEnable)
+                if (ApproximatelyRgb(_tint, nextTint) && enabled == shouldEnable)
                 {
                     return;
                 }
@@ -425,12 +488,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return (byte)((value * tint + 127) / 255);
             }
 
-            private static bool Approximately(Color left, Color right)
-            {
-                return Mathf.Approximately(left.r, right.r) &&
-                    Mathf.Approximately(left.g, right.g) &&
-                    Mathf.Approximately(left.b, right.b);
-            }
         }
 
         private sealed class CrosshairColorDriver : MonoBehaviour

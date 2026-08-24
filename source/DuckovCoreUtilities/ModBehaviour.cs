@@ -8,6 +8,7 @@ namespace SlimeNull.DuckovCoreUtilities
     public class ModBehaviour : Duckov.Modding.ModBehaviour
     {
         private FeatureHost? _features;
+        private CoreUtilitiesModSettings? _settings;
 
         protected override void OnAfterSetup()
         {
@@ -51,8 +52,9 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(killRecord);
             _features.Register(minimap);
 
-            var settings = new CoreUtilitiesModSettings(info, _features);
-            settings.Configure(
+            _settings = gameObject.GetComponent<CoreUtilitiesModSettings>() ?? gameObject.AddComponent<CoreUtilitiesModSettings>();
+            _settings.Initialize(
+                _features,
                 displayPrice,
                 displayStorageCount,
                 displayQuality,
@@ -72,6 +74,11 @@ namespace SlimeNull.DuckovCoreUtilities
         protected override void OnBeforeDeactivate()
         {
             Debug.Log("deactivating DCU");
+            if (_settings != null)
+            {
+                Destroy(_settings);
+                _settings = null;
+            }
             _features?.DisableAll();
             _features = null;
         }
