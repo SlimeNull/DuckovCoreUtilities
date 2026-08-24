@@ -119,7 +119,11 @@ namespace SlimeNull.DuckovModSettings.UI
             buttons.Add(button);
 
             var page = pageObject.AddComponent<SettingsPage>();
-            page.Initialize(_catalog, _onPageClosing, tabLabel?.font);
+            page.Initialize(
+                _catalog,
+                _onPageClosing,
+                tabLabel?.font,
+                templateTab.GetComponent<RectTransform>());
             PagesByPanel[panel.GetInstanceID()] = page;
             _attachments.Add(new Attachment(panel, button, page));
 

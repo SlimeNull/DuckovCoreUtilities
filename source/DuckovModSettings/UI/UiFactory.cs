@@ -261,7 +261,7 @@ namespace SlimeNull.DuckovModSettings.UI
             scroll.horizontal = false;
             scroll.vertical = true;
             scroll.movementType = ScrollRect.MovementType.Clamped;
-            scroll.scrollSensitivity = 32f;
+            scroll.scrollSensitivity = 1f;
             return scroll;
         }
 

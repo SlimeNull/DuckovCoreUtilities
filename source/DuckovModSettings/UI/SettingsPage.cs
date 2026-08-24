@@ -24,16 +24,25 @@ namespace SlimeNull.DuckovModSettings.UI
         private TMP_InputField? _search;
         private Button? _resetButton;
         private ScrollRect? _settingsScroll;
+        private LayoutElement? _pageLayout;
+        private RectTransform? _layoutTemplate;
         private ModSettingsModel? _selectedMod;
         private bool _initialized;
         private bool _wasVisible;
         private bool _rebuildRequested;
 
-        public void Initialize(SettingsCatalog catalog, Action onPageClosing, TMP_FontAsset? font)
+        public void Initialize(
+            SettingsCatalog catalog,
+            Action onPageClosing,
+            TMP_FontAsset? font,
+            RectTransform? layoutTemplate)
         {
             _catalog = catalog;
             _onPageClosing = onPageClosing;
             _font = font ?? Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault();
+            _layoutTemplate = layoutTemplate;
+            _pageLayout = gameObject.AddComponent<LayoutElement>();
+            RefreshPageLayout();
             BuildShell();
             _catalog.StructureChanged += OnStructureChanged;
             _catalog.ValueChanged += OnValueChanged;
@@ -58,6 +67,7 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void OnEnable()
         {
+            RefreshPageLayout();
             if (!_initialized)
             {
                 return;
@@ -74,6 +84,26 @@ namespace SlimeNull.DuckovModSettings.UI
                 _wasVisible = false;
                 CommitPendingChanges();
             }
+        }
+
+        private void RefreshPageLayout()
+        {
+            if (_pageLayout == null || _layoutTemplate == null)
+            {
+                return;
+            }
+
+            var templateHeight = Mathf.Max(0f, _layoutTemplate.rect.height);
+            var minimumHeight = Mathf.Max(0f, LayoutUtility.GetMinHeight(_layoutTemplate));
+            var preferredHeight = Mathf.Max(templateHeight, LayoutUtility.GetPreferredHeight(_layoutTemplate));
+            if (preferredHeight <= 0f)
+            {
+                return;
+            }
+
+            _pageLayout.minHeight = Mathf.Min(minimumHeight, preferredHeight);
+            _pageLayout.preferredHeight = preferredHeight;
+            _pageLayout.flexibleHeight = Mathf.Max(0f, LayoutUtility.GetFlexibleHeight(_layoutTemplate));
         }
 
         private void OnDestroy()
@@ -140,6 +170,7 @@ namespace SlimeNull.DuckovModSettings.UI
             var toolbarLayout = toolbar.gameObject.AddComponent<LayoutElement>();
             toolbarLayout.minHeight = 48f;
             toolbarLayout.preferredHeight = 48f;
+            toolbarLayout.flexibleHeight = 0f;
             var toolbarHorizontal = toolbar.gameObject.AddComponent<HorizontalLayoutGroup>();
             toolbarHorizontal.spacing = 10f;
             toolbarHorizontal.childAlignment = TextAnchor.MiddleCenter;
