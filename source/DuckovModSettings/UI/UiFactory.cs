@@ -212,8 +212,11 @@ namespace SlimeNull.DuckovModSettings.UI
             var handleArea = Rect("Handle Slide Area", root);
             Stretch(handleArea, 8f, 0f, 8f, 0f);
             var handle = Rect("Handle", handleArea);
-            handle.sizeDelta = new Vector2(18f, 18f);
-            var handleImage = AddImage(handle.gameObject, InputBackground, 9f);
+            handle.anchorMin = new Vector2(0f, 0.5f);
+            handle.anchorMax = new Vector2(0f, 0.5f);
+            handle.pivot = new Vector2(0.5f, 0.5f);
+            handle.sizeDelta = new Vector2(16f, 16f);
+            var handleImage = AddImage(handle.gameObject, InputBackground, 8f);
 
             slider.fillRect = fill;
             slider.handleRect = handle;

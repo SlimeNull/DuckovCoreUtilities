@@ -13,6 +13,7 @@ namespace SlimeNull.DuckovModSettings.UI
     internal sealed class SettingsPage : MonoBehaviour
     {
         private readonly Dictionary<string, bool> _foldoutStates = new Dictionary<string, bool>(StringComparer.Ordinal);
+        private readonly Dictionary<string, NavigationItem> _navigationItems = new Dictionary<string, NavigationItem>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> _previewSprites = new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private SettingsCatalog? _catalog;
         private Action? _onPageClosing;
@@ -74,7 +75,6 @@ namespace SlimeNull.DuckovModSettings.UI
             }
             _wasVisible = true;
             RebuildNavigation();
-            RebuildSettings();
         }
 
         private void OnDisable()
@@ -136,7 +136,7 @@ namespace SlimeNull.DuckovModSettings.UI
         {
             UiFactory.AddImage(gameObject, UiFactory.PageBackground, UiFactory.PanelRadius);
             var root = UiFactory.Rect("Layout", transform);
-            UiFactory.Stretch(root, 16f, 16f, 16f, 16f);
+            UiFactory.Stretch(root);
             var horizontal = root.gameObject.AddComponent<HorizontalLayoutGroup>();
             horizontal.spacing = 14f;
             horizontal.childControlHeight = true;
@@ -214,6 +214,7 @@ namespace SlimeNull.DuckovModSettings.UI
             {
                 return;
             }
+            _navigationItems.Clear();
             ClearChildren(_navigationContent);
 
             var mods = _catalog.Mods;
@@ -251,7 +252,8 @@ namespace SlimeNull.DuckovModSettings.UI
                 marker.pivot = new Vector2(0f, 0.5f);
                 marker.sizeDelta = new Vector2(5f, -12f);
                 marker.anchoredPosition = Vector2.zero;
-                UiFactory.AddImage(marker.gameObject, selected ? Color.white : Color.clear, 2.5f);
+                var markerImage = UiFactory.AddImage(marker.gameObject, selected ? Color.white : Color.clear, 2.5f);
+                _navigationItems[mod.Id] = new NavigationItem(button, markerImage);
             }
 
             RebuildSettings();
@@ -373,23 +375,35 @@ namespace SlimeNull.DuckovModSettings.UI
             rootVertical.childForceExpandHeight = false;
             rootVertical.childForceExpandWidth = true;
 
-            Button? foldoutButton = null;
-            foldoutButton = UiFactory.Button(
+            RectTransform? body = null;
+            TMP_Text? foldoutLabel = null;
+            var foldoutButton = UiFactory.Button(
                 "Foldout",
                 root,
                 _font,
                 (open ? "v  " : ">  ") + title,
                 () =>
                 {
-                    _foldoutStates[key] = !_foldoutStates[key];
-                    RebuildSettings();
+                    var nextOpen = !_foldoutStates[key];
+                    _foldoutStates[key] = nextOpen;
+                    body?.gameObject.SetActive(nextOpen);
+                    if (foldoutLabel != null)
+                    {
+                        foldoutLabel.text = (nextOpen ? "v  " : ">  ") + title;
+                    }
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(root);
+                    if (_settingsContent != null)
+                    {
+                        LayoutRebuilder.ForceRebuildLayoutImmediate(_settingsContent);
+                    }
                 },
                 42f,
                 UiFactory.GroupBackground,
                 TextAlignmentOptions.MidlineLeft);
+            foldoutLabel = foldoutButton.GetComponentInChildren<TMP_Text>();
             AttachTooltip(foldoutButton.gameObject, tooltip);
 
-            var body = UiFactory.Rect("Indented Content", root);
+            body = UiFactory.Rect("Indented Content", root);
             var bodyHorizontal = body.gameObject.AddComponent<HorizontalLayoutGroup>();
             bodyHorizontal.padding = new RectOffset(10, 0, 2, 4);
             bodyHorizontal.spacing = 12f;
@@ -606,8 +620,25 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void SelectMod(ModSettingsModel mod)
         {
+            if (_selectedMod?.Id == mod.Id)
+            {
+                return;
+            }
             _selectedMod = mod;
-            RebuildNavigation();
+            UpdateNavigationSelection();
+            RebuildSettings();
+        }
+
+        private void UpdateNavigationSelection()
+        {
+            foreach (var pair in _navigationItems)
+            {
+                var selected = _selectedMod?.Id == pair.Key;
+                var background = selected ? UiFactory.SelectedBackground : UiFactory.RaisedBackground;
+                pair.Value.Button.targetGraphic.color = background;
+                pair.Value.Button.colors = UiFactory.ButtonColors(background);
+                pair.Value.Marker.color = selected ? Color.white : Color.clear;
+            }
         }
 
         private void AddModPreview(Transform parent, ModSettingsModel mod)
@@ -734,6 +765,18 @@ namespace SlimeNull.DuckovModSettings.UI
                 child.SetActive(false);
                 Destroy(child);
             }
+        }
+
+        private sealed class NavigationItem
+        {
+            public NavigationItem(Button button, Image marker)
+            {
+                Button = button;
+                Marker = marker;
+            }
+
+            public Button Button { get; }
+            public Image Marker { get; }
         }
     }
 
