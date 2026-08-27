@@ -71,12 +71,10 @@ namespace SlimeNull.DuckovModSettings.Core
                 changed = true;
             }
 
-            _mods = _snapshots.Values
+            _mods = SortMods(_snapshots.Values
                 .Select(snapshot => snapshot.Model)
                 .Where(model => model != null)
-                .Cast<ModSettingsModel>()
-                .OrderBy(model => model.DisplayName, StringComparer.Create(LocalizedText.Culture, ignoreCase: true))
-                .ToArray();
+                .Cast<ModSettingsModel>());
             if (changed)
             {
                 StructureChanged?.Invoke();
@@ -99,10 +97,17 @@ namespace SlimeNull.DuckovModSettings.Core
 
         public void RefreshLocalization()
         {
-            _mods = _mods
-                .OrderBy(model => model.DisplayName, StringComparer.Create(LocalizedText.Culture, ignoreCase: true))
-                .ToArray();
+            _mods = SortMods(_mods);
             StructureChanged?.Invoke();
+        }
+
+        private static ModSettingsModel[] SortMods(IEnumerable<ModSettingsModel> mods)
+        {
+            var settingsAssembly = typeof(SettingsCatalog).Assembly;
+            return mods
+                .OrderBy(model => model.ResourceAssembly == settingsAssembly ? 0 : 1)
+                .ThenBy(model => model.DisplayName, StringComparer.Create(LocalizedText.Culture, ignoreCase: true))
+                .ToArray();
         }
 
         private static List<DuckovModBehaviour> GetActiveRoots()
