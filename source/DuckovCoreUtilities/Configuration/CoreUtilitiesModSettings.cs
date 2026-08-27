@@ -22,6 +22,17 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         }
 
         [Serializable]
+        private sealed class BlackMarketPriceOptions
+        {
+            [InspectorName("启用")]
+            public bool Enabled = true;
+
+            [InspectorName("需求价格比较基准")]
+            public BlackMarketPriceComparisonFeature.DemandBaseline DemandBaseline =
+                BlackMarketPriceComparisonFeature.DemandBaseline.MerchantSellback;
+        }
+
+        [Serializable]
         private sealed class StorageCountOptions
         {
             [InspectorName("启用")]
@@ -258,8 +269,65 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             public float Opacity = 0.7f;
         }
 
+        [Serializable]
+        private sealed class BossMapMarkerOptions
+        {
+            [InspectorName("启用")]
+            public bool Enabled = true;
+
+            [InspectorName("位置模式")]
+            public BossMapMarkerFeature.TrackingMode Mode = BossMapMarkerFeature.TrackingMode.Static;
+
+            [InspectorName("显示名称")]
+            public bool ShowNames = true;
+
+            [InspectorName("标记颜色")]
+            public Color MarkerColor = new Color(1f, 0.3f, 0.3f, 1f);
+        }
+
+        [Serializable]
+        private sealed class WakeTimeOptions
+        {
+            [InspectorName("小时")]
+            [Range(0, 23)]
+            public int Hour;
+
+            [InspectorName("分钟")]
+            [Range(0, 59)]
+            public int Minute;
+
+            public WakeTimeOptions(int hour, int minute)
+            {
+                Hour = hour;
+                Minute = minute;
+            }
+        }
+
+        [Serializable]
+        private sealed class QuickSleepOptions
+        {
+            [InspectorName("启用")]
+            public bool Enabled = true;
+
+            [InspectorName("固定时间按钮 1")]
+            public WakeTimeOptions FirstTime = new WakeTimeOptions(6, 0);
+
+            [InspectorName("固定时间按钮 2")]
+            public WakeTimeOptions SecondTime = new WakeTimeOptions(22, 0);
+        }
+
+        [Serializable]
+        private sealed class ItemUsageOptions
+        {
+            [InspectorName("启用")]
+            public bool Enabled = true;
+        }
+
         [SerializeField, InspectorName("显示物品价格")]
         private DisplayPriceOptions displayPrice = new DisplayPriceOptions();
+
+        [SerializeField, InspectorName("黑市比价")]
+        private BlackMarketPriceOptions blackMarketPrice = new BlackMarketPriceOptions();
 
         [SerializeField, InspectorName("显示库存数量")]
         private StorageCountOptions storageCount = new StorageCountOptions();
@@ -294,8 +362,18 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [SerializeField, InspectorName("小地图")]
         private MinimapOptions minimap = new MinimapOptions();
 
+        [SerializeField, InspectorName("显示 BOSS 位置")]
+        private BossMapMarkerOptions bossMapMarker = new BossMapMarkerOptions();
+
+        [SerializeField, InspectorName("快点鸭时间")]
+        private QuickSleepOptions quickSleep = new QuickSleepOptions();
+
+        [SerializeField, InspectorName("显示物品可用次数")]
+        private ItemUsageOptions itemUsage = new ItemUsageOptions();
+
         private FeatureHost? _host;
         private DisplayPriceFeature? _displayPriceFeature;
+        private BlackMarketPriceComparisonFeature? _blackMarketPriceFeature;
         private DisplayStorageCount? _storageCountFeature;
         private DisplayQualityFeature? _displayQualityFeature;
         private LootboxOutlineFeature? _lootOutlineFeature;
@@ -307,10 +385,14 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private LowHealthInnerShadowFeature? _lowHealthFeature;
         private KillRecordFeature? _killRecordFeature;
         private MinimapFeature? _minimapFeature;
+        private BossMapMarkerFeature? _bossMapMarkerFeature;
+        private QuickSleepFeature? _quickSleepFeature;
+        private ItemUsageDisplayFeature? _itemUsageFeature;
 
         public void Initialize(
             FeatureHost host,
             DisplayPriceFeature displayPriceFeature,
+            BlackMarketPriceComparisonFeature blackMarketPriceFeature,
             DisplayStorageCount storageCountFeature,
             DisplayQualityFeature displayQualityFeature,
             LootboxOutlineFeature lootOutlineFeature,
@@ -321,10 +403,14 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             MuteAndPauseWhenUnfocusedFeature unfocusedFeature,
             LowHealthInnerShadowFeature lowHealthFeature,
             KillRecordFeature killRecordFeature,
-            MinimapFeature minimapFeature)
+            MinimapFeature minimapFeature,
+            BossMapMarkerFeature bossMapMarkerFeature,
+            QuickSleepFeature quickSleepFeature,
+            ItemUsageDisplayFeature itemUsageFeature)
         {
             _host = host;
             _displayPriceFeature = displayPriceFeature;
+            _blackMarketPriceFeature = blackMarketPriceFeature;
             _storageCountFeature = storageCountFeature;
             _displayQualityFeature = displayQualityFeature;
             _lootOutlineFeature = lootOutlineFeature;
@@ -336,6 +422,9 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             _lowHealthFeature = lowHealthFeature;
             _killRecordFeature = killRecordFeature;
             _minimapFeature = minimapFeature;
+            _bossMapMarkerFeature = bossMapMarkerFeature;
+            _quickSleepFeature = quickSleepFeature;
+            _itemUsageFeature = itemUsageFeature;
             _minimapFeature.ZoomChangedByInput += OnMinimapZoomChanged;
             OnValidate();
         }
@@ -350,6 +439,9 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
 
             _displayPriceFeature!.Mode = displayPrice.Mode;
             _host.SetEnabled(_displayPriceFeature, displayPrice.Enabled);
+
+            _blackMarketPriceFeature!.Baseline = blackMarketPrice.DemandBaseline;
+            _host.SetEnabled(_blackMarketPriceFeature, blackMarketPrice.Enabled);
 
             _storageCountFeature!.DisplayItemCountInBackpack = storageCount.Backpack;
             _storageCountFeature.DisplayItemCountInRepository = storageCount.Repository;
@@ -404,6 +496,19 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             _minimapFeature.ZoomInKey = minimap.ZoomInKey;
             _minimapFeature.Opacity = minimap.Opacity;
             _host.SetEnabled(_minimapFeature, minimap.Enabled);
+
+            _bossMapMarkerFeature!.Mode = bossMapMarker.Mode;
+            _bossMapMarkerFeature.ShowNames = bossMapMarker.ShowNames;
+            _bossMapMarkerFeature.MarkerColor = bossMapMarker.MarkerColor;
+            _host.SetEnabled(_bossMapMarkerFeature, bossMapMarker.Enabled);
+
+            _quickSleepFeature!.FirstHour = quickSleep.FirstTime.Hour;
+            _quickSleepFeature.FirstMinute = quickSleep.FirstTime.Minute;
+            _quickSleepFeature.SecondHour = quickSleep.SecondTime.Hour;
+            _quickSleepFeature.SecondMinute = quickSleep.SecondTime.Minute;
+            _host.SetEnabled(_quickSleepFeature, quickSleep.Enabled);
+
+            _host.SetEnabled(_itemUsageFeature!, itemUsage.Enabled);
         }
 
         private void DuckovModSettingsUpdated()
@@ -445,6 +550,14 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             minimap.DisplaySize = Mathf.Clamp(minimap.DisplaySize, 100f, 600f);
             minimap.Zoom = Mathf.Clamp(minimap.Zoom, MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);
             minimap.Opacity = Mathf.Clamp01(minimap.Opacity);
+            bossMapMarker.MarkerColor.r = Mathf.Clamp01(bossMapMarker.MarkerColor.r);
+            bossMapMarker.MarkerColor.g = Mathf.Clamp01(bossMapMarker.MarkerColor.g);
+            bossMapMarker.MarkerColor.b = Mathf.Clamp01(bossMapMarker.MarkerColor.b);
+            bossMapMarker.MarkerColor.a = Mathf.Clamp01(bossMapMarker.MarkerColor.a);
+            quickSleep.FirstTime.Hour = Mathf.Clamp(quickSleep.FirstTime.Hour, 0, 23);
+            quickSleep.FirstTime.Minute = Mathf.Clamp(quickSleep.FirstTime.Minute, 0, 59);
+            quickSleep.SecondTime.Hour = Mathf.Clamp(quickSleep.SecondTime.Hour, 0, 23);
+            quickSleep.SecondTime.Minute = Mathf.Clamp(quickSleep.SecondTime.Minute, 0, 59);
         }
 
         private static bool IsValidRecordFormat(string? value)

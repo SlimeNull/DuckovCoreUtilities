@@ -21,6 +21,7 @@ namespace SlimeNull.DuckovCoreUtilities
 
             _features = new FeatureHost(gameObject);
             var displayPrice = new DisplayPriceFeature();
+            var blackMarketPrice = new BlackMarketPriceComparisonFeature();
             var displayStorageCount = new DisplayStorageCount();
             var displayQuality = new DisplayQualityFeature();
             var lootOutline = new LootboxOutlineFeature();
@@ -38,8 +39,12 @@ namespace SlimeNull.DuckovCoreUtilities
             var lowHealthShadow = new LowHealthInnerShadowFeature();
             var killRecord = new KillRecordFeature();
             var minimap = new MinimapFeature();
+            var bossMapMarker = new BossMapMarkerFeature();
+            var quickSleep = new QuickSleepFeature();
+            var itemUsage = new ItemUsageDisplayFeature();
 
             _features.Register(displayPrice);
+            _features.Register(blackMarketPrice);
             _features.Register(displayStorageCount);
             _features.Register(displayQuality);
             _features.Register(lootOutline);
@@ -51,11 +56,15 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(lowHealthShadow);
             _features.Register(killRecord);
             _features.Register(minimap);
+            _features.Register(bossMapMarker);
+            _features.Register(quickSleep);
+            _features.Register(itemUsage);
 
             _settings = gameObject.GetComponent<CoreUtilitiesModSettings>() ?? gameObject.AddComponent<CoreUtilitiesModSettings>();
             _settings.Initialize(
                 _features,
                 displayPrice,
+                blackMarketPrice,
                 displayStorageCount,
                 displayQuality,
                 lootOutline,
@@ -66,7 +75,10 @@ namespace SlimeNull.DuckovCoreUtilities
                 unfocused,
                 lowHealthShadow,
                 killRecord,
-                minimap);
+                minimap,
+                bossMapMarker,
+                quickSleep,
+                itemUsage);
 
             Debug.Log("loaded DCU");
         }
