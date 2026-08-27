@@ -66,7 +66,7 @@ To add another language:
 
 [olist]
 [*]Copy [b]Localization/SettingsText.resx[/b] from the project, or start from an existing translation.
-[*]Name the copy [b]SettingsText.<language>.resx[/b]. Use a neutral language tag such as [b]ja[/b], [b]ko[/b], or [b]ru[/b]. For Chinese, use the script tags [b]zh-Hans[/b] (Simplified) or [b]zh-Hant[/b] (Traditional).
+[*]Name the copy [b]SettingsText.<language>.resx[/b], such as [b]ja[/b], [b]ko[/b], or [b]ru[/b].
 [*]Translate resource values only. Preserve every key and placeholders such as [b]{0}[/b] and [b]{1}[/b].
 [*]Submit the completed file as a Pull Request to the [url=https://github.com/SlimeNull/DuckovMods]GitHub repository[/url].
 [/olist]
