@@ -414,73 +414,103 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             public Color MarkerColor = new Color(1f, 0.78f, 0.12f, 1f);
         }
 
-        [Header("@SettingsText/CategoryItemsAndEconomy")]
-        [SerializeField, InspectorName("@SettingsText/FeatureDisplayPrice")]
-        private DisplayPriceOptions displayPrice = new DisplayPriceOptions();
+        [Serializable]
+        private sealed class ItemsAndEconomyOptions
+        {
+            [InspectorName("@SettingsText/FeatureDisplayPrice")]
+            public DisplayPriceOptions DisplayPrice = new DisplayPriceOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureBlackMarketPrice")]
-        private BlackMarketPriceOptions blackMarketPrice = new BlackMarketPriceOptions();
+            [InspectorName("@SettingsText/FeatureBlackMarketPrice")]
+            public BlackMarketPriceOptions BlackMarketPrice = new BlackMarketPriceOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureStorageCount")]
-        private StorageCountOptions storageCount = new StorageCountOptions();
+            [InspectorName("@SettingsText/FeatureStorageCount")]
+            public StorageCountOptions StorageCount = new StorageCountOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureDisplayQuality")]
-        private DisplayQualityOptions displayQuality = new DisplayQualityOptions();
+            [InspectorName("@SettingsText/FeatureDisplayQuality")]
+            public DisplayQualityOptions DisplayQuality = new DisplayQualityOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureItemUsage")]
-        private ItemUsageOptions itemUsage = new ItemUsageOptions();
+            [InspectorName("@SettingsText/FeatureItemSearchSound")]
+            public ItemSearchSoundOptions ItemSearchSound = new ItemSearchSoundOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureRecordedItemIndicator")]
-        private RecordedItemIndicatorOptions recordedItemIndicator = new RecordedItemIndicatorOptions();
+            [InspectorName("@SettingsText/FeatureItemUsage")]
+            public ItemUsageOptions ItemUsage = new ItemUsageOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureQuestRequirements")]
-        private QuestRequirementsOptions questRequirements = new QuestRequirementsOptions();
+            [InspectorName("@SettingsText/FeatureRecordedItemIndicator")]
+            public RecordedItemIndicatorOptions RecordedItemIndicator = new RecordedItemIndicatorOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureItemSearchSound")]
-        private ItemSearchSoundOptions itemSearchSound = new ItemSearchSoundOptions();
+            [InspectorName("@SettingsText/FeatureQuestRequirements")]
+            public QuestRequirementsOptions QuestRequirements = new QuestRequirementsOptions();
+        }
 
-        [Header("@SettingsText/CategoryLootAndInventory")]
-        [SerializeField, InspectorName("@SettingsText/FeatureLootOutline")]
-        private LootOutlineOptions lootOutline = new LootOutlineOptions();
+        [Serializable]
+        private sealed class LootAndInventoryOptions
+        {
+            [InspectorName("@SettingsText/FeatureLootOutline")]
+            public LootOutlineOptions LootOutline = new LootOutlineOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureInventorySort")]
-        private InventorySortOptions inventorySort = new InventorySortOptions();
+            [InspectorName("@SettingsText/FeatureInventorySort")]
+            public InventorySortOptions InventorySort = new InventorySortOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureAutoCloseBackpack")]
-        private AutoCloseOptions autoCloseBackpack = new AutoCloseOptions();
+            [InspectorName("@SettingsText/FeatureAutoCloseBackpack")]
+            public AutoCloseOptions AutoCloseBackpack = new AutoCloseOptions();
+        }
 
-        [Header("@SettingsText/CategoryCombatAndHud")]
-        [SerializeField, InspectorName("@SettingsText/FeatureFadeHud")]
-        private FadeHudOptions fadeHud = new FadeHudOptions();
+        [Serializable]
+        private sealed class CombatAndHudOptions
+        {
+            [InspectorName("@SettingsText/FeatureFadeHud")]
+            public FadeHudOptions FadeHud = new FadeHudOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureCrosshairColor")]
-        private CrosshairColorOptions crosshairColor = new CrosshairColorOptions();
+            [InspectorName("@SettingsText/FeatureCrosshairColor")]
+            public CrosshairColorOptions CrosshairColor = new CrosshairColorOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureLowHealthShadow")]
-        private LowHealthShadowOptions lowHealthShadow = new LowHealthShadowOptions();
+            [InspectorName("@SettingsText/FeatureLowHealthShadow")]
+            public LowHealthShadowOptions LowHealthShadow = new LowHealthShadowOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureKillRecord")]
-        private KillRecordOptions killRecord = new KillRecordOptions();
+            [InspectorName("@SettingsText/FeatureKillRecord")]
+            public KillRecordOptions KillRecord = new KillRecordOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureGrenadeRadius")]
-        private GrenadeRadiusOptions grenadeRadius = new GrenadeRadiusOptions();
+            [InspectorName("@SettingsText/FeatureGrenadeRadius")]
+            public GrenadeRadiusOptions GrenadeRadius = new GrenadeRadiusOptions();
+        }
 
-        [Header("@SettingsText/CategoryMapAndTime")]
-        [SerializeField, InspectorName("@SettingsText/FeatureMinimap")]
-        private MinimapOptions minimap = new MinimapOptions();
+        [Serializable]
+        private sealed class MapAndTimeOptions
+        {
+            [InspectorName("@SettingsText/FeatureMinimap")]
+            public MinimapOptions Minimap = new MinimapOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureBossMapMarker")]
-        private BossMapMarkerOptions bossMapMarker = new BossMapMarkerOptions();
+            [InspectorName("@SettingsText/FeatureBossMapMarker")]
+            public BossMapMarkerOptions BossMapMarker = new BossMapMarkerOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureQuickSleep")]
-        private QuickSleepOptions quickSleep = new QuickSleepOptions();
+            [InspectorName("@SettingsText/FeatureQuickSleep")]
+            public QuickSleepOptions QuickSleep = new QuickSleepOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureQuestFavorites")]
-        private QuestFavoriteOptions questFavorites = new QuestFavoriteOptions();
+            [InspectorName("@SettingsText/FeatureQuestFavorites")]
+            public QuestFavoriteOptions QuestFavorites = new QuestFavoriteOptions();
+        }
 
-        [Header("@SettingsText/CategoryWindowBehavior")]
-        [SerializeField, InspectorName("@SettingsText/FeatureUnfocused")]
-        private UnfocusedOptions unfocused = new UnfocusedOptions();
+        [Serializable]
+        private sealed class WindowBehaviorOptions
+        {
+            [InspectorName("@SettingsText/FeatureUnfocused")]
+            public UnfocusedOptions Unfocused = new UnfocusedOptions();
+        }
+
+        [SerializeField, InspectorName("@SettingsText/CategoryItemsAndEconomy")]
+        private ItemsAndEconomyOptions itemsAndEconomy = new ItemsAndEconomyOptions();
+
+        [SerializeField, InspectorName("@SettingsText/CategoryLootAndInventory")]
+        private LootAndInventoryOptions lootAndInventory = new LootAndInventoryOptions();
+
+        [SerializeField, InspectorName("@SettingsText/CategoryCombatAndHud")]
+        private CombatAndHudOptions combatAndHud = new CombatAndHudOptions();
+
+        [SerializeField, InspectorName("@SettingsText/CategoryMapAndTime")]
+        private MapAndTimeOptions mapAndTime = new MapAndTimeOptions();
+
+        [SerializeField, InspectorName("@SettingsText/CategoryWindowBehavior")]
+        private WindowBehaviorOptions windowBehavior = new WindowBehaviorOptions();
 
         private FeatureHost? _host;
         private DisplayPriceFeature? _displayPriceFeature;
@@ -563,127 +593,127 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
                 return;
             }
 
-            _displayPriceFeature!.Mode = displayPrice.Mode;
-            _host.SetEnabled(_displayPriceFeature, displayPrice.Enabled);
+            _displayPriceFeature!.Mode = itemsAndEconomy.DisplayPrice.Mode;
+            _host.SetEnabled(_displayPriceFeature, itemsAndEconomy.DisplayPrice.Enabled);
 
-            _blackMarketPriceFeature!.Baseline = blackMarketPrice.DemandBaseline;
-            _host.SetEnabled(_blackMarketPriceFeature, blackMarketPrice.Enabled);
+            _blackMarketPriceFeature!.Baseline = itemsAndEconomy.BlackMarketPrice.DemandBaseline;
+            _host.SetEnabled(_blackMarketPriceFeature, itemsAndEconomy.BlackMarketPrice.Enabled);
 
-            _storageCountFeature!.DisplayItemCountInBackpack = storageCount.Backpack;
-            _storageCountFeature.DisplayItemCountInRepository = storageCount.Repository;
-            _host.SetEnabled(_storageCountFeature, storageCount.Enabled);
+            _storageCountFeature!.DisplayItemCountInBackpack = itemsAndEconomy.StorageCount.Backpack;
+            _storageCountFeature.DisplayItemCountInRepository = itemsAndEconomy.StorageCount.Repository;
+            _host.SetEnabled(_storageCountFeature, itemsAndEconomy.StorageCount.Enabled);
 
             _displayQualityFeature!.SetQualityColors(
-                displayQuality.Quality0Color,
-                displayQuality.Quality1Color,
-                displayQuality.Quality2Color,
-                displayQuality.Quality3Color,
-                displayQuality.Quality4Color,
-                displayQuality.Quality5Color,
-                displayQuality.Quality6Color);
-            _displayQualityFeature.Mode = displayQuality.Mode;
-            _host.SetEnabled(_displayQualityFeature, displayQuality.Enabled);
+                itemsAndEconomy.DisplayQuality.Quality0Color,
+                itemsAndEconomy.DisplayQuality.Quality1Color,
+                itemsAndEconomy.DisplayQuality.Quality2Color,
+                itemsAndEconomy.DisplayQuality.Quality3Color,
+                itemsAndEconomy.DisplayQuality.Quality4Color,
+                itemsAndEconomy.DisplayQuality.Quality5Color,
+                itemsAndEconomy.DisplayQuality.Quality6Color);
+            _displayQualityFeature.Mode = itemsAndEconomy.DisplayQuality.Mode;
+            _host.SetEnabled(_displayQualityFeature, itemsAndEconomy.DisplayQuality.Enabled);
 
-            ConfigureItemSearchSoundQuality(0, itemSearchSound.Quality0);
-            ConfigureItemSearchSoundQuality(1, itemSearchSound.Quality1);
-            ConfigureItemSearchSoundQuality(2, itemSearchSound.Quality2);
-            ConfigureItemSearchSoundQuality(3, itemSearchSound.Quality3);
-            ConfigureItemSearchSoundQuality(4, itemSearchSound.Quality4);
-            ConfigureItemSearchSoundQuality(5, itemSearchSound.Quality5);
-            ConfigureItemSearchSoundQuality(6, itemSearchSound.Quality6);
-            _host.SetEnabled(_itemSearchSoundFeature!, itemSearchSound.Enabled);
+            ConfigureItemSearchSoundQuality(0, itemsAndEconomy.ItemSearchSound.Quality0);
+            ConfigureItemSearchSoundQuality(1, itemsAndEconomy.ItemSearchSound.Quality1);
+            ConfigureItemSearchSoundQuality(2, itemsAndEconomy.ItemSearchSound.Quality2);
+            ConfigureItemSearchSoundQuality(3, itemsAndEconomy.ItemSearchSound.Quality3);
+            ConfigureItemSearchSoundQuality(4, itemsAndEconomy.ItemSearchSound.Quality4);
+            ConfigureItemSearchSoundQuality(5, itemsAndEconomy.ItemSearchSound.Quality5);
+            ConfigureItemSearchSoundQuality(6, itemsAndEconomy.ItemSearchSound.Quality6);
+            _host.SetEnabled(_itemSearchSoundFeature!, itemsAndEconomy.ItemSearchSound.Enabled);
 
-            _lootOutlineFeature!.EnableLootboxOutline = lootOutline.Lootboxes;
-            _lootOutlineFeature.EnableGroundItemOutline = lootOutline.GroundItems;
-            _lootOutlineFeature.UseQualityColor = lootOutline.QualityColor;
-            _lootOutlineFeature.LootboxBreathingEffect = lootOutline.LootboxBreathing;
-            _lootOutlineFeature.GroundItemBreathingEffect = lootOutline.GroundItemBreathing;
-            _lootOutlineFeature.BreathingPeriod = lootOutline.BreathingPeriod;
-            _lootOutlineFeature.BreathingMinAlpha = lootOutline.BreathingMinAlpha;
-            _host.SetEnabled(_lootOutlineFeature, lootOutline.Enabled);
+            _lootOutlineFeature!.EnableLootboxOutline = lootAndInventory.LootOutline.Lootboxes;
+            _lootOutlineFeature.EnableGroundItemOutline = lootAndInventory.LootOutline.GroundItems;
+            _lootOutlineFeature.UseQualityColor = lootAndInventory.LootOutline.QualityColor;
+            _lootOutlineFeature.LootboxBreathingEffect = lootAndInventory.LootOutline.LootboxBreathing;
+            _lootOutlineFeature.GroundItemBreathingEffect = lootAndInventory.LootOutline.GroundItemBreathing;
+            _lootOutlineFeature.BreathingPeriod = lootAndInventory.LootOutline.BreathingPeriod;
+            _lootOutlineFeature.BreathingMinAlpha = lootAndInventory.LootOutline.BreathingMinAlpha;
+            _host.SetEnabled(_lootOutlineFeature, lootAndInventory.LootOutline.Enabled);
 
-            _host.SetEnabled(_inventorySortFeature!, inventorySort.Enabled);
+            _host.SetEnabled(_inventorySortFeature!, lootAndInventory.InventorySort.Enabled);
 
-            _autoCloseFeature!.WhenMove = autoCloseBackpack.WhenMove;
-            _autoCloseFeature.WhenHurt = autoCloseBackpack.WhenHurt;
-            _host.SetEnabled(_autoCloseFeature, autoCloseBackpack.Enabled);
+            _autoCloseFeature!.WhenMove = lootAndInventory.AutoCloseBackpack.WhenMove;
+            _autoCloseFeature.WhenHurt = lootAndInventory.AutoCloseBackpack.WhenHurt;
+            _host.SetEnabled(_autoCloseFeature, lootAndInventory.AutoCloseBackpack.Enabled);
 
-            _fadeHudFeature!.TargetAlpha = fadeHud.TargetAlpha;
-            _fadeHudFeature.SmoothTime = fadeHud.SmoothTime;
-            _host.SetEnabled(_fadeHudFeature, fadeHud.Enabled);
+            _fadeHudFeature!.TargetAlpha = combatAndHud.FadeHud.TargetAlpha;
+            _fadeHudFeature.SmoothTime = combatAndHud.FadeHud.SmoothTime;
+            _host.SetEnabled(_fadeHudFeature, combatAndHud.FadeHud.Enabled);
 
-            _crosshairFeature!.WarnRatio = crosshairColor.WarnRatio;
-            _crosshairFeature.FinalWarningColor = crosshairColor.FinalWarningColor;
-            _crosshairFeature.StartWarningColor = crosshairColor.StartWarningColor;
-            _host.SetEnabled(_crosshairFeature, crosshairColor.Enabled);
+            _crosshairFeature!.WarnRatio = combatAndHud.CrosshairColor.WarnRatio;
+            _crosshairFeature.FinalWarningColor = combatAndHud.CrosshairColor.FinalWarningColor;
+            _crosshairFeature.StartWarningColor = combatAndHud.CrosshairColor.StartWarningColor;
+            _host.SetEnabled(_crosshairFeature, combatAndHud.CrosshairColor.Enabled);
 
-            _unfocusedFeature!.MuteWhenUnfocused = unfocused.Mute;
-            _unfocusedFeature.PauseWhenUnfocused = unfocused.Pause;
-            _host.SetEnabled(_unfocusedFeature, unfocused.Enabled);
+            _unfocusedFeature!.MuteWhenUnfocused = windowBehavior.Unfocused.Mute;
+            _unfocusedFeature.PauseWhenUnfocused = windowBehavior.Unfocused.Pause;
+            _host.SetEnabled(_unfocusedFeature, windowBehavior.Unfocused.Enabled);
 
-            _lowHealthFeature!.ShadowColor = lowHealthShadow.Color;
-            _lowHealthFeature.ShadowDistance = lowHealthShadow.Distance;
-            _lowHealthFeature.HealthThresholdUpper = lowHealthShadow.UpperThreshold;
-            _lowHealthFeature.HealthThresholdLower = lowHealthShadow.LowerThreshold;
-            _host.SetEnabled(_lowHealthFeature, lowHealthShadow.Enabled);
+            _lowHealthFeature!.ShadowColor = combatAndHud.LowHealthShadow.Color;
+            _lowHealthFeature.ShadowDistance = combatAndHud.LowHealthShadow.Distance;
+            _lowHealthFeature.HealthThresholdUpper = combatAndHud.LowHealthShadow.UpperThreshold;
+            _lowHealthFeature.HealthThresholdLower = combatAndHud.LowHealthShadow.LowerThreshold;
+            _host.SetEnabled(_lowHealthFeature, combatAndHud.LowHealthShadow.Enabled);
 
-            _killRecordFeature!.RecordDuration = killRecord.Duration;
-            _killRecordFeature.MaxRecordCount = killRecord.MaxCount;
-            _killRecordFeature.RecordFormat = killRecord.Format;
-            _host.SetEnabled(_killRecordFeature, killRecord.Enabled);
+            _killRecordFeature!.RecordDuration = combatAndHud.KillRecord.Duration;
+            _killRecordFeature.MaxRecordCount = combatAndHud.KillRecord.MaxCount;
+            _killRecordFeature.RecordFormat = combatAndHud.KillRecord.Format;
+            _host.SetEnabled(_killRecordFeature, combatAndHud.KillRecord.Enabled);
 
-            _minimapFeature!.DisplaySize = minimap.DisplaySize;
-            _minimapFeature.Zoom = minimap.Zoom;
-            _minimapFeature.Mode = minimap.Mode;
-            _minimapFeature.ZoomOutKey = minimap.ZoomOutKey;
-            _minimapFeature.ZoomInKey = minimap.ZoomInKey;
-            _minimapFeature.Opacity = minimap.Opacity;
-            _host.SetEnabled(_minimapFeature, minimap.Enabled);
+            _minimapFeature!.DisplaySize = mapAndTime.Minimap.DisplaySize;
+            _minimapFeature.Zoom = mapAndTime.Minimap.Zoom;
+            _minimapFeature.Mode = mapAndTime.Minimap.Mode;
+            _minimapFeature.ZoomOutKey = mapAndTime.Minimap.ZoomOutKey;
+            _minimapFeature.ZoomInKey = mapAndTime.Minimap.ZoomInKey;
+            _minimapFeature.Opacity = mapAndTime.Minimap.Opacity;
+            _host.SetEnabled(_minimapFeature, mapAndTime.Minimap.Enabled);
 
-            _bossMapMarkerFeature!.Mode = bossMapMarker.Mode;
-            _bossMapMarkerFeature.ShowNames = bossMapMarker.ShowNames;
-            _bossMapMarkerFeature.MarkerColor = bossMapMarker.MarkerColor;
-            _host.SetEnabled(_bossMapMarkerFeature, bossMapMarker.Enabled);
+            _bossMapMarkerFeature!.Mode = mapAndTime.BossMapMarker.Mode;
+            _bossMapMarkerFeature.ShowNames = mapAndTime.BossMapMarker.ShowNames;
+            _bossMapMarkerFeature.MarkerColor = mapAndTime.BossMapMarker.MarkerColor;
+            _host.SetEnabled(_bossMapMarkerFeature, mapAndTime.BossMapMarker.Enabled);
 
-            _quickSleepFeature!.FirstHour = quickSleep.FirstTime.Hour;
-            _quickSleepFeature.FirstMinute = quickSleep.FirstTime.Minute;
-            _quickSleepFeature.SecondHour = quickSleep.SecondTime.Hour;
-            _quickSleepFeature.SecondMinute = quickSleep.SecondTime.Minute;
-            _host.SetEnabled(_quickSleepFeature, quickSleep.Enabled);
+            _quickSleepFeature!.FirstHour = mapAndTime.QuickSleep.FirstTime.Hour;
+            _quickSleepFeature.FirstMinute = mapAndTime.QuickSleep.FirstTime.Minute;
+            _quickSleepFeature.SecondHour = mapAndTime.QuickSleep.SecondTime.Hour;
+            _quickSleepFeature.SecondMinute = mapAndTime.QuickSleep.SecondTime.Minute;
+            _host.SetEnabled(_quickSleepFeature, mapAndTime.QuickSleep.Enabled);
 
-            _host.SetEnabled(_itemUsageFeature!, itemUsage.Enabled);
+            _host.SetEnabled(_itemUsageFeature!, itemsAndEconomy.ItemUsage.Enabled);
 
-            _grenadeRadiusFeature!.RadiusColor = grenadeRadius.RadiusColor;
-            _grenadeRadiusFeature.ProgressColor = grenadeRadius.ProgressColor;
-            _grenadeRadiusFeature.SmokeTimerColor = grenadeRadius.SmokeTimerColor;
-            _grenadeRadiusFeature.ShowFuseProgress = grenadeRadius.ShowFuseProgress;
-            _grenadeRadiusFeature.ShowSmokeTimer = grenadeRadius.ShowSmokeTimer;
-            _host.SetEnabled(_grenadeRadiusFeature, grenadeRadius.Enabled);
+            _grenadeRadiusFeature!.RadiusColor = combatAndHud.GrenadeRadius.RadiusColor;
+            _grenadeRadiusFeature.ProgressColor = combatAndHud.GrenadeRadius.ProgressColor;
+            _grenadeRadiusFeature.SmokeTimerColor = combatAndHud.GrenadeRadius.SmokeTimerColor;
+            _grenadeRadiusFeature.ShowFuseProgress = combatAndHud.GrenadeRadius.ShowFuseProgress;
+            _grenadeRadiusFeature.ShowSmokeTimer = combatAndHud.GrenadeRadius.ShowSmokeTimer;
+            _host.SetEnabled(_grenadeRadiusFeature, combatAndHud.GrenadeRadius.Enabled);
             if (_grenadeRadiusFeature.IsEnabled)
             {
                 _grenadeRadiusFeature.RefreshExistingIndicators();
             }
 
-            _recordedItemIndicatorFeature!.BackgroundColor = recordedItemIndicator.BackgroundColor;
-            _recordedItemIndicatorFeature.TextColor = recordedItemIndicator.TextColor;
-            _host.SetEnabled(_recordedItemIndicatorFeature, recordedItemIndicator.Enabled);
+            _recordedItemIndicatorFeature!.BackgroundColor = itemsAndEconomy.RecordedItemIndicator.BackgroundColor;
+            _recordedItemIndicatorFeature.TextColor = itemsAndEconomy.RecordedItemIndicator.TextColor;
+            _host.SetEnabled(_recordedItemIndicatorFeature, itemsAndEconomy.RecordedItemIndicator.Enabled);
             if (_recordedItemIndicatorFeature.IsEnabled)
             {
                 _recordedItemIndicatorFeature.RefreshExistingIndicators();
             }
 
-            _questRequirementsFeature!.ShowQuestRequirements = questRequirements.IncludeQuests;
-            _questRequirementsFeature.ShowPerkRequirements = questRequirements.IncludePerks;
-            _questRequirementsFeature.ShowBuildingRequirements = questRequirements.IncludeBuildings;
-            _host.SetEnabled(_questRequirementsFeature, questRequirements.Enabled);
+            _questRequirementsFeature!.ShowQuestRequirements = itemsAndEconomy.QuestRequirements.IncludeQuests;
+            _questRequirementsFeature.ShowPerkRequirements = itemsAndEconomy.QuestRequirements.IncludePerks;
+            _questRequirementsFeature.ShowBuildingRequirements = itemsAndEconomy.QuestRequirements.IncludeBuildings;
+            _host.SetEnabled(_questRequirementsFeature, itemsAndEconomy.QuestRequirements.Enabled);
             if (_questRequirementsFeature.IsEnabled)
             {
                 _questRequirementsFeature.RefreshCurrentDisplay();
             }
 
-            _questFavoriteFeature!.Style = questFavorites.MarkerStyle;
-            _questFavoriteFeature.MarkerColor = questFavorites.MarkerColor;
-            _host.SetEnabled(_questFavoriteFeature, questFavorites.Enabled);
+            _questFavoriteFeature!.Style = mapAndTime.QuestFavorites.MarkerStyle;
+            _questFavoriteFeature.MarkerColor = mapAndTime.QuestFavorites.MarkerColor;
+            _host.SetEnabled(_questFavoriteFeature, mapAndTime.QuestFavorites.Enabled);
             if (_questFavoriteFeature.IsEnabled)
             {
                 _questFavoriteFeature.RefreshAppearanceAndSort();
@@ -706,15 +736,15 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
 
         internal void RefreshLocalization(string previousDefaultFormat)
         {
-            if (!string.Equals(killRecord.Format, previousDefaultFormat, StringComparison.Ordinal))
+            if (!string.Equals(combatAndHud.KillRecord.Format, previousDefaultFormat, StringComparison.Ordinal))
             {
                 return;
             }
 
-            killRecord.Format = SettingsText.KillRecordDefaultFormat;
+            combatAndHud.KillRecord.Format = SettingsText.KillRecordDefaultFormat;
             if (_killRecordFeature != null)
             {
-                _killRecordFeature.RecordFormat = killRecord.Format;
+                _killRecordFeature.RecordFormat = combatAndHud.KillRecord.Format;
             }
         }
 
@@ -728,45 +758,59 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
 
         private void OnMinimapZoomChanged(float value)
         {
-            minimap.Zoom = Mathf.Clamp(value, MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);
+            mapAndTime.Minimap.Zoom = Mathf.Clamp(value, MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);
         }
 
         private void ClampValues()
         {
-            lootOutline.BreathingPeriod = Mathf.Clamp(lootOutline.BreathingPeriod, 0.1f, 5f);
-            lootOutline.BreathingMinAlpha = Mathf.Clamp01(lootOutline.BreathingMinAlpha);
-            fadeHud.TargetAlpha = Mathf.Clamp01(fadeHud.TargetAlpha);
-            fadeHud.SmoothTime = Mathf.Clamp(fadeHud.SmoothTime, 0.01f, 1f);
-            crosshairColor.WarnRatio = Mathf.Clamp01(crosshairColor.WarnRatio);
-            crosshairColor.FinalWarningColor.a = 1f;
-            crosshairColor.StartWarningColor.a = 1f;
-            lowHealthShadow.Distance = Mathf.Clamp(lowHealthShadow.Distance, 0f, 400f);
-            lowHealthShadow.UpperThreshold = Mathf.Clamp01(lowHealthShadow.UpperThreshold);
-            lowHealthShadow.LowerThreshold = Mathf.Clamp01(lowHealthShadow.LowerThreshold);
-            killRecord.Duration = Mathf.Clamp(killRecord.Duration, 1f, 30f);
-            killRecord.MaxCount = Mathf.Clamp(killRecord.MaxCount, 1, 20);
-            if (!IsValidRecordFormat(killRecord.Format))
+            lootAndInventory.LootOutline.BreathingPeriod =
+                Mathf.Clamp(lootAndInventory.LootOutline.BreathingPeriod, 0.1f, 5f);
+            lootAndInventory.LootOutline.BreathingMinAlpha =
+                Mathf.Clamp01(lootAndInventory.LootOutline.BreathingMinAlpha);
+            combatAndHud.FadeHud.TargetAlpha = Mathf.Clamp01(combatAndHud.FadeHud.TargetAlpha);
+            combatAndHud.FadeHud.SmoothTime = Mathf.Clamp(combatAndHud.FadeHud.SmoothTime, 0.01f, 1f);
+            combatAndHud.CrosshairColor.WarnRatio = Mathf.Clamp01(combatAndHud.CrosshairColor.WarnRatio);
+            combatAndHud.CrosshairColor.FinalWarningColor.a = 1f;
+            combatAndHud.CrosshairColor.StartWarningColor.a = 1f;
+            combatAndHud.LowHealthShadow.Distance = Mathf.Clamp(combatAndHud.LowHealthShadow.Distance, 0f, 400f);
+            combatAndHud.LowHealthShadow.UpperThreshold =
+                Mathf.Clamp01(combatAndHud.LowHealthShadow.UpperThreshold);
+            combatAndHud.LowHealthShadow.LowerThreshold =
+                Mathf.Clamp01(combatAndHud.LowHealthShadow.LowerThreshold);
+            combatAndHud.KillRecord.Duration = Mathf.Clamp(combatAndHud.KillRecord.Duration, 1f, 30f);
+            combatAndHud.KillRecord.MaxCount = Mathf.Clamp(combatAndHud.KillRecord.MaxCount, 1, 20);
+            if (!IsValidRecordFormat(combatAndHud.KillRecord.Format))
             {
-                killRecord.Format = SettingsText.KillRecordDefaultFormat;
+                combatAndHud.KillRecord.Format = SettingsText.KillRecordDefaultFormat;
             }
-            minimap.DisplaySize = Mathf.Clamp(minimap.DisplaySize, 100f, 600f);
-            minimap.Zoom = Mathf.Clamp(minimap.Zoom, MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);
-            minimap.Opacity = Mathf.Clamp01(minimap.Opacity);
-            bossMapMarker.MarkerColor.r = Mathf.Clamp01(bossMapMarker.MarkerColor.r);
-            bossMapMarker.MarkerColor.g = Mathf.Clamp01(bossMapMarker.MarkerColor.g);
-            bossMapMarker.MarkerColor.b = Mathf.Clamp01(bossMapMarker.MarkerColor.b);
-            bossMapMarker.MarkerColor.a = Mathf.Clamp01(bossMapMarker.MarkerColor.a);
-            quickSleep.FirstTime.Hour = Mathf.Clamp(quickSleep.FirstTime.Hour, 0, 23);
-            quickSleep.FirstTime.Minute = Mathf.Clamp(quickSleep.FirstTime.Minute, 0, 59);
-            quickSleep.SecondTime.Hour = Mathf.Clamp(quickSleep.SecondTime.Hour, 0, 23);
-            quickSleep.SecondTime.Minute = Mathf.Clamp(quickSleep.SecondTime.Minute, 0, 59);
-            itemSearchSound.Quality0.Volume = Mathf.Clamp(itemSearchSound.Quality0.Volume, 0f, 10f);
-            itemSearchSound.Quality1.Volume = Mathf.Clamp(itemSearchSound.Quality1.Volume, 0f, 10f);
-            itemSearchSound.Quality2.Volume = Mathf.Clamp(itemSearchSound.Quality2.Volume, 0f, 10f);
-            itemSearchSound.Quality3.Volume = Mathf.Clamp(itemSearchSound.Quality3.Volume, 0f, 10f);
-            itemSearchSound.Quality4.Volume = Mathf.Clamp(itemSearchSound.Quality4.Volume, 0f, 10f);
-            itemSearchSound.Quality5.Volume = Mathf.Clamp(itemSearchSound.Quality5.Volume, 0f, 10f);
-            itemSearchSound.Quality6.Volume = Mathf.Clamp(itemSearchSound.Quality6.Volume, 0f, 10f);
+            mapAndTime.Minimap.DisplaySize = Mathf.Clamp(mapAndTime.Minimap.DisplaySize, 100f, 600f);
+            mapAndTime.Minimap.Zoom = Mathf.Clamp(
+                mapAndTime.Minimap.Zoom,
+                MinimapFeature.MinimumZoom,
+                MinimapFeature.MaximumZoom);
+            mapAndTime.Minimap.Opacity = Mathf.Clamp01(mapAndTime.Minimap.Opacity);
+            mapAndTime.BossMapMarker.MarkerColor.r = Mathf.Clamp01(mapAndTime.BossMapMarker.MarkerColor.r);
+            mapAndTime.BossMapMarker.MarkerColor.g = Mathf.Clamp01(mapAndTime.BossMapMarker.MarkerColor.g);
+            mapAndTime.BossMapMarker.MarkerColor.b = Mathf.Clamp01(mapAndTime.BossMapMarker.MarkerColor.b);
+            mapAndTime.BossMapMarker.MarkerColor.a = Mathf.Clamp01(mapAndTime.BossMapMarker.MarkerColor.a);
+            mapAndTime.QuickSleep.FirstTime.Hour = Mathf.Clamp(mapAndTime.QuickSleep.FirstTime.Hour, 0, 23);
+            mapAndTime.QuickSleep.FirstTime.Minute = Mathf.Clamp(mapAndTime.QuickSleep.FirstTime.Minute, 0, 59);
+            mapAndTime.QuickSleep.SecondTime.Hour = Mathf.Clamp(mapAndTime.QuickSleep.SecondTime.Hour, 0, 23);
+            mapAndTime.QuickSleep.SecondTime.Minute = Mathf.Clamp(mapAndTime.QuickSleep.SecondTime.Minute, 0, 59);
+            itemsAndEconomy.ItemSearchSound.Quality0.Volume =
+                Mathf.Clamp(itemsAndEconomy.ItemSearchSound.Quality0.Volume, 0f, 10f);
+            itemsAndEconomy.ItemSearchSound.Quality1.Volume =
+                Mathf.Clamp(itemsAndEconomy.ItemSearchSound.Quality1.Volume, 0f, 10f);
+            itemsAndEconomy.ItemSearchSound.Quality2.Volume =
+                Mathf.Clamp(itemsAndEconomy.ItemSearchSound.Quality2.Volume, 0f, 10f);
+            itemsAndEconomy.ItemSearchSound.Quality3.Volume =
+                Mathf.Clamp(itemsAndEconomy.ItemSearchSound.Quality3.Volume, 0f, 10f);
+            itemsAndEconomy.ItemSearchSound.Quality4.Volume =
+                Mathf.Clamp(itemsAndEconomy.ItemSearchSound.Quality4.Volume, 0f, 10f);
+            itemsAndEconomy.ItemSearchSound.Quality5.Volume =
+                Mathf.Clamp(itemsAndEconomy.ItemSearchSound.Quality5.Volume, 0f, 10f);
+            itemsAndEconomy.ItemSearchSound.Quality6.Volume =
+                Mathf.Clamp(itemsAndEconomy.ItemSearchSound.Quality6.Volume, 0f, 10f);
         }
 
         private static bool IsValidRecordFormat(string? value)
