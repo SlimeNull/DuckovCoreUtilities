@@ -3,6 +3,7 @@ using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using SlimeNull.DuckovCoreUtilities.Localization;
 using System;
 using System.ComponentModel;
+using System.IO;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -80,7 +81,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         {
             [InspectorName("@SettingsText/LocalSoundFile")]
             [Description("Audio Files|*.wav;*.ogg;*.mp3;*.aif;*.aiff")]
-            public string LocalFilePath = string.Empty;
+            public FileInfo? LocalFile = null;
 
             [InspectorName("@SettingsText/SoundEventPath")]
             public string EventPath;
@@ -729,7 +730,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         {
             _itemSearchSoundFeature!.ConfigureQuality(
                 quality,
-                options.LocalFilePath,
+                options.LocalFile?.FullName,
                 options.EventPath,
                 options.Volume);
         }

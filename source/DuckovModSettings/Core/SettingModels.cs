@@ -17,6 +17,7 @@ namespace SlimeNull.DuckovModSettings.Core
         Integer,
         FloatingPoint,
         String,
+        File,
         Enum,
         Key,
         Color,

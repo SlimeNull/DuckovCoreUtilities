@@ -3,6 +3,7 @@ using SlimeNull.DuckovModSettings.Localization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using TMPro;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace SlimeNull.DuckovModSettings.UI
         private SettingsCatalog? _catalog;
         private Action<SettingsPage>? _onPageOpening;
         private Action<SettingsPage>? _onPageClosing;
+        private Func<InitialGroupExpansionMode>? _getInitialGroupExpansion;
         private TMP_FontAsset? _font;
         private RectTransform? _navigationContent;
         private RectTransform? _settingsContent;
@@ -36,6 +38,7 @@ namespace SlimeNull.DuckovModSettings.UI
         private bool _loading;
         private bool _navigationRebuildRequested;
         private bool _settingsRebuildRequested;
+        private InitialGroupExpansionMode? _appliedInitialGroupExpansion;
         private float _lastTemplateHeight = -1f;
         private float _lastViewportHeight = -1f;
 
@@ -45,12 +48,14 @@ namespace SlimeNull.DuckovModSettings.UI
             SettingsCatalog catalog,
             Action<SettingsPage> onPageOpening,
             Action<SettingsPage> onPageClosing,
+            Func<InitialGroupExpansionMode> getInitialGroupExpansion,
             TMP_FontAsset? font,
             RectTransform? layoutTemplate)
         {
             _catalog = catalog;
             _onPageOpening = onPageOpening;
             _onPageClosing = onPageClosing;
+            _getInitialGroupExpansion = getInitialGroupExpansion;
             _font = font ?? Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault();
             _layoutTemplate = layoutTemplate;
             _pageLayout = gameObject.AddComponent<LayoutElement>();
@@ -449,6 +454,14 @@ namespace SlimeNull.DuckovModSettings.UI
             {
                 return;
             }
+            var initialGroupExpansion = GetInitialGroupExpansion();
+            if (_appliedInitialGroupExpansion.HasValue &&
+                _appliedInitialGroupExpansion.Value != initialGroupExpansion)
+            {
+                _foldoutStates.Clear();
+            }
+            _appliedInitialGroupExpansion = initialGroupExpansion;
+
             ClearChildren(_settingsContent);
             ShowTooltip(string.Empty);
 
@@ -500,7 +513,12 @@ namespace SlimeNull.DuckovModSettings.UI
                 {
                     if (NodeMatches(node, query))
                     {
-                        RenderNode(_settingsContent, node, query, forceChildren: DirectMatch(node, query));
+                        RenderNode(
+                            _settingsContent,
+                            node,
+                            query,
+                            forceChildren: DirectMatch(node, query),
+                            groupDepth: 0);
                     }
                 }
                 return;
@@ -511,21 +529,32 @@ namespace SlimeNull.DuckovModSettings.UI
                 component.ComponentKey,
                 component.DisplayName,
                 tooltip: component.Target.GetType().FullName ?? component.DisplayName,
-                defaultOpen: true,
+                groupDepth: 0,
+                forceOpen: !string.IsNullOrEmpty(query),
                 out var body);
             var rendered = 0;
             foreach (var node in component.Nodes)
             {
                 if (NodeMatches(node, query))
                 {
-                    RenderNode(body, node, query, forceChildren: DirectMatch(node, query));
+                    RenderNode(
+                        body,
+                        node,
+                        query,
+                        forceChildren: DirectMatch(node, query),
+                        groupDepth: 1);
                     rendered++;
                 }
             }
             group.SetActive(rendered > 0);
         }
 
-        private void RenderNode(RectTransform parent, SettingNode node, string query, bool forceChildren)
+        private void RenderNode(
+            RectTransform parent,
+            SettingNode node,
+            string query,
+            bool forceChildren,
+            int groupDepth)
         {
             if (!string.IsNullOrWhiteSpace(node.Header))
             {
@@ -537,12 +566,24 @@ namespace SlimeNull.DuckovModSettings.UI
 
             if (node.Kind == SettingNodeKind.Group)
             {
-                CreateGroupShell(parent, node.StoreKey, node.DisplayName, node.Tooltip, defaultOpen: true, out var body);
+                CreateGroupShell(
+                    parent,
+                    node.StoreKey,
+                    node.DisplayName,
+                    node.Tooltip,
+                    groupDepth,
+                    forceOpen: !string.IsNullOrEmpty(query),
+                    out var body);
                 foreach (var child in node.Children)
                 {
                     if (forceChildren || NodeMatches(child, query))
                     {
-                        RenderNode(body, child, query, forceChildren || DirectMatch(child, query));
+                        RenderNode(
+                            body,
+                            child,
+                            query,
+                            forceChildren || DirectMatch(child, query),
+                            groupDepth + 1);
                     }
                 }
                 return;
@@ -556,14 +597,16 @@ namespace SlimeNull.DuckovModSettings.UI
             string key,
             string title,
             string tooltip,
-            bool defaultOpen,
+            int groupDepth,
+            bool forceOpen,
             out RectTransform bodyContent)
         {
-            if (!_foldoutStates.TryGetValue(key, out var open))
+            if (!_foldoutStates.TryGetValue(key, out var rememberedOpen))
             {
-                open = defaultOpen;
-                _foldoutStates[key] = open;
+                rememberedOpen = IsGroupInitiallyOpen(groupDepth);
+                _foldoutStates[key] = rememberedOpen;
             }
+            var open = forceOpen || rememberedOpen;
 
             var root = UiFactory.Rect("Group " + title, parent);
             var rootVertical = root.gameObject.AddComponent<VerticalLayoutGroup>();
@@ -582,7 +625,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 (open ? "v  " : ">  ") + title,
                 () =>
                 {
-                    var nextOpen = !_foldoutStates[key];
+                    var nextOpen = body == null || !body.gameObject.activeSelf;
                     _foldoutStates[key] = nextOpen;
                     body?.gameObject.SetActive(nextOpen);
                     if (foldoutLabel != null)
@@ -628,6 +671,21 @@ namespace SlimeNull.DuckovModSettings.UI
 
             body.gameObject.SetActive(open);
             return root.gameObject;
+        }
+
+        private bool IsGroupInitiallyOpen(int groupDepth)
+        {
+            return GetInitialGroupExpansion() switch
+            {
+                InitialGroupExpansionMode.CollapseAll => false,
+                InitialGroupExpansionMode.ExpandAll => true,
+                _ => groupDepth == 0,
+            };
+        }
+
+        private InitialGroupExpansionMode GetInitialGroupExpansion()
+        {
+            return _getInitialGroupExpansion?.Invoke() ?? InitialGroupExpansionMode.OutermostOnly;
         }
 
         private void RenderValue(RectTransform parent, SettingNode node)
@@ -707,6 +765,10 @@ namespace SlimeNull.DuckovModSettings.UI
 
                 case SettingNodeKind.String:
                     CreateStringInput(parent, node, multiline, editorHeight);
+                    break;
+
+                case SettingNodeKind.File:
+                    CreateFileInput(parent, node, editorHeight);
                     break;
             }
         }
@@ -807,63 +869,66 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void CreateStringInput(RectTransform parent, SettingNode node, bool multiline, float editorHeight)
         {
-            var hasFilePicker = !multiline && NativeFileDialog.IsValidFilter(node.FileFilter);
-            var inputParent = parent;
-            if (hasFilePicker)
-            {
-                var row = UiFactory.Rect("File Input", parent);
-                UiFactory.Stretch(row);
-                var horizontal = row.gameObject.AddComponent<HorizontalLayoutGroup>();
-                horizontal.spacing = 8f;
-                horizontal.childAlignment = TextAnchor.MiddleCenter;
-                horizontal.childControlHeight = true;
-                horizontal.childControlWidth = true;
-                horizontal.childForceExpandHeight = true;
-                horizontal.childForceExpandWidth = false;
-                inputParent = row;
-            }
-
-            var input = UiFactory.Input("Value", inputParent, _font, node.GetValue()?.ToString() ?? string.Empty, string.Empty,
+            var input = UiFactory.Input("Value", parent, _font, node.GetValue()?.ToString() ?? string.Empty, string.Empty,
                 editorHeight, multiline);
-            if (hasFilePicker)
-            {
-                var inputLayout = input.GetComponent<LayoutElement>();
-                inputLayout.minWidth = 0f;
-                inputLayout.flexibleWidth = 1f;
-
-                var browse = UiFactory.Button(
-                    "Browse",
-                    inputParent,
-                    _font,
-                    "...",
-                    () =>
-                    {
-                        if (NativeFileDialog.TryOpen(
-                            node.FileFilter!,
-                            node.GetValue()?.ToString(),
-                            out var selectedPath))
-                        {
-                            node.TrySetValue(selectedPath, SettingChangeOrigin.User);
-                            input.SetTextWithoutNotify(node.GetValue()?.ToString() ?? string.Empty);
-                        }
-                    },
-                    editorHeight);
-                var browseLayout = browse.GetComponent<LayoutElement>();
-                browseLayout.minWidth = 48f;
-                browseLayout.preferredWidth = 48f;
-                browseLayout.flexibleWidth = 0f;
-                AttachTooltip(browse.gameObject, node.FileFilter!);
-            }
-            else
-            {
-                UiFactory.Stretch((RectTransform)input.transform);
-            }
-
+            UiFactory.Stretch((RectTransform)input.transform);
             input.onEndEdit.AddListener(value =>
             {
                 node.TrySetValue(value, SettingChangeOrigin.User);
                 input.SetTextWithoutNotify(node.GetValue()?.ToString() ?? string.Empty);
             });
+        }
+
+        private void CreateFileInput(RectTransform parent, SettingNode node, float editorHeight)
+        {
+            var row = UiFactory.Rect("File Input", parent);
+            UiFactory.Stretch(row);
+            var horizontal = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+            horizontal.spacing = 8f;
+            horizontal.childAlignment = TextAnchor.MiddleCenter;
+            horizontal.childControlHeight = true;
+            horizontal.childControlWidth = true;
+            horizontal.childForceExpandHeight = true;
+            horizontal.childForceExpandWidth = false;
+
+            var input = UiFactory.Input("Value", row, _font, GetFilePath(node), string.Empty, editorHeight);
+            var inputLayout = input.GetComponent<LayoutElement>();
+            inputLayout.minWidth = 0f;
+            inputLayout.flexibleWidth = 1f;
+
+            var open = UiFactory.Button(
+                "Open",
+                row,
+                _font,
+                SettingsText.Open,
+                () =>
+                {
+                    if (NativeFileDialog.TryOpen(node.FileFilter, GetFilePath(node), out var selectedPath))
+                    {
+                        node.TrySetValue(selectedPath, SettingChangeOrigin.User);
+                        input.SetTextWithoutNotify(GetFilePath(node));
+                    }
+                },
+                editorHeight);
+            var openLayout = open.GetComponent<LayoutElement>();
+            openLayout.minWidth = 72f;
+            openLayout.preferredWidth = 72f;
+            openLayout.flexibleWidth = 0f;
+            if (NativeFileDialog.IsValidFilter(node.FileFilter))
+            {
+                AttachTooltip(open.gameObject, node.FileFilter!);
+            }
+
+            input.onEndEdit.AddListener(value =>
+            {
+                node.TrySetValue(value, SettingChangeOrigin.User);
+                input.SetTextWithoutNotify(GetFilePath(node));
+            });
+        }
+
+        private static string GetFilePath(SettingNode node)
+        {
+            return node.GetValue() is FileInfo file ? file.FullName : string.Empty;
         }
 
         private void SelectMod(ModSettingsModel mod)

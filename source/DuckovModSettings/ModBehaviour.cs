@@ -15,9 +15,27 @@ using DuckovModBehaviour = Duckov.Modding.ModBehaviour;
 
 namespace SlimeNull.DuckovModSettings
 {
+    internal enum InitialGroupExpansionMode
+    {
+        [InspectorName("@SettingsText/ExpandOutermostGroups")]
+        OutermostOnly,
+
+        [InspectorName("@SettingsText/CollapseAllGroups")]
+        CollapseAll,
+
+        [InspectorName("@SettingsText/ExpandAllGroups")]
+        ExpandAll,
+    }
+
     public sealed class ModBehaviour : Duckov.Modding.ModBehaviour
     {
         private const string HarmonyId = "SlimeNull.DuckovModSettings";
+
+        [SerializeField]
+        [InspectorName("@SettingsText/InitialGroupExpansion")]
+        [Tooltip("@SettingsText/InitialGroupExpansionTooltip")]
+        private InitialGroupExpansionMode initialGroupExpansion = InitialGroupExpansionMode.OutermostOnly;
+
         private readonly HashSet<GameObject> _editedObjects = new HashSet<GameObject>();
         private readonly HashSet<int> _hydratedRoots = new HashSet<int>();
         private SettingsCatalog? _catalog;
@@ -42,7 +60,11 @@ namespace SlimeNull.DuckovModSettings
             Instance = this;
             _catalog = new SettingsCatalog();
             _catalog.UserEdited += OnUserEdited;
-            _injector = new SettingsPanelInjector(_catalog, OnSettingsPageOpened, OnSettingsPageClosed);
+            _injector = new SettingsPanelInjector(
+                _catalog,
+                OnSettingsPageOpened,
+                OnSettingsPageClosed,
+                () => initialGroupExpansion);
             _harmony = new Harmony(HarmonyId);
             _harmony.PatchAll(typeof(ModBehaviour).Assembly);
             ModManager.OnModActivated += OnModActivated;

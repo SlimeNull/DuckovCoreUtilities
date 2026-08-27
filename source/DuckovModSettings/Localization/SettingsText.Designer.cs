@@ -56,6 +56,15 @@ namespace SlimeNull.DuckovModSettings.Localization {
                 resourceCulture = value;
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Collapse all groups.
+        /// </summary>
+        internal static string CollapseAllGroups {
+            get {
+                return ResourceManager.GetString("CollapseAllGroups", resourceCulture);
+            }
+        }
         
         /// <summary>
         ///   Looks up a localized string similar to Done.
@@ -63,6 +72,42 @@ namespace SlimeNull.DuckovModSettings.Localization {
         internal static string Done {
             get {
                 return ResourceManager.GetString("Done", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Expand all groups.
+        /// </summary>
+        internal static string ExpandAllGroups {
+            get {
+                return ResourceManager.GetString("ExpandAllGroups", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Expand outermost groups only.
+        /// </summary>
+        internal static string ExpandOutermostGroups {
+            get {
+                return ResourceManager.GetString("ExpandOutermostGroups", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Initial group expansion.
+        /// </summary>
+        internal static string InitialGroupExpansion {
+            get {
+                return ResourceManager.GetString("InitialGroupExpansion", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Controls a group's state when it is shown for the first time..
+        /// </summary>
+        internal static string InitialGroupExpansionTooltip {
+            get {
+                return ResourceManager.GetString("InitialGroupExpansionTooltip", resourceCulture);
             }
         }
         
@@ -117,6 +162,15 @@ namespace SlimeNull.DuckovModSettings.Localization {
         internal static string NoMatchingSettings {
             get {
                 return ResourceManager.GetString("NoMatchingSettings", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Open.
+        /// </summary>
+        internal static string Open {
+            get {
+                return ResourceManager.GetString("Open", resourceCulture);
             }
         }
         

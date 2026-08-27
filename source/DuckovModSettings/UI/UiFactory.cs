@@ -149,7 +149,7 @@ namespace SlimeNull.DuckovModSettings.UI
             var text = Text("Text", viewport, font, value, 18f, InputText);
             Stretch(text.rectTransform);
             text.enableWordWrapping = multiline;
-            text.overflowMode = multiline ? TextOverflowModes.Masking : TextOverflowModes.Ellipsis;
+            text.overflowMode = TextOverflowModes.Masking;
 
             var hint = Text("Placeholder", viewport, font, placeholder, 18f, new Color32(92, 116, 127, 255));
             Stretch(hint.rectTransform);

@@ -1,6 +1,7 @@
 using Newtonsoft.Json.Linq;
 using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -29,7 +30,7 @@ namespace SlimeNull.DuckovModSettings.Core
             type = Nullable.GetUnderlyingType(type) ?? type;
             return type == typeof(bool) || type == typeof(string) || type == typeof(char) ||
                 IsIntegral(type) || IsFloatingPoint(type) || type.IsEnum ||
-                type == typeof(Color) || type == typeof(Color32);
+                type == typeof(Color) || type == typeof(Color32) || type == typeof(FileInfo);
         }
 
         public static SettingNodeKind GetKind(Type type)
@@ -50,6 +51,10 @@ namespace SlimeNull.DuckovModSettings.Core
             if (type == typeof(string) || type == typeof(char))
             {
                 return SettingNodeKind.String;
+            }
+            if (type == typeof(FileInfo))
+            {
+                return SettingNodeKind.File;
             }
             if (type == typeof(Color) || type == typeof(Color32))
             {
@@ -103,6 +108,12 @@ namespace SlimeNull.DuckovModSettings.Core
                 if (effectiveType == typeof(Color32) && value is Color color)
                 {
                     converted = (Color32)color;
+                    return true;
+                }
+                if (effectiveType == typeof(FileInfo))
+                {
+                    var path = Convert.ToString(value, CultureInfo.InvariantCulture);
+                    converted = string.IsNullOrWhiteSpace(path) ? null : new FileInfo(path);
                     return true;
                 }
                 if (effectiveType == typeof(char))
@@ -165,6 +176,10 @@ namespace SlimeNull.DuckovModSettings.Core
             {
                 return new JValue(value.ToString());
             }
+            if (type == typeof(FileInfo))
+            {
+                return new JValue(((FileInfo)value).FullName);
+            }
 
             return JToken.FromObject(value);
         }
@@ -211,6 +226,12 @@ namespace SlimeNull.DuckovModSettings.Core
                     value = text[0];
                     return true;
                 }
+                if (effectiveType == typeof(FileInfo))
+                {
+                    var path = token.Value<string>();
+                    value = string.IsNullOrWhiteSpace(path) ? null : new FileInfo(path);
+                    return true;
+                }
 
                 value = token.ToObject(effectiveType);
                 return value != null || !effectiveType.IsValueType;
@@ -249,12 +270,27 @@ namespace SlimeNull.DuckovModSettings.Core
                 return Mathf.Approximately(a.r, b.r) && Mathf.Approximately(a.g, b.g) &&
                     Mathf.Approximately(a.b, b.b) && Mathf.Approximately(a.a, b.a);
             }
+            if (type == typeof(FileInfo))
+            {
+                var comparison = Path.DirectorySeparatorChar == '\\'
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+                return string.Equals(
+                    ((FileInfo)left).FullName,
+                    ((FileInfo)right).FullName,
+                    comparison);
+            }
             return left.Equals(right);
         }
 
         public static object? CloneValue(object? value, Type type)
         {
-            // Every supported leaf is either immutable or a value type.
+            if (value is FileInfo fileInfo)
+            {
+                return new FileInfo(fileInfo.FullName);
+            }
+
+            // Every other supported leaf is either immutable or a value type.
             return value;
         }
 

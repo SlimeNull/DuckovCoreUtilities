@@ -11,6 +11,7 @@ namespace SlimeNull.DuckovModSettings.UI
 {
     internal static class NativeFileDialog
     {
+        private const string DefaultFilter = "All Files|*.*";
         private const int MaximumPathLength = 32768;
         private const int OpenFileExplorer = 0x00080000;
         private const int OpenFileNoChangeDirectory = 0x00000008;
@@ -40,17 +41,18 @@ namespace SlimeNull.DuckovModSettings.UI
             return true;
         }
 
-        public static bool TryOpen(string filter, string? currentPath, out string selectedPath)
+        public static bool TryOpen(string? filter, string? currentPath, out string selectedPath)
         {
             selectedPath = string.Empty;
             try
             {
+                var effectiveFilter = IsValidFilter(filter) ? filter! : DefaultFilter;
                 return Application.platform switch
                 {
                     RuntimePlatform.WindowsEditor or RuntimePlatform.WindowsPlayer =>
-                        TryOpenWindows(filter, currentPath, out selectedPath),
+                        TryOpenWindows(effectiveFilter, currentPath, out selectedPath),
                     RuntimePlatform.OSXEditor or RuntimePlatform.OSXPlayer =>
-                        TryOpenMac(filter, currentPath, out selectedPath),
+                        TryOpenMac(effectiveFilter, currentPath, out selectedPath),
                     _ => false,
                 };
             }

@@ -8,7 +8,8 @@ Duckov Mod Settings adds a unified in-game settings page for Escape from Duckov 
 [*]Preserves the real object structure as collapsible nested setting groups.
 [*]Searches setting names, tooltips, and current values.
 [*]Supports toggles, numeric inputs, range sliders, strings, characters, enums, keys, and colors.
-[*]String settings with file filters can select files through the Windows or macOS system dialog.
+[*]System.IO.FileInfo settings can select files through the Windows or macOS system dialog, with optional file filters.
+[*]Configures the initial group state: outermost groups only, all collapsed, or all expanded.
 [*]Provides RGBA fields and HEX input in the color picker.
 [*]Provides a Restore Defaults button for resetting every option in the selected mod.
 [*]Persists values and restores them the next time each mod loads.
@@ -51,6 +52,7 @@ Static, constant, read-only, indexed, and [b]HideInInspector[/b] members are ign
 [list]
 [*]bool
 [*]string and char
+[*]System.IO.FileInfo
 [*]all integral types
 [*]float, double, and decimal
 [*]enums
@@ -68,7 +70,7 @@ Static, constant, read-only, indexed, and [b]HideInInspector[/b] members are ign
 [*][b]Header[/b]: section heading.
 [*][b]Range[/b]: constrained slider.
 [*][b]TextArea[/b]: multiline string editor.
-[*][b]System.ComponentModel.Description[/b]: provides a file filter for a string field in [b]Label|pattern[/b] form, such as [b]WAV File|*.wav[/b]. Separate multiple patterns with semicolons or append more label-pattern pairs. The UI adds a system file-picker button to the right of the text box on Windows and macOS.
+[*][b]System.ComponentModel.Description[/b]: provides an optional filter for a FileInfo editor in [b]Label|pattern[/b] form, such as [b]WAV File|*.wav[/b]. Separate multiple patterns with semicolons or append more label-pattern pairs. A FileInfo member displays the Open button even without this attribute and then uses an All Files filter.
 [*][b]HideInInspector[/b]: excludes a member from the page.
 [/list]
 
@@ -87,7 +89,7 @@ private sealed class NetworkOptions
 
     [InspectorName("Alert sound")]
     [Description("WAV File|*.wav")]
-    public string AlertSound = string.Empty;
+    public FileInfo? AlertSound;
 }
 
 [SerializeField, InspectorName("Network")]

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using UnityEngine;
@@ -97,7 +98,9 @@ namespace SlimeNull.DuckovModSettings.Core
                     var displayName = GetStringAttribute(member, InspectorNameAttribute) ?? NameUtility.NicifyMemberName(member.Name);
                     var tooltip = GetStringAttribute(member, TooltipAttribute) ?? string.Empty;
                     var header = GetStringAttribute(member, HeaderAttribute);
-                    var fileFilter = GetStringAttribute(member, DescriptionAttribute);
+                    var fileFilter = memberType == typeof(FileInfo)
+                        ? GetStringAttribute(member, DescriptionAttribute)
+                        : null;
                     var range = GetRange(member);
                     var textArea = GetTextArea(member);
 

@@ -23,16 +23,19 @@ namespace SlimeNull.DuckovModSettings.UI
         private readonly SettingsCatalog _catalog;
         private readonly Action<SettingsPage> _onPageOpening;
         private readonly Action<SettingsPage> _onPageClosing;
+        private readonly Func<InitialGroupExpansionMode> _getInitialGroupExpansion;
         private readonly List<Attachment> _attachments = new List<Attachment>();
 
         public SettingsPanelInjector(
             SettingsCatalog catalog,
             Action<SettingsPage> onPageOpening,
-            Action<SettingsPage> onPageClosing)
+            Action<SettingsPage> onPageClosing,
+            Func<InitialGroupExpansionMode> getInitialGroupExpansion)
         {
             _catalog = catalog;
             _onPageOpening = onPageOpening;
             _onPageClosing = onPageClosing;
+            _getInitialGroupExpansion = getInitialGroupExpansion;
         }
 
         public void AttachExistingPanels()
@@ -191,6 +194,7 @@ namespace SlimeNull.DuckovModSettings.UI
                     _catalog,
                     _onPageOpening,
                     _onPageClosing,
+                    _getInitialGroupExpansion,
                     tabLabel?.font,
                     templateTab.GetComponent<RectTransform>());
                 buttons.Add(button);

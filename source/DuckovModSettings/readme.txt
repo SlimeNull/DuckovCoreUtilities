@@ -8,7 +8,8 @@ Duckov Mod Settings 为《逃离鸭科夫》添加统一的游戏内模组设置
 [*]按真实对象结构显示可折叠的多级设置组。
 [*]支持搜索设置名称、提示文本和当前值。
 [*]支持布尔开关、数字输入、范围滑块、字符串、字符、枚举、按键及颜色编辑。
-[*]带文件 Filter 的字符串设置可通过 Windows 或 macOS 系统对话框选择文件。
+[*]System.IO.FileInfo 设置可通过 Windows 或 macOS 系统对话框选择文件，并支持可选的文件 Filter。
+[*]可配置分组首次显示时的展开状态：仅展开最外层、全部收起或全部展开。
 [*]颜色选择器支持 RGBA 数值和 HEX 文本。
 [*]提供“恢复默认”按钮，可一次重置当前模组的所有选项。
 [*]自动保存设置，并在模组下次加载时恢复。
@@ -51,6 +52,7 @@ Duckov Mod Settings 会检查每个已加载的 Duckov.Modding.ModBehaviour 根�
 [list]
 [*]bool
 [*]string、char
+[*]System.IO.FileInfo
 [*]所有整数类型
 [*]float、double、decimal
 [*]枚举
@@ -68,7 +70,7 @@ Duckov Mod Settings 会检查每个已加载的 Duckov.Modding.ModBehaviour 根�
 [*][b]Header[/b]：插入分区标题。
 [*][b]Range[/b]：使用滑块并约束数值范围。
 [*][b]TextArea[/b]：使用多行字符串编辑器。
-[*][b]System.ComponentModel.Description[/b]：为 string 文本框提供文件 Filter，格式为 [b]说明|通配符[/b]，例如 [b]WAV File|*.wav[/b]；可使用分号分隔多个通配符，也可继续添加多组“说明|通配符”。设置界面会在文本框右侧显示系统文件选择按钮，支持 Windows 和 macOS。
+[*][b]System.ComponentModel.Description[/b]：为 FileInfo 文件编辑器提供可选 Filter，格式为 [b]说明|通配符[/b]，例如 [b]WAV File|*.wav[/b]；可使用分号分隔多个通配符，也可继续添加多组“说明|通配符”。FileInfo 即使没有此特性也会显示“打开”按钮，并使用“所有文件”Filter。
 [*][b]HideInInspector[/b]：从设置页面隐藏成员。
 [/list]
 
@@ -87,7 +89,7 @@ private sealed class NetworkOptions
 
     [InspectorName("提示音")]
     [Description("WAV File|*.wav")]
-    public string AlertSound = string.Empty;
+    public FileInfo? AlertSound;
 }
 
 [SerializeField, InspectorName("网络")]
