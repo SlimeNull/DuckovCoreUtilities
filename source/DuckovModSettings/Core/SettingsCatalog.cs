@@ -1,4 +1,6 @@
+using Duckov.Modding;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -9,42 +11,46 @@ namespace SlimeNull.DuckovModSettings.Core
     internal sealed class SettingsCatalog
     {
         private readonly Dictionary<string, Snapshot> _snapshots = new Dictionary<string, Snapshot>(StringComparer.Ordinal);
+        private ModSettingsModel[] _mods = Array.Empty<ModSettingsModel>();
         private bool _batching;
         private readonly HashSet<ComponentSettingsModel> _batchedValidation = new HashSet<ComponentSettingsModel>();
 
-        public IReadOnlyList<ModSettingsModel> Mods => _snapshots.Values
-            .Select(snapshot => snapshot.Model)
-            .Where(model => model != null)
-            .Cast<ModSettingsModel>()
-            .OrderBy(model => model.DisplayName, StringComparer.CurrentCultureIgnoreCase)
-            .ToArray();
+        public IReadOnlyList<ModSettingsModel> Mods => _mods;
 
         public event Action? StructureChanged;
         public event Action<SettingNode, SettingChangeOrigin>? ValueChanged;
         public event Action<ComponentSettingsModel>? UserEdited;
 
-        public void Refresh()
+        public IEnumerator RefreshIncrementally(Action<int, int>? reportProgress = null)
         {
-            var roots = Resources.FindObjectsOfTypeAll<DuckovModBehaviour>();
+            var roots = GetActiveRoots();
             var seen = new HashSet<string>(StringComparer.Ordinal);
             var changed = false;
+            reportProgress?.Invoke(0, roots.Count);
 
-            foreach (var root in roots)
+            for (var index = 0; index < roots.Count; index++)
             {
+                var root = roots[index];
                 if (root == null || string.IsNullOrWhiteSpace(root.info.name) || !root.gameObject.scene.IsValid())
                 {
+                    reportProgress?.Invoke(index + 1, roots.Count);
+                    yield return null;
                     continue;
                 }
 
                 var key = GetRootKey(root);
                 if (!seen.Add(key))
                 {
+                    reportProgress?.Invoke(index + 1, roots.Count);
+                    yield return null;
                     continue;
                 }
 
                 var fingerprint = BuildFingerprint(root);
                 if (_snapshots.TryGetValue(key, out var existing) && existing.Fingerprint == fingerprint)
                 {
+                    reportProgress?.Invoke(index + 1, roots.Count);
+                    yield return null;
                     continue;
                 }
 
@@ -55,6 +61,8 @@ namespace SlimeNull.DuckovModSettings.Core
                 }
                 _snapshots[key] = new Snapshot(root, fingerprint, model);
                 changed = true;
+                reportProgress?.Invoke(index + 1, roots.Count);
+                yield return null;
             }
 
             foreach (var staleKey in _snapshots.Keys.Where(key => !seen.Contains(key)).ToArray())
@@ -63,6 +71,12 @@ namespace SlimeNull.DuckovModSettings.Core
                 changed = true;
             }
 
+            _mods = _snapshots.Values
+                .Select(snapshot => snapshot.Model)
+                .Where(model => model != null)
+                .Cast<ModSettingsModel>()
+                .OrderBy(model => model.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                .ToArray();
             if (changed)
             {
                 StructureChanged?.Invoke();
@@ -71,10 +85,29 @@ namespace SlimeNull.DuckovModSettings.Core
 
         public void ObserveExternalChanges()
         {
-            foreach (var node in Mods.SelectMany(mod => mod.Components).SelectMany(component => component.Leaves))
+            foreach (var mod in _mods)
             {
-                node.TryObserveExternalChange();
+                foreach (var component in mod.Components)
+                {
+                    foreach (var node in component.Leaves)
+                    {
+                        node.TryObserveExternalChange();
+                    }
+                }
             }
+        }
+
+        private static List<DuckovModBehaviour> GetActiveRoots()
+        {
+            var roots = new List<DuckovModBehaviour>(ModManager.modInfos.Count);
+            foreach (var info in ModManager.modInfos)
+            {
+                if (ModManager.IsModActive(info, out var root) && root != null)
+                {
+                    roots.Add(root);
+                }
+            }
+            return roots;
         }
 
         public void Reset(ModSettingsModel mod)

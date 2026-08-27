@@ -16,7 +16,8 @@ namespace SlimeNull.DuckovModSettings.UI
         private readonly Dictionary<string, NavigationItem> _navigationItems = new Dictionary<string, NavigationItem>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> _previewSprites = new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private SettingsCatalog? _catalog;
-        private Action? _onPageClosing;
+        private Action<SettingsPage>? _onPageOpening;
+        private Action<SettingsPage>? _onPageClosing;
         private TMP_FontAsset? _font;
         private RectTransform? _navigationContent;
         private RectTransform? _settingsContent;
@@ -24,21 +25,30 @@ namespace SlimeNull.DuckovModSettings.UI
         private TextMeshProUGUI? _tooltip;
         private TMP_InputField? _search;
         private Button? _resetButton;
+        private ScrollRect? _navigationScroll;
         private ScrollRect? _settingsScroll;
         private LayoutElement? _pageLayout;
         private RectTransform? _layoutTemplate;
         private ModSettingsModel? _selectedMod;
         private bool _initialized;
-        private bool _wasVisible;
-        private bool _rebuildRequested;
+        private bool _menuOpen;
+        private bool _loading;
+        private bool _navigationRebuildRequested;
+        private bool _settingsRebuildRequested;
+        private float _lastTemplateHeight = -1f;
+        private float _lastViewportHeight = -1f;
+
+        internal bool IsMenuOpen => _menuOpen;
 
         public void Initialize(
             SettingsCatalog catalog,
-            Action onPageClosing,
+            Action<SettingsPage> onPageOpening,
+            Action<SettingsPage> onPageClosing,
             TMP_FontAsset? font,
             RectTransform? layoutTemplate)
         {
             _catalog = catalog;
+            _onPageOpening = onPageOpening;
             _onPageClosing = onPageClosing;
             _font = font ?? Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault();
             _layoutTemplate = layoutTemplate;
@@ -47,13 +57,63 @@ namespace SlimeNull.DuckovModSettings.UI
             BuildShell();
             _catalog.StructureChanged += OnStructureChanged;
             _catalog.ValueChanged += OnValueChanged;
-            RebuildNavigation();
             _initialized = true;
         }
 
-        public void CommitPendingChanges()
+        internal void NotifyMenuOpened()
         {
-            _onPageClosing?.Invoke();
+            if (!_initialized || _menuOpen)
+            {
+                return;
+            }
+
+            _menuOpen = true;
+            RefreshPageLayout();
+            BeginLoading();
+            _onPageOpening?.Invoke(this);
+        }
+
+        internal void NotifyMenuClosed()
+        {
+            if (!_menuOpen)
+            {
+                return;
+            }
+
+            _menuOpen = false;
+            ShowTooltip(string.Empty);
+            _onPageClosing?.Invoke(this);
+        }
+
+        internal void ReportLoadingProgress(int processed, int total)
+        {
+            if (!_loading || _emptyState == null)
+            {
+                return;
+            }
+
+            _emptyState.text = total > 0 ? $"正在加载... {processed}/{total}" : "正在加载...";
+        }
+
+        internal void CompleteLoading()
+        {
+            if (!_menuOpen)
+            {
+                return;
+            }
+
+            _loading = false;
+            _navigationRebuildRequested = false;
+            _settingsRebuildRequested = false;
+            if (_navigationScroll != null)
+            {
+                _navigationScroll.gameObject.SetActive(true);
+            }
+            if (_search != null)
+            {
+                _search.interactable = true;
+            }
+            RebuildNavigation();
         }
 
         public void ShowTooltip(string text)
@@ -69,21 +129,11 @@ namespace SlimeNull.DuckovModSettings.UI
         private void OnEnable()
         {
             RefreshPageLayout();
-            if (!_initialized)
-            {
-                return;
-            }
-            _wasVisible = true;
-            RebuildNavigation();
         }
 
         private void OnDisable()
         {
-            if (_initialized && _wasVisible)
-            {
-                _wasVisible = false;
-                CommitPendingChanges();
-            }
+            NotifyMenuClosed();
         }
 
         private void RefreshPageLayout()
@@ -94,6 +144,8 @@ namespace SlimeNull.DuckovModSettings.UI
             }
 
             var templateHeight = Mathf.Max(0f, _layoutTemplate.rect.height);
+            _lastTemplateHeight = templateHeight;
+            _lastViewportHeight = GetViewportHeight();
             var minimumHeight = Mathf.Max(0f, LayoutUtility.GetMinHeight(_layoutTemplate));
             var preferredHeight = Mathf.Max(
                 templateHeight,
@@ -142,8 +194,23 @@ namespace SlimeNull.DuckovModSettings.UI
             return Mathf.Max(0f, availableHeight);
         }
 
+        private float GetViewportHeight()
+        {
+            return transform.parent is RectTransform content && content.parent is RectTransform viewport
+                ? Mathf.Max(0f, viewport.rect.height)
+                : 0f;
+        }
+
+        private bool LayoutDimensionsChanged()
+        {
+            return _layoutTemplate != null &&
+                (!Mathf.Approximately(_lastTemplateHeight, Mathf.Max(0f, _layoutTemplate.rect.height)) ||
+                    !Mathf.Approximately(_lastViewportHeight, GetViewportHeight()));
+        }
+
         private void OnDestroy()
         {
+            NotifyMenuClosed();
             if (_catalog != null)
             {
                 _catalog.StructureChanged -= OnStructureChanged;
@@ -161,16 +228,53 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void Update()
         {
-            if (!gameObject.activeInHierarchy)
+            if (!_menuOpen)
             {
                 return;
             }
 
-            RefreshPageLayout();
-            if (_rebuildRequested)
+            if (LayoutDimensionsChanged())
             {
-                _rebuildRequested = false;
+                RefreshPageLayout();
+            }
+            if (_navigationRebuildRequested)
+            {
+                _navigationRebuildRequested = false;
+                _settingsRebuildRequested = false;
                 RebuildNavigation();
+            }
+            else if (_settingsRebuildRequested)
+            {
+                _settingsRebuildRequested = false;
+                RebuildSettings();
+            }
+        }
+
+        internal void BeginLoading()
+        {
+            _loading = true;
+            _navigationRebuildRequested = false;
+            _settingsRebuildRequested = false;
+            if (_navigationScroll != null)
+            {
+                _navigationScroll.gameObject.SetActive(false);
+            }
+            if (_search != null)
+            {
+                _search.interactable = false;
+            }
+            if (_resetButton != null)
+            {
+                _resetButton.interactable = false;
+            }
+            if (_settingsScroll != null)
+            {
+                _settingsScroll.gameObject.SetActive(false);
+            }
+            if (_emptyState != null)
+            {
+                _emptyState.text = "正在加载...";
+                _emptyState.gameObject.SetActive(true);
             }
         }
 
@@ -200,7 +304,7 @@ namespace SlimeNull.DuckovModSettings.UI
             navigationVertical.childForceExpandHeight = false;
             navigationVertical.childForceExpandWidth = true;
 
-            UiFactory.ScrollView("Mods", navigation, out _navigationContent);
+            _navigationScroll = UiFactory.ScrollView("Mods", navigation, out _navigationContent);
 
             _search = UiFactory.Input("Search", navigation, _font, string.Empty, "搜索设置", 36f);
             _search.onValueChanged.AddListener(_ => RebuildSettings());
@@ -232,6 +336,7 @@ namespace SlimeNull.DuckovModSettings.UI
             var emptyLayout = _emptyState.gameObject.AddComponent<LayoutElement>();
             emptyLayout.minHeight = 46f;
             emptyLayout.preferredHeight = 46f;
+            emptyLayout.flexibleHeight = 1f;
             _emptyState.gameObject.SetActive(false);
 
             var tooltipRect = UiFactory.Rect("Tooltip", transform);
@@ -248,7 +353,7 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void RebuildNavigation()
         {
-            if (_catalog == null || _navigationContent == null)
+            if (_loading || _catalog == null || _navigationContent == null)
             {
                 return;
             }
@@ -299,7 +404,7 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void RebuildSettings()
         {
-            if (_settingsContent == null)
+            if (_loading || _settingsContent == null)
             {
                 return;
             }
@@ -758,14 +863,17 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void OnStructureChanged()
         {
-            _rebuildRequested = true;
+            if (_menuOpen && !_loading)
+            {
+                _navigationRebuildRequested = true;
+            }
         }
 
         private void OnValueChanged(SettingNode node, SettingChangeOrigin origin)
         {
-            if (origin == SettingChangeOrigin.External && _selectedMod?.Id == node.Owner.Mod.Id)
+            if (_menuOpen && !_loading && origin == SettingChangeOrigin.External && _selectedMod?.Id == node.Owner.Mod.Id)
             {
-                _rebuildRequested = true;
+                _settingsRebuildRequested = true;
             }
         }
 

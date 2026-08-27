@@ -80,6 +80,7 @@ namespace SlimeNull.DuckovModSettings.Core
     internal sealed class ComponentSettingsModel
     {
         private readonly List<SettingNode> _nodes = new List<SettingNode>();
+        private SettingNode[]? _leaves;
 
         public ComponentSettingsModel(ModSettingsModel mod, MonoBehaviour target)
         {
@@ -95,11 +96,15 @@ namespace SlimeNull.DuckovModSettings.Core
         public string DisplayName { get; }
         public IReadOnlyList<SettingNode> Nodes => _nodes;
 
-        public IEnumerable<SettingNode> Leaves => _nodes.SelectMany(node => node.SelfAndDescendants()).Where(node => node.IsValue);
+        public IReadOnlyList<SettingNode> Leaves => _leaves ??= _nodes
+            .SelectMany(node => node.SelfAndDescendants())
+            .Where(node => node.IsValue)
+            .ToArray();
 
         public void Add(SettingNode node)
         {
             _nodes.Add(node);
+            _leaves = null;
         }
 
         public void InvokeOnValidate()

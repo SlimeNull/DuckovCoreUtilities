@@ -249,7 +249,7 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void Update()
         {
-            if (_page == null || !_page.gameObject.activeInHierarchy)
+            if (_page == null || !_page.IsMenuOpen)
             {
                 Close();
             }
