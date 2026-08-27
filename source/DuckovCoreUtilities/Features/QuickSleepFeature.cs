@@ -180,8 +180,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             containerObject.transform.SetParent(panel, false);
             containerObject.transform.SetSiblingIndex(confirmTransform!.GetSiblingIndex() + 1);
 
-            var buttonWidth = Mathf.Max(110f, GetRectWidth(confirmRect) * 0.7f);
-            var buttonHeight = Mathf.Max(52f, GetRectHeight(confirmRect) * 0.9f);
+            var buttonWidth = Mathf.Max(160f, GetRectWidth(confirmRect) * 0.7f);
+            var buttonHeight = Mathf.Max(64f, GetRectHeight(confirmRect) * 0.9f);
             var spacing = new Vector2(15f, 15f);
             var grid = containerObject.GetComponent<GridLayoutGroup>();
             grid.cellSize = new Vector2(buttonWidth, buttonHeight);
