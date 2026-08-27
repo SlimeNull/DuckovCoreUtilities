@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Resources;
+using SlimeNull.Mods.Localization;
 
 namespace SlimeNull.DuckovModSettings.Core
 {
@@ -132,7 +133,10 @@ namespace SlimeNull.DuckovModSettings.Core
                     }
 
                     var baseName = resourceName.Substring(0, resourceName.Length - ".resources".Length);
-                    _first = AddAccessor(new ResourceAccessor(new ResourceManager(baseName, _assembly), null));
+                    _first = AddAccessor(new ResourceAccessor(
+                        new ResourceManager(baseName, _assembly),
+                        null,
+                        _assembly));
                     return _first;
                 }
 
@@ -168,7 +172,9 @@ namespace SlimeNull.DuckovModSettings.Core
                     manager = null;
                 }
 
-                var accessor = manager == null ? null : AddAccessor(new ResourceAccessor(manager, type));
+                var accessor = manager == null
+                    ? null
+                    : AddAccessor(new ResourceAccessor(manager, type, type.Assembly));
                 _accessors[type] = accessor;
                 return accessor;
             }
@@ -237,13 +243,15 @@ namespace SlimeNull.DuckovModSettings.Core
             private sealed class ResourceAccessor
             {
                 private readonly ResourceManager _manager;
+                private readonly Assembly _assembly;
                 private readonly PropertyInfo? _staticCultureProperty;
                 private readonly FieldInfo? _staticCultureField;
                 private string? _appliedCultureName;
 
-                public ResourceAccessor(ResourceManager manager, Type? resourceType)
+                public ResourceAccessor(ResourceManager manager, Type? resourceType, Assembly assembly)
                 {
                     _manager = manager;
+                    _assembly = assembly;
                     if (resourceType == null)
                     {
                         return;
@@ -279,6 +287,7 @@ namespace SlimeNull.DuckovModSettings.Core
                     _appliedCultureName = culture.Name;
                     try
                     {
+                        ModLanguage.PrepareResourceManager(_manager, _assembly, culture);
                         _staticCultureProperty?.SetValue(null, culture, null);
                         _staticCultureField?.SetValue(null, culture);
                     }

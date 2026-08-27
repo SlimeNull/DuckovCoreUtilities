@@ -1,4 +1,8 @@
+using System;
 using System.Globalization;
+using System.IO;
+using System.Reflection;
+using System.Resources;
 using UnityEngine;
 
 namespace SlimeNull.Mods.Localization
@@ -67,6 +71,80 @@ namespace SlimeNull.Mods.Localization
             catch (CultureNotFoundException)
             {
                 return CultureInfo.InvariantCulture;
+            }
+        }
+
+        public static void PrepareResourceManager(
+            ResourceManager resourceManager,
+            Assembly mainAssembly,
+            CultureInfo culture)
+        {
+            LoadSatelliteAssembly(mainAssembly, culture);
+            resourceManager.ReleaseAllResources();
+        }
+
+        private static void LoadSatelliteAssembly(Assembly mainAssembly, CultureInfo culture)
+        {
+            if (culture.Equals(CultureInfo.InvariantCulture))
+            {
+                return;
+            }
+
+            var mainAssemblyName = mainAssembly.GetName().Name;
+            if (string.IsNullOrEmpty(mainAssemblyName))
+            {
+                return;
+            }
+
+            var satelliteAssemblyName = mainAssemblyName + ".resources";
+            foreach (var loadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                try
+                {
+                    var loadedName = loadedAssembly.GetName();
+                    if (string.Equals(loadedName.Name, satelliteAssemblyName, StringComparison.OrdinalIgnoreCase) &&
+                        string.Equals(loadedName.CultureName, culture.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return;
+                    }
+                }
+                catch
+                {
+                }
+            }
+
+            string location;
+            try
+            {
+                location = mainAssembly.Location;
+            }
+            catch
+            {
+                return;
+            }
+
+            var assemblyDirectory = Path.GetDirectoryName(location);
+            if (string.IsNullOrEmpty(assemblyDirectory))
+            {
+                return;
+            }
+
+            var satellitePath = Path.Combine(
+                assemblyDirectory,
+                culture.Name,
+                satelliteAssemblyName + ".dll");
+            if (!File.Exists(satellitePath))
+            {
+                return;
+            }
+
+            try
+            {
+                Assembly.LoadFrom(satellitePath);
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[ModLocalization] Could not load '{satellitePath}': {ex.Message}");
             }
         }
     }

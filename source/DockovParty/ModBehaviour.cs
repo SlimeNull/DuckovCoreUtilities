@@ -23,7 +23,9 @@ namespace SlimeNull.DockovParty
                 var language = LocalizationManager.Initialized
                     ? LocalizationManager.CurrentLanguage
                     : Application.systemLanguage;
-                SettingsText.Culture = ModLanguage.GetCulture(language);
+                var culture = ModLanguage.GetCulture(language);
+                ModLanguage.PrepareResourceManager(SettingsText.ResourceManager, typeof(SettingsText).Assembly, culture);
+                SettingsText.Culture = culture;
                 LocalizationManager.OnSetLanguage += OnLanguageChanged;
                 _settings = gameObject.GetComponent<PartySettings>() ?? gameObject.AddComponent<PartySettings>();
 
@@ -77,7 +79,9 @@ namespace SlimeNull.DockovParty
 
         private void OnLanguageChanged(SystemLanguage language)
         {
-            SettingsText.Culture = ModLanguage.GetCulture(language);
+            var culture = ModLanguage.GetCulture(language);
+            ModLanguage.PrepareResourceManager(SettingsText.ResourceManager, typeof(SettingsText).Assembly, culture);
+            SettingsText.Culture = culture;
             _runtime?.RefreshLocalization();
         }
     }

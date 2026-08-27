@@ -179,6 +179,7 @@ namespace SlimeNull.DuckovModSettings
         private static void ApplyLanguage(SystemLanguage language)
         {
             var culture = ModLanguage.GetCulture(language);
+            ModLanguage.PrepareResourceManager(SettingsText.ResourceManager, typeof(SettingsText).Assembly, culture);
             SettingsText.Culture = culture;
             LocalizedText.SetCulture(culture);
         }

@@ -48,7 +48,9 @@ namespace SlimeNull.DuckovInterop
                 var language = LocalizationManager.Initialized
                     ? LocalizationManager.CurrentLanguage
                     : Application.systemLanguage;
-                SettingsText.Culture = ModLanguage.GetCulture(language);
+                var culture = ModLanguage.GetCulture(language);
+                ModLanguage.PrepareResourceManager(SettingsText.ResourceManager, typeof(SettingsText).Assembly, culture);
+                SettingsText.Culture = culture;
                 LocalizationManager.OnSetLanguage += OnLanguageChanged;
                 _jsEngine = new Engine((Options cfg) => cfg.AllowClr());
                 _settings = gameObject.GetComponent<InteropSettings>() ?? gameObject.AddComponent<InteropSettings>();
@@ -82,7 +84,9 @@ namespace SlimeNull.DuckovInterop
 
         private static void OnLanguageChanged(SystemLanguage language)
         {
-            SettingsText.Culture = ModLanguage.GetCulture(language);
+            var culture = ModLanguage.GetCulture(language);
+            ModLanguage.PrepareResourceManager(SettingsText.ResourceManager, typeof(SettingsText).Assembly, culture);
+            SettingsText.Culture = culture;
         }
 
         internal void ApplySettings(InteropSettings settings)

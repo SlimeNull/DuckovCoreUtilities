@@ -25,7 +25,9 @@ namespace SlimeNull.DuckovCoreUtilities
             var language = LocalizationManager.Initialized
                 ? LocalizationManager.CurrentLanguage
                 : Application.systemLanguage;
-            SettingsText.Culture = ModLanguage.GetCulture(language);
+            var culture = ModLanguage.GetCulture(language);
+            ModLanguage.PrepareResourceManager(SettingsText.ResourceManager, typeof(SettingsText).Assembly, culture);
+            SettingsText.Culture = culture;
 
             _features = new FeatureHost(gameObject);
             var displayPrice = new DisplayPriceFeature();
@@ -118,7 +120,9 @@ namespace SlimeNull.DuckovCoreUtilities
         private void OnLanguageChanged(SystemLanguage language)
         {
             var previousDefaultFormat = SettingsText.KillRecordDefaultFormat;
-            SettingsText.Culture = ModLanguage.GetCulture(language);
+            var culture = ModLanguage.GetCulture(language);
+            ModLanguage.PrepareResourceManager(SettingsText.ResourceManager, typeof(SettingsText).Assembly, culture);
+            SettingsText.Culture = culture;
             _settings?.RefreshLocalization(previousDefaultFormat);
             _features?.RefreshLocalization();
         }
