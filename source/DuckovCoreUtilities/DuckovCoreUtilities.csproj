@@ -114,6 +114,10 @@
       <HintPath>$(ManagedPath)\FOW.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="FMODUnity">
+      <HintPath>$(ManagedPath)\FMODUnity.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Sirenix.OdinInspector.Attributes">
       <HintPath>$(ManagedPath)\Sirenix.OdinInspector.Attributes.dll</HintPath>
       <Private>false</Private>

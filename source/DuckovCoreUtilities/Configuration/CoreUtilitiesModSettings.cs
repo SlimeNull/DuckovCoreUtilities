@@ -58,6 +58,72 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
 
             [InspectorName("@SettingsText/DisplayMode")]
             public DisplayQualityFeature.DecorateMode Mode = DisplayQualityFeature.DecorateMode.Border;
+
+            [InspectorName("@SettingsText/Quality0Color")]
+            public Color Quality0Color = new Color(1f, 1f, 1f, 0f);
+
+            [InspectorName("@SettingsText/Quality1Color")]
+            public Color Quality1Color = new Color(1f, 1f, 1f, 0f);
+
+            [InspectorName("@SettingsText/Quality2Color")]
+            public Color Quality2Color = new Color(0.6f, 0.9f, 0.6f, 0.24f);
+
+            [InspectorName("@SettingsText/Quality3Color")]
+            public Color Quality3Color = new Color(0.6f, 0.8f, 1f, 0.3f);
+
+            [InspectorName("@SettingsText/Quality4Color")]
+            public Color Quality4Color = new Color(1f, 0.5f, 1f, 0.4f);
+
+            [InspectorName("@SettingsText/Quality5Color")]
+            public Color Quality5Color = new Color(1f, 0.75f, 0.2f, 0.6f);
+
+            [InspectorName("@SettingsText/Quality6Color")]
+            public Color Quality6Color = new Color(1f, 0.3f, 0.3f, 0.4f);
+        }
+
+        [Serializable]
+        private sealed class QualitySoundOptions
+        {
+            [InspectorName("@SettingsText/SoundEventPath")]
+            public string EventPath;
+
+            [InspectorName("@SettingsText/SoundVolume")]
+            [Range(0f, 10f)]
+            public float Volume;
+
+            public QualitySoundOptions(string eventPath, float volume)
+            {
+                EventPath = eventPath;
+                Volume = volume;
+            }
+        }
+
+        [Serializable]
+        private sealed class ItemSearchSoundOptions
+        {
+            [InspectorName("@SettingsText/Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("@SettingsText/Quality0")]
+            public QualitySoundOptions Quality0 = new QualitySoundOptions("event:/UI/level_up", 8f);
+
+            [InspectorName("@SettingsText/Quality1")]
+            public QualitySoundOptions Quality1 = new QualitySoundOptions("event:/UI/click", 1f);
+
+            [InspectorName("@SettingsText/Quality2")]
+            public QualitySoundOptions Quality2 = new QualitySoundOptions("event:/UI/click", 3f);
+
+            [InspectorName("@SettingsText/Quality3")]
+            public QualitySoundOptions Quality3 = new QualitySoundOptions("event:/UI/confirm", 3f);
+
+            [InspectorName("@SettingsText/Quality4")]
+            public QualitySoundOptions Quality4 = new QualitySoundOptions("event:/UI/ui_skill_up", 1f);
+
+            [InspectorName("@SettingsText/Quality5")]
+            public QualitySoundOptions Quality5 = new QualitySoundOptions("event:/UI/level_up", 2f);
+
+            [InspectorName("@SettingsText/Quality6")]
+            public QualitySoundOptions Quality6 = new QualitySoundOptions("event:/UI/level_up", 8f);
         }
 
         [Serializable]
@@ -388,6 +454,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             public Color MarkerColor = new Color(1f, 0.78f, 0.12f, 1f);
         }
 
+        [Header("@SettingsText/CategoryItemsAndEconomy")]
         [SerializeField, InspectorName("@SettingsText/FeatureDisplayPrice")]
         private DisplayPriceOptions displayPrice = new DisplayPriceOptions();
 
@@ -400,6 +467,19 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [SerializeField, InspectorName("@SettingsText/FeatureDisplayQuality")]
         private DisplayQualityOptions displayQuality = new DisplayQualityOptions();
 
+        [SerializeField, InspectorName("@SettingsText/FeatureItemUsage")]
+        private ItemUsageOptions itemUsage = new ItemUsageOptions();
+
+        [SerializeField, InspectorName("@SettingsText/FeatureRecordedItemIndicator")]
+        private RecordedItemIndicatorOptions recordedItemIndicator = new RecordedItemIndicatorOptions();
+
+        [SerializeField, InspectorName("@SettingsText/FeatureQuestRequirements")]
+        private QuestRequirementsOptions questRequirements = new QuestRequirementsOptions();
+
+        [SerializeField, InspectorName("@SettingsText/FeatureItemSearchSound")]
+        private ItemSearchSoundOptions itemSearchSound = new ItemSearchSoundOptions();
+
+        [Header("@SettingsText/CategoryLootAndInventory")]
         [SerializeField, InspectorName("@SettingsText/FeatureLootOutline")]
         private LootOutlineOptions lootOutline = new LootOutlineOptions();
 
@@ -409,14 +489,12 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [SerializeField, InspectorName("@SettingsText/FeatureAutoCloseBackpack")]
         private AutoCloseOptions autoCloseBackpack = new AutoCloseOptions();
 
+        [Header("@SettingsText/CategoryCombatAndHud")]
         [SerializeField, InspectorName("@SettingsText/FeatureFadeHud")]
         private FadeHudOptions fadeHud = new FadeHudOptions();
 
         [SerializeField, InspectorName("@SettingsText/FeatureCrosshairColor")]
         private CrosshairColorOptions crosshairColor = new CrosshairColorOptions();
-
-        [SerializeField, InspectorName("@SettingsText/FeatureUnfocused")]
-        private UnfocusedOptions unfocused = new UnfocusedOptions();
 
         [SerializeField, InspectorName("@SettingsText/FeatureLowHealthShadow")]
         private LowHealthShadowOptions lowHealthShadow = new LowHealthShadowOptions();
@@ -424,6 +502,10 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [SerializeField, InspectorName("@SettingsText/FeatureKillRecord")]
         private KillRecordOptions killRecord = new KillRecordOptions();
 
+        [SerializeField, InspectorName("@SettingsText/FeatureGrenadeRadius")]
+        private GrenadeRadiusOptions grenadeRadius = new GrenadeRadiusOptions();
+
+        [Header("@SettingsText/CategoryMapAndTime")]
         [SerializeField, InspectorName("@SettingsText/FeatureMinimap")]
         private MinimapOptions minimap = new MinimapOptions();
 
@@ -433,26 +515,19 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [SerializeField, InspectorName("@SettingsText/FeatureQuickSleep")]
         private QuickSleepOptions quickSleep = new QuickSleepOptions();
 
-        [SerializeField, InspectorName("@SettingsText/FeatureItemUsage")]
-        private ItemUsageOptions itemUsage = new ItemUsageOptions();
-
-        [SerializeField, InspectorName("@SettingsText/FeatureGrenadeRadius")]
-        private GrenadeRadiusOptions grenadeRadius = new GrenadeRadiusOptions();
-
-        [SerializeField, InspectorName("@SettingsText/FeatureRecordedItemIndicator")]
-        private RecordedItemIndicatorOptions recordedItemIndicator = new RecordedItemIndicatorOptions();
-
-        [SerializeField, InspectorName("@SettingsText/FeatureQuestRequirements")]
-        private QuestRequirementsOptions questRequirements = new QuestRequirementsOptions();
-
         [SerializeField, InspectorName("@SettingsText/FeatureQuestFavorites")]
         private QuestFavoriteOptions questFavorites = new QuestFavoriteOptions();
+
+        [Header("@SettingsText/CategoryWindowBehavior")]
+        [SerializeField, InspectorName("@SettingsText/FeatureUnfocused")]
+        private UnfocusedOptions unfocused = new UnfocusedOptions();
 
         private FeatureHost? _host;
         private DisplayPriceFeature? _displayPriceFeature;
         private BlackMarketPriceComparisonFeature? _blackMarketPriceFeature;
         private DisplayStorageCount? _storageCountFeature;
         private DisplayQualityFeature? _displayQualityFeature;
+        private ItemSearchSoundFeature? _itemSearchSoundFeature;
         private LootboxOutlineFeature? _lootOutlineFeature;
         private InventorySortButtonsFeature? _inventorySortFeature;
         private AutoCloseBackpackFeature? _autoCloseFeature;
@@ -476,6 +551,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             BlackMarketPriceComparisonFeature blackMarketPriceFeature,
             DisplayStorageCount storageCountFeature,
             DisplayQualityFeature displayQualityFeature,
+            ItemSearchSoundFeature itemSearchSoundFeature,
             LootboxOutlineFeature lootOutlineFeature,
             InventorySortButtonsFeature inventorySortFeature,
             AutoCloseBackpackFeature autoCloseFeature,
@@ -498,6 +574,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             _blackMarketPriceFeature = blackMarketPriceFeature;
             _storageCountFeature = storageCountFeature;
             _displayQualityFeature = displayQualityFeature;
+            _itemSearchSoundFeature = itemSearchSoundFeature;
             _lootOutlineFeature = lootOutlineFeature;
             _inventorySortFeature = inventorySortFeature;
             _autoCloseFeature = autoCloseFeature;
@@ -536,8 +613,25 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             _storageCountFeature.DisplayItemCountInRepository = storageCount.Repository;
             _host.SetEnabled(_storageCountFeature, storageCount.Enabled);
 
-            _displayQualityFeature!.Mode = displayQuality.Mode;
+            _displayQualityFeature!.SetQualityColors(
+                displayQuality.Quality0Color,
+                displayQuality.Quality1Color,
+                displayQuality.Quality2Color,
+                displayQuality.Quality3Color,
+                displayQuality.Quality4Color,
+                displayQuality.Quality5Color,
+                displayQuality.Quality6Color);
+            _displayQualityFeature.Mode = displayQuality.Mode;
             _host.SetEnabled(_displayQualityFeature, displayQuality.Enabled);
+
+            _itemSearchSoundFeature!.ConfigureQuality(0, itemSearchSound.Quality0.EventPath, itemSearchSound.Quality0.Volume);
+            _itemSearchSoundFeature.ConfigureQuality(1, itemSearchSound.Quality1.EventPath, itemSearchSound.Quality1.Volume);
+            _itemSearchSoundFeature.ConfigureQuality(2, itemSearchSound.Quality2.EventPath, itemSearchSound.Quality2.Volume);
+            _itemSearchSoundFeature.ConfigureQuality(3, itemSearchSound.Quality3.EventPath, itemSearchSound.Quality3.Volume);
+            _itemSearchSoundFeature.ConfigureQuality(4, itemSearchSound.Quality4.EventPath, itemSearchSound.Quality4.Volume);
+            _itemSearchSoundFeature.ConfigureQuality(5, itemSearchSound.Quality5.EventPath, itemSearchSound.Quality5.Volume);
+            _itemSearchSoundFeature.ConfigureQuality(6, itemSearchSound.Quality6.EventPath, itemSearchSound.Quality6.Volume);
+            _host.SetEnabled(_itemSearchSoundFeature, itemSearchSound.Enabled);
 
             _lootOutlineFeature!.EnableLootboxOutline = lootOutline.Lootboxes;
             _lootOutlineFeature.EnableGroundItemOutline = lootOutline.GroundItems;
@@ -697,6 +791,13 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             quickSleep.FirstTime.Minute = Mathf.Clamp(quickSleep.FirstTime.Minute, 0, 59);
             quickSleep.SecondTime.Hour = Mathf.Clamp(quickSleep.SecondTime.Hour, 0, 23);
             quickSleep.SecondTime.Minute = Mathf.Clamp(quickSleep.SecondTime.Minute, 0, 59);
+            itemSearchSound.Quality0.Volume = Mathf.Clamp(itemSearchSound.Quality0.Volume, 0f, 10f);
+            itemSearchSound.Quality1.Volume = Mathf.Clamp(itemSearchSound.Quality1.Volume, 0f, 10f);
+            itemSearchSound.Quality2.Volume = Mathf.Clamp(itemSearchSound.Quality2.Volume, 0f, 10f);
+            itemSearchSound.Quality3.Volume = Mathf.Clamp(itemSearchSound.Quality3.Volume, 0f, 10f);
+            itemSearchSound.Quality4.Volume = Mathf.Clamp(itemSearchSound.Quality4.Volume, 0f, 10f);
+            itemSearchSound.Quality5.Volume = Mathf.Clamp(itemSearchSound.Quality5.Volume, 0f, 10f);
+            itemSearchSound.Quality6.Volume = Mathf.Clamp(itemSearchSound.Quality6.Volume, 0f, 10f);
         }
 
         private static bool IsValidRecordFormat(string? value)

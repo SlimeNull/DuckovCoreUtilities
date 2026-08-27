@@ -123,4 +123,26 @@
   <data name="RequirementsQuestUse" xml:space="preserve"><value>Quests that require using this item:</value></data>
   <data name="RequirementsPerk" xml:space="preserve"><value>Perks that require this item:</value></data>
   <data name="RequirementsBuilding" xml:space="preserve"><value>Buildings that require this item:</value></data>
+  <data name="CategoryItemsAndEconomy" xml:space="preserve"><value>Items and economy</value></data>
+  <data name="CategoryLootAndInventory" xml:space="preserve"><value>Loot and inventory</value></data>
+  <data name="CategoryCombatAndHud" xml:space="preserve"><value>Combat and HUD</value></data>
+  <data name="CategoryMapAndTime" xml:space="preserve"><value>Map and time</value></data>
+  <data name="CategoryWindowBehavior" xml:space="preserve"><value>Window behavior</value></data>
+  <data name="FeatureItemSearchSound" xml:space="preserve"><value>Item search sounds</value></data>
+  <data name="Quality0Color" xml:space="preserve"><value>Quality 0 color</value></data>
+  <data name="Quality1Color" xml:space="preserve"><value>Quality 1 color</value></data>
+  <data name="Quality2Color" xml:space="preserve"><value>Quality 2 color</value></data>
+  <data name="Quality3Color" xml:space="preserve"><value>Quality 3 color</value></data>
+  <data name="Quality4Color" xml:space="preserve"><value>Quality 4 color</value></data>
+  <data name="Quality5Color" xml:space="preserve"><value>Quality 5 color</value></data>
+  <data name="Quality6Color" xml:space="preserve"><value>Quality 6 color</value></data>
+  <data name="Quality0" xml:space="preserve"><value>Quality 0</value></data>
+  <data name="Quality1" xml:space="preserve"><value>Quality 1</value></data>
+  <data name="Quality2" xml:space="preserve"><value>Quality 2</value></data>
+  <data name="Quality3" xml:space="preserve"><value>Quality 3</value></data>
+  <data name="Quality4" xml:space="preserve"><value>Quality 4</value></data>
+  <data name="Quality5" xml:space="preserve"><value>Quality 5</value></data>
+  <data name="Quality6" xml:space="preserve"><value>Quality 6</value></data>
+  <data name="SoundEventPath" xml:space="preserve"><value>FMOD event path</value></data>
+  <data name="SoundVolume" xml:space="preserve"><value>Volume</value></data>
 </root>

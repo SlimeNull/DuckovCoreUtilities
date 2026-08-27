@@ -123,4 +123,26 @@
   <data name="RequirementsQuestUse" xml:space="preserve"><value>需要使用該物品的任務:</value></data>
   <data name="RequirementsPerk" xml:space="preserve"><value>需要該物品解鎖的天賦:</value></data>
   <data name="RequirementsBuilding" xml:space="preserve"><value>需要該物品解鎖的建築:</value></data>
+  <data name="CategoryItemsAndEconomy" xml:space="preserve"><value>物品與經濟</value></data>
+  <data name="CategoryLootAndInventory" xml:space="preserve"><value>戰利品與庫存</value></data>
+  <data name="CategoryCombatAndHud" xml:space="preserve"><value>戰鬥與 HUD</value></data>
+  <data name="CategoryMapAndTime" xml:space="preserve"><value>地圖與時間</value></data>
+  <data name="CategoryWindowBehavior" xml:space="preserve"><value>視窗行為</value></data>
+  <data name="FeatureItemSearchSound" xml:space="preserve"><value>物品搜尋音效</value></data>
+  <data name="Quality0Color" xml:space="preserve"><value>品質 0 顏色</value></data>
+  <data name="Quality1Color" xml:space="preserve"><value>品質 1 顏色</value></data>
+  <data name="Quality2Color" xml:space="preserve"><value>品質 2 顏色</value></data>
+  <data name="Quality3Color" xml:space="preserve"><value>品質 3 顏色</value></data>
+  <data name="Quality4Color" xml:space="preserve"><value>品質 4 顏色</value></data>
+  <data name="Quality5Color" xml:space="preserve"><value>品質 5 顏色</value></data>
+  <data name="Quality6Color" xml:space="preserve"><value>品質 6 顏色</value></data>
+  <data name="Quality0" xml:space="preserve"><value>品質 0</value></data>
+  <data name="Quality1" xml:space="preserve"><value>品質 1</value></data>
+  <data name="Quality2" xml:space="preserve"><value>品質 2</value></data>
+  <data name="Quality3" xml:space="preserve"><value>品質 3</value></data>
+  <data name="Quality4" xml:space="preserve"><value>品質 4</value></data>
+  <data name="Quality5" xml:space="preserve"><value>品質 5</value></data>
+  <data name="Quality6" xml:space="preserve"><value>品質 6</value></data>
+  <data name="SoundEventPath" xml:space="preserve"><value>FMOD 事件路徑</value></data>
+  <data name="SoundVolume" xml:space="preserve"><value>音量</value></data>
 </root>

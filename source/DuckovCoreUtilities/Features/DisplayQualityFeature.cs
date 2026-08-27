@@ -2,7 +2,6 @@
 using HarmonyLib;
 using ItemStatsSystem;
 using SlimeNull.DuckovCoreUtilities.Features.Abstraction;
-using SlimeNull.DuckovCoreUtilities.Utilities;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,7 +11,19 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 {
     internal sealed class DisplayQualityFeature : ItemDecorateFeature
     {
+        private const int QualityCount = 7;
+
         private DecorateMode _mode = DecorateMode.Border;
+        private readonly Color[] _qualityColors =
+        {
+            new Color(1f, 1f, 1f, 0f),
+            new Color(1f, 1f, 1f, 0f),
+            new Color(0.6f, 0.9f, 0.6f, 0.24f),
+            new Color(0.6f, 0.8f, 1f, 0.3f),
+            new Color(1f, 0.5f, 1f, 0.4f),
+            new Color(1f, 0.75f, 0.2f, 0.6f),
+            new Color(1f, 0.3f, 0.3f, 0.4f),
+        };
 
         public override string Name => "Display quality";
 
@@ -40,15 +51,44 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 }
 
                 _mode = value;
-                foreach (var component in Resources.FindObjectsOfTypeAll<QualityDisplayComponent>())
+                RefreshExistingIndicators();
+            }
+        }
+
+        public void SetQualityColors(
+            Color quality0,
+            Color quality1,
+            Color quality2,
+            Color quality3,
+            Color quality4,
+            Color quality5,
+            Color quality6)
+        {
+            _qualityColors[0] = quality0;
+            _qualityColors[1] = quality1;
+            _qualityColors[2] = quality2;
+            _qualityColors[3] = quality3;
+            _qualityColors[4] = quality4;
+            _qualityColors[5] = quality5;
+            _qualityColors[6] = quality6;
+            RefreshExistingIndicators();
+        }
+
+        public void RefreshExistingIndicators()
+        {
+            foreach (var component in Resources.FindObjectsOfTypeAll<QualityDisplayComponent>())
+            {
+                if (component != null)
                 {
-                    if (component != null)
-                    {
-                        component.Mode = value;
-                        component.Refresh(force: true);
-                    }
+                    component.Mode = Mode;
+                    component.Refresh(force: true);
                 }
             }
+        }
+
+        private Color GetQualityColor(int quality)
+        {
+            return _qualityColors[Mathf.Clamp(quality, 0, QualityCount - 1)];
         }
 
         protected override void DecorateItemDisplay(ItemDisplay itemDisplay)
@@ -76,11 +116,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             var backgroundRing = backgroundRingOfItemDisplay.Invoke(itemDisplay).GetComponent<Graphic>();
             var qualityDisplayComponent = itemDisplay.gameObject.GetOrAddComponent<QualityDisplayComponent>();
             qualityDisplayComponent.Mode = Mode;
-            qualityDisplayComponent.Initialize(itemDisplay, backgroundRing, display);
+            qualityDisplayComponent.Initialize(this, itemDisplay, backgroundRing, display);
         }
 
         private class QualityDisplayComponent : MonoBehaviour
         {
+            private DisplayQualityFeature? _feature;
             private ItemDisplay? _target;
             private Graphic? _originBackgroundRing;
             private CustomQualityIndicator? _customQualityIndicator;
@@ -91,8 +132,13 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             public DecorateMode Mode { get; set; }
 
-            public void Initialize(ItemDisplay target, Graphic originBackgroundRing, CustomQualityIndicator customQualityIndicator)
+            public void Initialize(
+                DisplayQualityFeature feature,
+                ItemDisplay target,
+                Graphic originBackgroundRing,
+                CustomQualityIndicator customQualityIndicator)
             {
+                _feature = feature;
                 _target = target;
                 _originBackgroundRing = originBackgroundRing;
                 _customQualityIndicator = customQualityIndicator;
@@ -110,11 +156,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 if (_target is not null &&
                     (force || _target.Target != _lastItem || _target.Target?.Inspected != _lastInspected))
                 {
-                    if (_target.Target is { } item &&
+                    if (_feature is not null &&
+                        _target.Target is { } item &&
                         item.StackCount > 0 &&
                         item.Inspected)
                     {
-                        SetColor(QualityColor.Get(item.Quality));
+                        SetColor(_feature.GetQualityColor(item.Quality));
                     }
                     else
                     {

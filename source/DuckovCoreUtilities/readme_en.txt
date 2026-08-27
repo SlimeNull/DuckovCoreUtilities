@@ -18,7 +18,8 @@ Core Utilities still runs with its defaults when Duckov Mod Settings is absent, 
 [*][b]Item prices[/b]: show either merchant sell price or raw item value in item details.
 [*][b]Black market comparison[/b]: display percentage and absolute differences below black-market offers. Supply offers are compared with raw value; demand offers can use either merchant buyback value or raw value as the baseline. The total difference for all remaining transactions is also shown.
 [*][b]Inventory counts[/b]: show the number of matching items in the backpack and storage.
-[*][b]Item quality[/b]: represent item quality with a border, background, or corner badge.
+[*][b]Item quality[/b]: represent item quality with a border, background, or corner badge, with a configurable color for every quality.
+[*][b]Item search sounds[/b]: play a quality-specific sound when an item search finishes, with an independent FMOD event path and volume for every quality.
 [*][b]Item uses[/b]: show current and maximum uses for durability-based items, including maximum uses after durability loss when applicable.
 [*][b]Recorded key and blueprint indicator[/b]: mark registered keys, keycards, and blueprints with a configurable check indicator.
 [*][b]Quest item requirements[/b]: summarize quantities needed by unfinished quests, perks, and buildings; hold [b]Shift[/b] to see each requirement source.

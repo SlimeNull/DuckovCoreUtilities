@@ -34,6 +34,7 @@ namespace SlimeNull.DuckovCoreUtilities
             var blackMarketPrice = new BlackMarketPriceComparisonFeature();
             var displayStorageCount = new DisplayStorageCount();
             var displayQuality = new DisplayQualityFeature();
+            var itemSearchSound = new ItemSearchSoundFeature();
             var lootOutline = new LootboxOutlineFeature();
             var inventorySort = new InventorySortButtonsFeature();
             var autoCloseBackpack = new AutoCloseBackpackFeature();
@@ -61,6 +62,7 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(blackMarketPrice);
             _features.Register(displayStorageCount);
             _features.Register(displayQuality);
+            _features.Register(itemSearchSound);
             _features.Register(lootOutline);
             _features.Register(inventorySort);
             _features.Register(autoCloseBackpack);
@@ -85,6 +87,7 @@ namespace SlimeNull.DuckovCoreUtilities
                 blackMarketPrice,
                 displayStorageCount,
                 displayQuality,
+                itemSearchSound,
                 lootOutline,
                 inventorySort,
                 autoCloseBackpack,

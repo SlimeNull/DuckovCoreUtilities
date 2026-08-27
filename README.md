@@ -34,7 +34,8 @@ Core Utilities 提供一组可以在 Duckov Mod Settings 界面中独立启用�
 
 - 在物品界面显示出售价格或原始价格。
 - 显示背包和仓库中同类物品的数量。
-- 在物品界面显示品质信息。
+- 在物品界面显示品质信息，并可分别设置每种品质的颜色。
+- 物品搜索完成后按品质播放可自定义事件与音量的音效。
 - 为玩家当前可见的战利品箱和地面物品显示轮廓，支持品质颜色和呼吸效果。
 - 为背包与仓库添加按价值、重量和价重比排序的按钮。
 - 在移动或受伤时自动关闭背包和拾取界面。
@@ -153,7 +154,8 @@ Core Utilities provides individually configurable features through Duckov Mod Se
 
 - Show sell price or raw price in item interfaces.
 - Show matching item counts in the backpack and storage.
-- Display item quality information.
+- Display item quality information with a configurable color for every quality.
+- Play per-quality, configurable event sounds and volumes when item searches finish.
 - Outline loot containers and ground items currently visible to the player, with quality colors and breathing effects.
 - Add inventory sorting buttons for value, weight, and value-to-weight ratio.
 - Automatically close backpack and loot views when moving or taking damage.
