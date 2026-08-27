@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="Done" xml:space="preserve"><value>完成</value></data>
+  <data name="Loading" xml:space="preserve"><value>正在加载...</value></data>
+  <data name="LoadingProgress" xml:space="preserve"><value>正在加载... {0}/{1}</value></data>
+  <data name="ModSettings" xml:space="preserve"><value>模组设置</value></data>
+  <data name="NoEditableModSettings" xml:space="preserve"><value>没有发现可编辑的模组设置</value></data>
+  <data name="NoEditableSettings" xml:space="preserve"><value>没有发现可编辑的设置</value></data>
+  <data name="NoMatchingSettings" xml:space="preserve"><value>没有匹配的设置</value></data>
+  <data name="RestoreDefaults" xml:space="preserve"><value>恢复默认</value></data>
+  <data name="SearchSettings" xml:space="preserve"><value>搜索设置</value></data>
+</root>

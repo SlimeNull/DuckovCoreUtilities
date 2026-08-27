@@ -16,10 +16,10 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         public enum TrackingMode
         {
-            [InspectorName("静态")]
+            [InspectorName("@SettingsText/TrackingStatic")]
             Static,
 
-            [InspectorName("动态")]
+            [InspectorName("@SettingsText/TrackingDynamic")]
             Dynamic,
         }
 

@@ -63,12 +63,16 @@ namespace SlimeNull.DuckovModSettings.Core
             Root = root;
             Info = root.info;
             Id = SettingsStore.BuildModId(Info);
+            ResourceAssembly = root.GetType().Assembly;
         }
 
         public DuckovModBehaviour Root { get; }
         public ModInfo Info { get; }
         public string Id { get; }
-        public string DisplayName => string.IsNullOrWhiteSpace(Info.displayName) ? Info.name : Info.displayName;
+        public Assembly ResourceAssembly { get; }
+        public string DisplayName => LocalizedText.Resolve(
+            string.IsNullOrWhiteSpace(Info.displayName) ? Info.name : Info.displayName,
+            ResourceAssembly);
         public IReadOnlyList<ComponentSettingsModel> Components => _components;
 
         public void Add(ComponentSettingsModel component)
@@ -94,6 +98,7 @@ namespace SlimeNull.DuckovModSettings.Core
         public MonoBehaviour Target { get; }
         public string ComponentKey { get; }
         public string DisplayName { get; }
+        public Assembly ResourceAssembly => Mod.ResourceAssembly;
         public IReadOnlyList<SettingNode> Nodes => _nodes;
 
         public IReadOnlyList<SettingNode> Leaves => _leaves ??= _nodes
@@ -141,6 +146,9 @@ namespace SlimeNull.DuckovModSettings.Core
     internal sealed class SettingNode
     {
         private readonly List<SettingNode> _children = new List<SettingNode>();
+        private readonly string _displayName;
+        private readonly string _tooltip;
+        private readonly string? _header;
         private object? _lastObservedValue;
 
         public SettingNode(
@@ -160,9 +168,9 @@ namespace SlimeNull.DuckovModSettings.Core
             Owner = owner;
             Kind = kind;
             MemberPath = memberPath;
-            DisplayName = displayName;
-            Tooltip = tooltip;
-            Header = header;
+            _displayName = displayName;
+            _tooltip = tooltip;
+            _header = header;
             ValueType = valueType;
             AccessPath = accessPath;
             DefaultValue = SettingValueCodec.CloneValue(defaultValue, valueType);
@@ -177,9 +185,11 @@ namespace SlimeNull.DuckovModSettings.Core
         public SettingNodeKind Kind { get; }
         public string MemberPath { get; }
         public string StoreKey { get; }
-        public string DisplayName { get; }
-        public string Tooltip { get; }
-        public string? Header { get; }
+        public string DisplayName => LocalizedText.Resolve(_displayName, Owner.ResourceAssembly);
+        public string Tooltip => LocalizedText.Resolve(_tooltip, Owner.ResourceAssembly);
+        public string? Header => _header == null
+            ? null
+            : LocalizedText.Resolve(_header, Owner.ResourceAssembly);
         public Type ValueType { get; }
         public ReflectionPath? AccessPath { get; }
         public object? DefaultValue { get; }

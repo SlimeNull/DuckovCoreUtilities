@@ -278,7 +278,9 @@ namespace SlimeNull.DuckovModSettings.Core
                 {
                     var attribute = CustomAttributeData.GetCustomAttributes(field)
                         .FirstOrDefault(item => item.AttributeType.FullName == "UnityEngine.InspectorNameAttribute");
-                    return attribute?.ConstructorArguments.FirstOrDefault().Value as string ?? NameUtility.NicifyMemberName(name);
+                    var displayName = attribute?.ConstructorArguments.FirstOrDefault().Value as string ??
+                        NameUtility.NicifyMemberName(name);
+                    return LocalizedText.Resolve(displayName, enumType.Assembly);
                 }
                 catch
                 {

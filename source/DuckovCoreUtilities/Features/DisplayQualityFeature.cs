@@ -21,11 +21,11 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         public enum DecorateMode
         {
-            [InspectorName("边框")]
+            [InspectorName("@SettingsText/QualityBorder")]
             Border,
-            [InspectorName("角标")]
+            [InspectorName("@SettingsText/QualityCornerBadge")]
             Corner,
-            [InspectorName("背景")]
+            [InspectorName("@SettingsText/QualityBackground")]
             Background
         }
 

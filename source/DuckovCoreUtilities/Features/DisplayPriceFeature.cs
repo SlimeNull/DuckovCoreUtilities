@@ -11,9 +11,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         public enum DisplayMode
         {
-            [UnityEngine.InspectorName("售价")]
+            [UnityEngine.InspectorName("@SettingsText/PriceSell")]
             SellPrice,
-            [UnityEngine.InspectorName("原价")]
+            [UnityEngine.InspectorName("@SettingsText/PriceBase")]
             RawPrice,
         }
 

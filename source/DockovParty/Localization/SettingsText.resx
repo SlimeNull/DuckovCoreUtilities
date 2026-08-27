@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="DiagnosticLogging" xml:space="preserve"><value>Diagnostic logging</value></data>
+  <data name="DiagnosticLoggingTooltip" xml:space="preserve"><value>Write multiplayer protocol traffic to the game log</value></data>
+  <data name="InterpolationDelay" xml:space="preserve"><value>Interpolation delay</value></data>
+  <data name="InterpolationDelayTooltip" xml:space="preserve"><value>Interpolation buffer for remote player movement, in seconds</value></data>
+  <data name="JoinAddress" xml:space="preserve"><value>Join address</value></data>
+  <data name="ListenAddress" xml:space="preserve"><value>Host listen address</value></data>
+  <data name="ListenAddressTooltip" xml:space="preserve"><value>Applied the next time hosting starts</value></data>
+  <data name="NetworkGroup" xml:space="preserve"><value>Network</value></data>
+  <data name="PlayerGroup" xml:space="preserve"><value>Player</value></data>
+  <data name="PlayerName" xml:space="preserve"><value>Multiplayer name</value></data>
+  <data name="PlayerNameTooltip" xml:space="preserve"><value>Name shown to other players in multiplayer</value></data>
+  <data name="Port" xml:space="preserve"><value>Port</value></data>
+  <data name="StateRate" xml:space="preserve"><value>State update rate</value></data>
+  <data name="StateRateTooltip" xml:space="preserve"><value>Player state updates sent per second</value></data>
+</root>

@@ -1,6 +1,7 @@
 using Duckov.Options.UI;
 using HarmonyLib;
 using SlimeNull.DuckovModSettings.Core;
+using SlimeNull.DuckovModSettings.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -71,6 +72,25 @@ namespace SlimeNull.DuckovModSettings.UI
                 Detach(attachment);
             }
             _attachments.Clear();
+        }
+
+        public void RefreshLocalization()
+        {
+            foreach (var attachment in _attachments)
+            {
+                if (attachment.Button != null)
+                {
+                    var label = attachment.Button.GetComponentInChildren<TMP_Text>(includeInactive: true);
+                    if (label != null)
+                    {
+                        label.text = SettingsText.Get("ModSettings");
+                    }
+                }
+                if (attachment.Page != null)
+                {
+                    attachment.Page.RefreshLocalization();
+                }
+            }
         }
 
         internal static void NotifyPanelOpened(OptionsPanel panel)
@@ -150,7 +170,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 var tabLabel = buttonObject.GetComponentInChildren<TMP_Text>(includeInactive: true);
                 if (tabLabel != null)
                 {
-                    tabLabel.text = "模组设置";
+                    tabLabel.text = SettingsText.Get("ModSettings");
                 }
 
                 pageObject = new GameObject("DuckovModSettings_Content", typeof(RectTransform));

@@ -17,10 +17,10 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         public enum DemandBaseline
         {
-            [InspectorName("商人回购价")]
+            [InspectorName("@SettingsText/MerchantSellback")]
             MerchantSellback,
 
-            [InspectorName("物品原价")]
+            [InspectorName("@SettingsText/ItemBasePrice")]
             ItemBasePrice,
         }
 
@@ -119,13 +119,23 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return;
             }
 
-            var displayTransform = anchor.transform.Find(DisplayName);
+            var parent = anchor.transform.parent;
+            if (parent == null)
+            {
+                return;
+            }
+
+            var displayTransform = parent.Find(DisplayName) ?? anchor.transform.Find(DisplayName);
             var display = displayTransform != null
                 ? displayTransform.GetComponent<PriceComparisonDisplay>()
                 : null;
             if (display == null)
             {
                 display = CreateDisplay(anchor);
+            }
+            else
+            {
+                ConfigureDisplayLayout(display, anchor);
             }
 
             display.Target = target;
@@ -143,20 +153,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 typeof(TextMeshProUGUI),
                 typeof(PriceComparisonDisplay));
             gameObject.layer = anchor.gameObject.layer;
-            gameObject.transform.SetParent(anchor.transform, false);
-
-            var rect = (RectTransform)gameObject.transform;
-            rect.anchorMin = new Vector2(0.5f, 0f);
-            rect.anchorMax = new Vector2(0.5f, 0f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = new Vector2(0f, -2f);
-            rect.sizeDelta = new Vector2(300f, 24f);
 
             var text = gameObject.GetComponent<TextMeshProUGUI>();
             text.font = anchor.font;
             text.fontSharedMaterial = anchor.fontSharedMaterial;
             text.fontStyle = anchor.fontStyle;
-            text.alignment = TextAlignmentOptions.Top;
+            text.alignment = anchor.alignment;
             text.color = Color.white;
             text.raycastTarget = false;
             text.richText = true;
@@ -168,7 +170,36 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             var display = gameObject.GetComponent<PriceComparisonDisplay>();
             display.Text = text;
+            ConfigureDisplayLayout(display, anchor);
             return display;
+        }
+
+        private static void ConfigureDisplayLayout(
+            PriceComparisonDisplay display,
+            TextMeshProUGUI anchor)
+        {
+            var parent = anchor.transform.parent;
+            if (parent == null)
+            {
+                return;
+            }
+
+            var displayTransform = display.transform;
+            if (displayTransform.parent != parent)
+            {
+                displayTransform.SetParent(parent, false);
+            }
+
+            displayTransform.SetSiblingIndex(anchor.transform.GetSiblingIndex() + 1);
+
+            var anchorRect = anchor.rectTransform;
+            var displayRect = (RectTransform)displayTransform;
+            displayRect.anchorMin = anchorRect.anchorMin;
+            displayRect.anchorMax = anchorRect.anchorMax;
+            displayRect.pivot = anchorRect.pivot;
+            displayRect.sizeDelta = new Vector2(anchorRect.sizeDelta.x, 20f);
+            displayRect.anchoredPosition = anchorRect.anchoredPosition + new Vector2(0f, -25f);
+            display.Text.alignment = anchor.alignment;
         }
 
         private static TextMeshProUGUI? FindPriceText(Transform root, string path, int expectedPrice)

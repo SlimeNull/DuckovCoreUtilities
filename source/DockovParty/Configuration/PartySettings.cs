@@ -10,8 +10,8 @@ namespace SlimeNull.DockovParty.Configuration
         [Serializable]
         private sealed class IdentityOptions
         {
-            [InspectorName("联机昵称")]
-            [Tooltip("其他玩家在联机游戏中看到的名称")]
+            [InspectorName("@SettingsText/PlayerName")]
+            [Tooltip("@SettingsText/PlayerNameTooltip")]
             [FormerlySerializedAs("Identity.PlayerName")]
             public string PlayerName = "玩家";
         }
@@ -19,44 +19,44 @@ namespace SlimeNull.DockovParty.Configuration
         [Serializable]
         private sealed class NetworkOptions
         {
-            [InspectorName("服主监听地址")]
-            [Tooltip("下次开服时生效")]
+            [InspectorName("@SettingsText/ListenAddress")]
+            [Tooltip("@SettingsText/ListenAddressTooltip")]
             [FormerlySerializedAs("Network.ListenAddress")]
             public string ListenAddress = "0.0.0.0";
 
-            [InspectorName("加入游戏地址")]
+            [InspectorName("@SettingsText/JoinAddress")]
             [FormerlySerializedAs("Network.JoinAddress")]
             public string JoinAddress = "127.0.0.1";
 
-            [InspectorName("端口")]
+            [InspectorName("@SettingsText/Port")]
             [Range(1024, 65535)]
             [FormerlySerializedAs("Network.Port")]
             public int Port = 37622;
 
-            [InspectorName("状态同步频率")]
-            [Tooltip("每秒发送的玩家状态数量")]
+            [InspectorName("@SettingsText/StateRate")]
+            [Tooltip("@SettingsText/StateRateTooltip")]
             [Range(5, 30)]
             [FormerlySerializedAs("Network.StateRate")]
             public int StateRate = 15;
 
-            [InspectorName("插值延迟")]
-            [Tooltip("远程玩家移动的插值缓冲时间（秒）")]
+            [InspectorName("@SettingsText/InterpolationDelay")]
+            [Tooltip("@SettingsText/InterpolationDelayTooltip")]
             [Range(0.03f, 0.3f)]
             [FormerlySerializedAs("Network.InterpolationDelay")]
             public float InterpolationDelay = 0.1f;
 
-            [InspectorName("诊断日志")]
-            [Tooltip("将联机协议收发信息写入游戏日志")]
+            [InspectorName("@SettingsText/DiagnosticLogging")]
+            [Tooltip("@SettingsText/DiagnosticLoggingTooltip")]
             [FormerlySerializedAs("Network.DiagnosticLogging")]
             public bool DiagnosticLogging = false;
         }
 
         [SerializeField]
-        [InspectorName("玩家")]
+        [InspectorName("@SettingsText/PlayerGroup")]
         private IdentityOptions identity = new IdentityOptions();
 
         [SerializeField]
-        [InspectorName("网络")]
+        [InspectorName("@SettingsText/NetworkGroup")]
         private NetworkOptions network = new NetworkOptions();
 
         public string ListenAddress => network.ListenAddress;

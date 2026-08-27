@@ -24,6 +24,10 @@
       <HintPath>$(ManagedPath)\Plugins.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="SodaLocalization">
+      <HintPath>$(ManagedPath)\SodaLocalization.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="TeamSoda.Duckov.Core">
       <HintPath>$(ManagedPath)\TeamSoda.Duckov.Core.dll</HintPath>
       <Private>false</Private>

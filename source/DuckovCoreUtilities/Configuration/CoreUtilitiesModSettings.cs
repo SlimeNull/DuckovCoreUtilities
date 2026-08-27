@@ -12,11 +12,11 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class DisplayPriceOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("DisplayPrice.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("价格类型")]
+            [InspectorName("@SettingsText/PriceType")]
             [FormerlySerializedAs("DisplayPrice.Mode")]
             public DisplayPriceFeature.DisplayMode Mode = DisplayPriceFeature.DisplayMode.SellPrice;
         }
@@ -24,10 +24,10 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class BlackMarketPriceOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("需求价格比较基准")]
+            [InspectorName("@SettingsText/DemandPriceBaseline")]
             public BlackMarketPriceComparisonFeature.DemandBaseline DemandBaseline =
                 BlackMarketPriceComparisonFeature.DemandBaseline.MerchantSellback;
         }
@@ -35,15 +35,15 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class StorageCountOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("DisplayStorageCount.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("显示背包内数量")]
+            [InspectorName("@SettingsText/ShowBackpackCount")]
             [FormerlySerializedAs("DisplayStorageCount.Backpack")]
             public bool Backpack = true;
 
-            [InspectorName("显示仓库内数量")]
+            [InspectorName("@SettingsText/ShowRepositoryCount")]
             [FormerlySerializedAs("DisplayStorageCount.Repository")]
             public bool Repository = true;
         }
@@ -51,48 +51,48 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class DisplayQualityOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("DisplayQuality.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("显示方式")]
+            [InspectorName("@SettingsText/DisplayMode")]
             public DisplayQualityFeature.DecorateMode Mode = DisplayQualityFeature.DecorateMode.Border;
         }
 
         [Serializable]
         private sealed class LootOutlineOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("LootOutline.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("显示战利品箱轮廓")]
+            [InspectorName("@SettingsText/ShowLootboxOutline")]
             [FormerlySerializedAs("LootOutline.Lootboxes")]
             public bool Lootboxes = true;
 
-            [InspectorName("显示地面物品轮廓")]
+            [InspectorName("@SettingsText/ShowGroundItemOutline")]
             [FormerlySerializedAs("LootOutline.GroundItems")]
             public bool GroundItems = true;
 
-            [InspectorName("使用物品品质颜色")]
+            [InspectorName("@SettingsText/UseQualityColor")]
             [FormerlySerializedAs("LootOutline.QualityColor")]
             public bool QualityColor = true;
 
-            [InspectorName("战利品箱呼吸效果")]
+            [InspectorName("@SettingsText/LootboxBreathing")]
             [FormerlySerializedAs("LootOutline.LootboxBreathing")]
             public bool LootboxBreathing = true;
 
-            [InspectorName("地面物品呼吸效果")]
+            [InspectorName("@SettingsText/GroundItemBreathing")]
             [FormerlySerializedAs("LootOutline.GroundItemBreathing")]
             public bool GroundItemBreathing = true;
 
-            [InspectorName("呼吸周期")]
-            [Tooltip("轮廓完成一次明暗变化所需的秒数")]
+            [InspectorName("@SettingsText/BreathingPeriod")]
+            [Tooltip("@SettingsText/BreathingPeriodTooltip")]
             [Range(0.1f, 5f)]
             [FormerlySerializedAs("LootOutline.BreathingPeriod")]
             public float BreathingPeriod = 1.5f;
 
-            [InspectorName("最低透明度")]
+            [InspectorName("@SettingsText/MinimumOpacity")]
             [Range(0f, 1f)]
             [FormerlySerializedAs("LootOutline.BreathingMinAlpha")]
             public float BreathingMinAlpha = 0.35f;
@@ -101,7 +101,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class InventorySortOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("InventorySort.Enabled")]
             public bool Enabled = true;
         }
@@ -109,15 +109,15 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class AutoCloseOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("AutoCloseBackpack.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("移动时关闭")]
+            [InspectorName("@SettingsText/CloseWhileMoving")]
             [FormerlySerializedAs("AutoCloseBackpack.WhenMove")]
             public bool WhenMove = true;
 
-            [InspectorName("受伤时关闭")]
+            [InspectorName("@SettingsText/CloseWhenHurt")]
             [FormerlySerializedAs("AutoCloseBackpack.WhenHurt")]
             public bool WhenHurt = true;
         }
@@ -125,16 +125,16 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class FadeHudOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("FadeHud.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("瞄准时透明度")]
+            [InspectorName("@SettingsText/AimOpacity")]
             [Range(0f, 1f)]
             [FormerlySerializedAs("FadeHud.TargetAlpha")]
             public float TargetAlpha = 0.3f;
 
-            [InspectorName("淡入淡出时间")]
+            [InspectorName("@SettingsText/FadeDuration")]
             [Range(0.01f, 1f)]
             [FormerlySerializedAs("FadeHud.SmoothTime")]
             public float SmoothTime = 0.1f;
@@ -143,23 +143,23 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class CrosshairColorOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("CrosshairColor.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("开始警告比例")]
-            [Tooltip("弹匣剩余比例低于此值时，准星开始变色")]
+            [InspectorName("@SettingsText/WarningThreshold")]
+            [Tooltip("@SettingsText/WarningThresholdTooltip")]
             [Range(0f, 1f)]
             [FormerlySerializedAs("CrosshairColor.WarnRatio")]
             public float WarnRatio = 0.5f;
 
-            [InspectorName("最终警告颜色")]
-            [Tooltip("弹匣耗尽时的准星颜色")]
+            [InspectorName("@SettingsText/FinalWarningColor")]
+            [Tooltip("@SettingsText/FinalWarningColorTooltip")]
             [FormerlySerializedAs("CrosshairColor.FinalWarningColor")]
             public Color FinalWarningColor = Color.red;
 
-            [InspectorName("开始警告颜色")]
-            [Tooltip("刚进入低弹药警告区间时的准星颜色")]
+            [InspectorName("@SettingsText/InitialWarningColor")]
+            [Tooltip("@SettingsText/InitialWarningColorTooltip")]
             [FormerlySerializedAs("CrosshairColor.StartWarningColor")]
             public Color StartWarningColor = Color.yellow;
         }
@@ -167,15 +167,15 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class UnfocusedOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("Unfocused.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("失去焦点时静音")]
+            [InspectorName("@SettingsText/MuteWhenUnfocused")]
             [FormerlySerializedAs("Unfocused.Mute")]
             public bool Mute = true;
 
-            [InspectorName("失去焦点时暂停")]
+            [InspectorName("@SettingsText/PauseWhenUnfocused")]
             [FormerlySerializedAs("Unfocused.Pause")]
 #if DEBUG
             public bool Pause = false;
@@ -187,25 +187,25 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class LowHealthShadowOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("LowHealthShadow.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("阴影颜色")]
+            [InspectorName("@SettingsText/ShadowColor")]
             [FormerlySerializedAs("LowHealthShadow.Color")]
             public Color Color = new Color(1f, 0f, 0f, 0.5f);
 
-            [InspectorName("阴影宽度")]
+            [InspectorName("@SettingsText/ShadowWidth")]
             [Range(0f, 400f)]
             [FormerlySerializedAs("LowHealthShadow.Distance")]
             public float Distance = 150f;
 
-            [InspectorName("开始显示比例")]
+            [InspectorName("@SettingsText/ShowThreshold")]
             [Range(0f, 1f)]
             [FormerlySerializedAs("LowHealthShadow.UpperThreshold")]
             public float UpperThreshold = 0.6f;
 
-            [InspectorName("最深效果比例")]
+            [InspectorName("@SettingsText/MaximumEffectThreshold")]
             [Range(0f, 1f)]
             [FormerlySerializedAs("LowHealthShadow.LowerThreshold")]
             public float LowerThreshold = 0.2f;
@@ -214,22 +214,22 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class KillRecordOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("KillRecord.Enabled")]
             public bool Enabled = false;
 
-            [InspectorName("显示时间")]
+            [InspectorName("@SettingsText/DisplayDuration")]
             [Range(1f, 30f)]
             [FormerlySerializedAs("KillRecord.Duration")]
             public float Duration = 5f;
 
-            [InspectorName("最多显示条数")]
+            [InspectorName("@SettingsText/MaximumEntries")]
             [Range(1, 20)]
             [FormerlySerializedAs("KillRecord.MaxCount")]
             public int MaxCount = 5;
 
-            [InspectorName("文本格式")]
-            [Tooltip("{0} 会替换为目标名称")]
+            [InspectorName("@SettingsText/TextFormat")]
+            [Tooltip("@SettingsText/TextFormatTooltip")]
             [FormerlySerializedAs("KillRecord.Format")]
             public string Format = "击杀 {0}";
         }
@@ -237,33 +237,33 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class MinimapOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             [FormerlySerializedAs("Minimap.Enabled")]
             public bool Enabled = false;
 
-            [InspectorName("显示尺寸")]
+            [InspectorName("@SettingsText/DisplaySize")]
             [Range(100f, 600f)]
             [FormerlySerializedAs("Minimap.DisplaySize")]
             public float DisplaySize = 260f;
 
-            [InspectorName("缩放系数")]
+            [InspectorName("@SettingsText/Zoom")]
             [Range(MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom)]
             [FormerlySerializedAs("Minimap.Zoom")]
             public float Zoom = 1f;
 
-            [InspectorName("地图方向")]
+            [InspectorName("@SettingsText/MapOrientation")]
             [FormerlySerializedAs("Minimap.Mode")]
             public MinimapFeature.OrientationMode Mode = MinimapFeature.OrientationMode.FixedAngle;
 
-            [InspectorName("缩小按键")]
+            [InspectorName("@SettingsText/ZoomOutKey")]
             [FormerlySerializedAs("Minimap.ZoomOutKey")]
             public Key ZoomOutKey = MinimapFeature.DefaultZoomOutKey;
 
-            [InspectorName("放大按键")]
+            [InspectorName("@SettingsText/ZoomInKey")]
             [FormerlySerializedAs("Minimap.ZoomInKey")]
             public Key ZoomInKey = MinimapFeature.DefaultZoomInKey;
 
-            [InspectorName("不透明度")]
+            [InspectorName("@SettingsText/Opacity")]
             [Range(0f, 1f)]
             [FormerlySerializedAs("Minimap.Opacity")]
             public float Opacity = 0.7f;
@@ -272,27 +272,27 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class BossMapMarkerOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("位置模式")]
+            [InspectorName("@SettingsText/PositionMode")]
             public BossMapMarkerFeature.TrackingMode Mode = BossMapMarkerFeature.TrackingMode.Static;
 
-            [InspectorName("显示名称")]
+            [InspectorName("@SettingsText/ShowNames")]
             public bool ShowNames = true;
 
-            [InspectorName("标记颜色")]
+            [InspectorName("@SettingsText/MarkerColor")]
             public Color MarkerColor = new Color(1f, 0.3f, 0.3f, 1f);
         }
 
         [Serializable]
         private sealed class WakeTimeOptions
         {
-            [InspectorName("小时")]
+            [InspectorName("@SettingsText/Hour")]
             [Range(0, 23)]
             public int Hour;
 
-            [InspectorName("分钟")]
+            [InspectorName("@SettingsText/Minute")]
             [Range(0, 59)]
             public int Minute;
 
@@ -306,69 +306,69 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class QuickSleepOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("固定时间按钮 1")]
+            [InspectorName("@SettingsText/PresetTime1")]
             public WakeTimeOptions FirstTime = new WakeTimeOptions(6, 0);
 
-            [InspectorName("固定时间按钮 2")]
+            [InspectorName("@SettingsText/PresetTime2")]
             public WakeTimeOptions SecondTime = new WakeTimeOptions(22, 0);
         }
 
         [Serializable]
         private sealed class ItemUsageOptions
         {
-            [InspectorName("启用")]
+            [InspectorName("@SettingsText/Enabled")]
             public bool Enabled = true;
         }
 
-        [SerializeField, InspectorName("显示物品价格")]
+        [SerializeField, InspectorName("@SettingsText/FeatureDisplayPrice")]
         private DisplayPriceOptions displayPrice = new DisplayPriceOptions();
 
-        [SerializeField, InspectorName("黑市比价")]
+        [SerializeField, InspectorName("@SettingsText/FeatureBlackMarketPrice")]
         private BlackMarketPriceOptions blackMarketPrice = new BlackMarketPriceOptions();
 
-        [SerializeField, InspectorName("显示库存数量")]
+        [SerializeField, InspectorName("@SettingsText/FeatureStorageCount")]
         private StorageCountOptions storageCount = new StorageCountOptions();
 
-        [SerializeField, InspectorName("显示物品品质")]
+        [SerializeField, InspectorName("@SettingsText/FeatureDisplayQuality")]
         private DisplayQualityOptions displayQuality = new DisplayQualityOptions();
 
-        [SerializeField, InspectorName("战利品轮廓")]
+        [SerializeField, InspectorName("@SettingsText/FeatureLootOutline")]
         private LootOutlineOptions lootOutline = new LootOutlineOptions();
 
-        [SerializeField, InspectorName("仓库排序按钮")]
+        [SerializeField, InspectorName("@SettingsText/FeatureInventorySort")]
         private InventorySortOptions inventorySort = new InventorySortOptions();
 
-        [SerializeField, InspectorName("自动关闭背包")]
+        [SerializeField, InspectorName("@SettingsText/FeatureAutoCloseBackpack")]
         private AutoCloseOptions autoCloseBackpack = new AutoCloseOptions();
 
-        [SerializeField, InspectorName("瞄准时淡出 HUD")]
+        [SerializeField, InspectorName("@SettingsText/FeatureFadeHud")]
         private FadeHudOptions fadeHud = new FadeHudOptions();
 
-        [SerializeField, InspectorName("弹药量准星颜色")]
+        [SerializeField, InspectorName("@SettingsText/FeatureCrosshairColor")]
         private CrosshairColorOptions crosshairColor = new CrosshairColorOptions();
 
-        [SerializeField, InspectorName("游戏失去焦点时")]
+        [SerializeField, InspectorName("@SettingsText/FeatureUnfocused")]
         private UnfocusedOptions unfocused = new UnfocusedOptions();
 
-        [SerializeField, InspectorName("低生命值屏幕阴影")]
+        [SerializeField, InspectorName("@SettingsText/FeatureLowHealthShadow")]
         private LowHealthShadowOptions lowHealthShadow = new LowHealthShadowOptions();
 
-        [SerializeField, InspectorName("击杀记录")]
+        [SerializeField, InspectorName("@SettingsText/FeatureKillRecord")]
         private KillRecordOptions killRecord = new KillRecordOptions();
 
-        [SerializeField, InspectorName("小地图")]
+        [SerializeField, InspectorName("@SettingsText/FeatureMinimap")]
         private MinimapOptions minimap = new MinimapOptions();
 
-        [SerializeField, InspectorName("显示 BOSS 位置")]
+        [SerializeField, InspectorName("@SettingsText/FeatureBossMapMarker")]
         private BossMapMarkerOptions bossMapMarker = new BossMapMarkerOptions();
 
-        [SerializeField, InspectorName("快点鸭时间")]
+        [SerializeField, InspectorName("@SettingsText/FeatureQuickSleep")]
         private QuickSleepOptions quickSleep = new QuickSleepOptions();
 
-        [SerializeField, InspectorName("显示物品可用次数")]
+        [SerializeField, InspectorName("@SettingsText/FeatureItemUsage")]
         private ItemUsageOptions itemUsage = new ItemUsageOptions();
 
         private FeatureHost? _host;

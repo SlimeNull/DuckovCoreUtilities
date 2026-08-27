@@ -3,6 +3,7 @@ using Duckov.Options.UI;
 using HarmonyLib;
 using SlimeNull.DuckovModSettings.Core;
 using SlimeNull.DuckovModSettings.UI;
+using SodaCraft.Localizations;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -44,6 +45,9 @@ namespace SlimeNull.DuckovModSettings
             _harmony.PatchAll(typeof(ModBehaviour).Assembly);
             ModManager.OnModActivated += OnModActivated;
             ModManager.OnModWillBeDeactivated += OnModWillBeDeactivated;
+            LocalizedText.SetLanguage(
+                LocalizationManager.Initialized ? LocalizationManager.CurrentLanguage : Application.systemLanguage);
+            LocalizationManager.OnSetLanguage += OnLanguageChanged;
 
             _catalogRefreshRequested = true;
             _attachPanelsCoroutine = StartCoroutine(AttachExistingPanelsAfterStart());
@@ -54,6 +58,7 @@ namespace SlimeNull.DuckovModSettings
         {
             ModManager.OnModActivated -= OnModActivated;
             ModManager.OnModWillBeDeactivated -= OnModWillBeDeactivated;
+            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
             StopCatalogRefresh();
             if (_attachPanelsCoroutine != null)
             {
@@ -158,6 +163,14 @@ namespace SlimeNull.DuckovModSettings
                 _hydratedRoots.Remove(root.GetInstanceID());
             }
             RequestCatalogRefreshIfOpen();
+        }
+
+        private void OnLanguageChanged(SystemLanguage _)
+        {
+            LocalizedText.SetLanguage(LocalizationManager.CurrentLanguage);
+            _catalog?.RefreshLocalization();
+            _injector?.RefreshLocalization();
+            ColorPickerDialog.RefreshCurrentLocalization();
         }
 
         private void HydrateRoot(DuckovModBehaviour root)

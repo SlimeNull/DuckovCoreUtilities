@@ -11,30 +11,30 @@ namespace SlimeNull.DuckovInterop.Configuration
         [Serializable]
         private sealed class ServerOptions
         {
-            [InspectorName("启用服务")]
-            [Tooltip("启用供场景检视器使用的 JSON RPC 服务")]
+            [InspectorName("@SettingsText/ServerEnabled")]
+            [Tooltip("@SettingsText/ServerEnabledTooltip")]
             [FormerlySerializedAs("Server.Enabled")]
             public bool Enabled = true;
 
-            [InspectorName("监听地址")]
-            [Tooltip("重新启用服务后生效")]
+            [InspectorName("@SettingsText/ListenAddress")]
+            [Tooltip("@SettingsText/RestartServiceTooltip")]
             [FormerlySerializedAs("Server.Host")]
             public string Host = HierarchyInspectorRpcEndpoint.Host;
 
-            [InspectorName("监听端口")]
-            [Tooltip("重新启用服务后生效")]
+            [InspectorName("@SettingsText/ListenPort")]
+            [Tooltip("@SettingsText/RestartServiceTooltip")]
             [Range(1024, 65535)]
             [FormerlySerializedAs("Server.Port")]
             public int Port = HierarchyInspectorRpcEndpoint.Port;
 
-            [InspectorName("诊断日志")]
-            [Tooltip("将 RPC 请求和错误写入游戏日志")]
+            [InspectorName("@SettingsText/DiagnosticLogging")]
+            [Tooltip("@SettingsText/DiagnosticLoggingTooltip")]
             [FormerlySerializedAs("Server.DiagnosticLogging")]
             public bool DiagnosticLogging = false;
         }
 
         [SerializeField]
-        [InspectorName("JSON RPC 服务")]
+        [InspectorName("@SettingsText/ServerGroup")]
         private ServerOptions server = new ServerOptions();
 
         private ModBehaviour? _owner;

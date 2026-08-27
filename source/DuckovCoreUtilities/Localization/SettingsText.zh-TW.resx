@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AimOpacity" xml:space="preserve"><value>瞄準時透明度</value></data>
+  <data name="BreathingPeriod" xml:space="preserve"><value>呼吸週期</value></data>
+  <data name="BreathingPeriodTooltip" xml:space="preserve"><value>輪廓完成一次明暗變化所需的秒數</value></data>
+  <data name="CloseWhenHurt" xml:space="preserve"><value>受傷時關閉</value></data>
+  <data name="CloseWhileMoving" xml:space="preserve"><value>移動時關閉</value></data>
+  <data name="DemandPriceBaseline" xml:space="preserve"><value>需求價格比較基準</value></data>
+  <data name="DisplayDuration" xml:space="preserve"><value>顯示時間</value></data>
+  <data name="DisplayMode" xml:space="preserve"><value>顯示方式</value></data>
+  <data name="DisplaySize" xml:space="preserve"><value>顯示尺寸</value></data>
+  <data name="Enabled" xml:space="preserve"><value>啟用</value></data>
+  <data name="FadeDuration" xml:space="preserve"><value>淡入淡出時間</value></data>
+  <data name="FeatureAutoCloseBackpack" xml:space="preserve"><value>自動關閉背包</value></data>
+  <data name="FeatureBlackMarketPrice" xml:space="preserve"><value>黑市比價</value></data>
+  <data name="FeatureBossMapMarker" xml:space="preserve"><value>顯示 BOSS 位置</value></data>
+  <data name="FeatureCrosshairColor" xml:space="preserve"><value>彈藥量準星顏色</value></data>
+  <data name="FeatureDisplayPrice" xml:space="preserve"><value>顯示物品價格</value></data>
+  <data name="FeatureDisplayQuality" xml:space="preserve"><value>顯示物品品質</value></data>
+  <data name="FeatureFadeHud" xml:space="preserve"><value>瞄準時淡出 HUD</value></data>
+  <data name="FeatureInventorySort" xml:space="preserve"><value>倉庫排序按鈕</value></data>
+  <data name="FeatureItemUsage" xml:space="preserve"><value>顯示物品可用次數</value></data>
+  <data name="FeatureKillRecord" xml:space="preserve"><value>擊殺記錄</value></data>
+  <data name="FeatureLootOutline" xml:space="preserve"><value>戰利品輪廓</value></data>
+  <data name="FeatureLowHealthShadow" xml:space="preserve"><value>低生命值螢幕陰影</value></data>
+  <data name="FeatureMinimap" xml:space="preserve"><value>小地圖</value></data>
+  <data name="FeatureQuickSleep" xml:space="preserve"><value>快點鴨時間</value></data>
+  <data name="FeatureStorageCount" xml:space="preserve"><value>顯示庫存數量</value></data>
+  <data name="FeatureUnfocused" xml:space="preserve"><value>遊戲失去焦點時</value></data>
+  <data name="FinalWarningColor" xml:space="preserve"><value>最終警告顏色</value></data>
+  <data name="FinalWarningColorTooltip" xml:space="preserve"><value>彈匣耗盡時的準星顏色</value></data>
+  <data name="GroundItemBreathing" xml:space="preserve"><value>地面物品呼吸效果</value></data>
+  <data name="Hour" xml:space="preserve"><value>小時</value></data>
+  <data name="InitialWarningColor" xml:space="preserve"><value>開始警告顏色</value></data>
+  <data name="InitialWarningColorTooltip" xml:space="preserve"><value>剛進入低彈藥警告區間時的準星顏色</value></data>
+  <data name="ItemBasePrice" xml:space="preserve"><value>物品原價</value></data>
+  <data name="LootboxBreathing" xml:space="preserve"><value>戰利品箱呼吸效果</value></data>
+  <data name="MapFixedAngle" xml:space="preserve"><value>固定角度</value></data>
+  <data name="MapFollowPlayer" xml:space="preserve"><value>跟隨玩家角度</value></data>
+  <data name="MapOrientation" xml:space="preserve"><value>地圖方向</value></data>
+  <data name="MarkerColor" xml:space="preserve"><value>標記顏色</value></data>
+  <data name="MaximumEffectThreshold" xml:space="preserve"><value>最深效果比例</value></data>
+  <data name="MaximumEntries" xml:space="preserve"><value>最多顯示條數</value></data>
+  <data name="MerchantSellback" xml:space="preserve"><value>商人回購價</value></data>
+  <data name="MinimumOpacity" xml:space="preserve"><value>最低透明度</value></data>
+  <data name="Minute" xml:space="preserve"><value>分鐘</value></data>
+  <data name="MuteWhenUnfocused" xml:space="preserve"><value>失去焦點時靜音</value></data>
+  <data name="Opacity" xml:space="preserve"><value>不透明度</value></data>
+  <data name="PauseWhenUnfocused" xml:space="preserve"><value>失去焦點時暫停</value></data>
+  <data name="PositionMode" xml:space="preserve"><value>位置模式</value></data>
+  <data name="PresetTime1" xml:space="preserve"><value>固定時間按鈕 1</value></data>
+  <data name="PresetTime2" xml:space="preserve"><value>固定時間按鈕 2</value></data>
+  <data name="PriceBase" xml:space="preserve"><value>原價</value></data>
+  <data name="PriceSell" xml:space="preserve"><value>售價</value></data>
+  <data name="PriceType" xml:space="preserve"><value>價格類型</value></data>
+  <data name="QualityBackground" xml:space="preserve"><value>背景</value></data>
+  <data name="QualityBorder" xml:space="preserve"><value>邊框</value></data>
+  <data name="QualityCornerBadge" xml:space="preserve"><value>角標</value></data>
+  <data name="ShadowColor" xml:space="preserve"><value>陰影顏色</value></data>
+  <data name="ShadowWidth" xml:space="preserve"><value>陰影寬度</value></data>
+  <data name="ShowBackpackCount" xml:space="preserve"><value>顯示背包內數量</value></data>
+  <data name="ShowGroundItemOutline" xml:space="preserve"><value>顯示地面物品輪廓</value></data>
+  <data name="ShowLootboxOutline" xml:space="preserve"><value>顯示戰利品箱輪廓</value></data>
+  <data name="ShowNames" xml:space="preserve"><value>顯示名稱</value></data>
+  <data name="ShowRepositoryCount" xml:space="preserve"><value>顯示倉庫內數量</value></data>
+  <data name="ShowThreshold" xml:space="preserve"><value>開始顯示比例</value></data>
+  <data name="TextFormat" xml:space="preserve"><value>文字格式</value></data>
+  <data name="TextFormatTooltip" xml:space="preserve"><value>{0} 會替換為目標名稱</value></data>
+  <data name="TrackingDynamic" xml:space="preserve"><value>動態</value></data>
+  <data name="TrackingStatic" xml:space="preserve"><value>靜態</value></data>
+  <data name="UseQualityColor" xml:space="preserve"><value>使用物品品質顏色</value></data>
+  <data name="WarningThreshold" xml:space="preserve"><value>開始警告比例</value></data>
+  <data name="WarningThresholdTooltip" xml:space="preserve"><value>彈匣剩餘比例低於此值時，準星開始變色</value></data>
+  <data name="Zoom" xml:space="preserve"><value>縮放係數</value></data>
+  <data name="ZoomInKey" xml:space="preserve"><value>放大按鍵</value></data>
+  <data name="ZoomOutKey" xml:space="preserve"><value>縮小按鍵</value></data>
+</root>

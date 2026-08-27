@@ -1,4 +1,5 @@
 using SlimeNull.DuckovModSettings.Core;
+using SlimeNull.DuckovModSettings.Localization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -92,7 +93,9 @@ namespace SlimeNull.DuckovModSettings.UI
                 return;
             }
 
-            _emptyState.text = total > 0 ? $"正在加载... {processed}/{total}" : "正在加载...";
+            _emptyState.text = total > 0
+                ? string.Format(LocalizedText.Culture, SettingsText.Get("LoadingProgress"), processed, total)
+                : SettingsText.Get("Loading");
         }
 
         internal void CompleteLoading()
@@ -124,6 +127,31 @@ namespace SlimeNull.DuckovModSettings.UI
             }
             _tooltip.text = text;
             _tooltip.gameObject.SetActive(!string.IsNullOrWhiteSpace(text));
+        }
+
+        internal void RefreshLocalization()
+        {
+            if (_search?.placeholder is TMP_Text placeholder)
+            {
+                placeholder.text = SettingsText.Get("SearchSettings");
+            }
+            if (_resetButton != null)
+            {
+                var label = _resetButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
+                if (label != null)
+                {
+                    label.text = SettingsText.Get("RestoreDefaults");
+                }
+            }
+
+            if (_loading && _emptyState != null)
+            {
+                _emptyState.text = SettingsText.Get("Loading");
+            }
+            else if (_menuOpen)
+            {
+                _navigationRebuildRequested = true;
+            }
         }
 
         private void OnEnable()
@@ -273,7 +301,7 @@ namespace SlimeNull.DuckovModSettings.UI
             }
             if (_emptyState != null)
             {
-                _emptyState.text = "正在加载...";
+                _emptyState.text = SettingsText.Get("Loading");
                 _emptyState.gameObject.SetActive(true);
             }
         }
@@ -306,14 +334,20 @@ namespace SlimeNull.DuckovModSettings.UI
 
             _navigationScroll = UiFactory.ScrollView("Mods", navigation, out _navigationContent);
 
-            _search = UiFactory.Input("Search", navigation, _font, string.Empty, "搜索设置", 36f);
+            _search = UiFactory.Input(
+                "Search",
+                navigation,
+                _font,
+                string.Empty,
+                SettingsText.Get("SearchSettings"),
+                36f);
             _search.onValueChanged.AddListener(_ => RebuildSettings());
 
             _resetButton = UiFactory.Button(
                 "Reset",
                 navigation,
                 _font,
-                "恢复默认",
+                SettingsText.Get("RestoreDefaults"),
                 ResetSelectedMod,
                 36f,
                 UiFactory.SecondaryAccent,
@@ -332,7 +366,14 @@ namespace SlimeNull.DuckovModSettings.UI
 
             _settingsScroll = UiFactory.ScrollView("Setting Tree", main, out _settingsContent);
 
-            _emptyState = UiFactory.Text("Empty", main, _font, "没有发现可编辑的设置", 20f, UiFactory.TextSecondary, TextAlignmentOptions.Center);
+            _emptyState = UiFactory.Text(
+                "Empty",
+                main,
+                _font,
+                SettingsText.Get("NoEditableSettings"),
+                20f,
+                UiFactory.TextSecondary,
+                TextAlignmentOptions.Center);
             var emptyLayout = _emptyState.gameObject.AddComponent<LayoutElement>();
             emptyLayout.minHeight = 46f;
             emptyLayout.preferredHeight = 46f;
@@ -435,8 +476,10 @@ namespace SlimeNull.DuckovModSettings.UI
             {
                 _emptyState.gameObject.SetActive(rendered == 0);
                 _emptyState.text = _selectedMod == null
-                    ? "没有发现可编辑的模组设置"
-                    : string.IsNullOrEmpty(query) ? "没有发现可编辑的设置" : "没有匹配的设置";
+                    ? SettingsText.Get("NoEditableModSettings")
+                    : string.IsNullOrEmpty(query)
+                        ? SettingsText.Get("NoEditableSettings")
+                        : SettingsText.Get("NoMatchingSettings");
             }
             if (_settingsScroll != null)
             {

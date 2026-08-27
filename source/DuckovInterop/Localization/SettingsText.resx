@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="DiagnosticLogging" xml:space="preserve"><value>Diagnostic logging</value></data>
+  <data name="DiagnosticLoggingTooltip" xml:space="preserve"><value>Write RPC requests and errors to the game log</value></data>
+  <data name="ListenAddress" xml:space="preserve"><value>Listen address</value></data>
+  <data name="ListenPort" xml:space="preserve"><value>Listen port</value></data>
+  <data name="RestartServiceTooltip" xml:space="preserve"><value>Applied when the service is re-enabled</value></data>
+  <data name="ServerEnabled" xml:space="preserve"><value>Enable service</value></data>
+  <data name="ServerEnabledTooltip" xml:space="preserve"><value>Enable the JSON RPC service used by the hierarchy inspector</value></data>
+  <data name="ServerGroup" xml:space="preserve"><value>JSON RPC service</value></data>
+</root>

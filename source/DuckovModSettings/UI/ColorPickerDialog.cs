@@ -1,4 +1,5 @@
 using SlimeNull.DuckovModSettings.Core;
+using SlimeNull.DuckovModSettings.Localization;
 using System;
 using System.Globalization;
 using TMPro;
@@ -17,6 +18,8 @@ namespace SlimeNull.DuckovModSettings.UI
         private TMP_FontAsset? _font;
         private Image? _preview;
         private TMP_InputField? _hexInput;
+        private TMP_Text? _title;
+        private TMP_Text? _doneLabel;
         private bool _closing;
         private bool _updating;
 
@@ -47,6 +50,11 @@ namespace SlimeNull.DuckovModSettings.UI
             _current = dialog;
             dialog.Initialize(page, node, font);
             overlay.gameObject.SetActive(true);
+        }
+
+        internal static void RefreshCurrentLocalization()
+        {
+            _current?.RefreshLocalization();
         }
 
         private void Initialize(SettingsPage page, SettingNode node, TMP_FontAsset? font)
@@ -90,8 +98,8 @@ namespace SlimeNull.DuckovModSettings.UI
             titleHorizontal.childControlWidth = true;
             titleHorizontal.childForceExpandHeight = true;
             titleHorizontal.childForceExpandWidth = false;
-            var title = UiFactory.Text("Label", titleRow, _font, node.DisplayName, 25f, UiFactory.TextPrimary);
-            title.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
+            _title = UiFactory.Text("Label", titleRow, _font, node.DisplayName, 25f, UiFactory.TextPrimary);
+            _title.gameObject.AddComponent<LayoutElement>().flexibleWidth = 1f;
             var close = UiFactory.Button("Close", titleRow, _font, "X", Close, 38f, UiFactory.RaisedBackground);
             var closeLayout = close.GetComponent<LayoutElement>();
             closeLayout.minWidth = 42f;
@@ -126,8 +134,28 @@ namespace SlimeNull.DuckovModSettings.UI
             _hexInput.GetComponent<LayoutElement>().flexibleWidth = 1f;
             _hexInput.onEndEdit.AddListener(SetHex);
 
-            UiFactory.Button("Done", panel, _font, "完成", Close, 44f, new Color(0.12f, 0.36f, 0.27f, 1f));
+            var done = UiFactory.Button(
+                "Done",
+                panel,
+                _font,
+                SettingsText.Get("Done"),
+                Close,
+                44f,
+                new Color(0.12f, 0.36f, 0.27f, 1f));
+            _doneLabel = done.GetComponentInChildren<TMP_Text>(includeInactive: true);
             UpdateControls(GetColor());
+        }
+
+        private void RefreshLocalization()
+        {
+            if (_title != null && _node != null)
+            {
+                _title.text = _node.DisplayName;
+            }
+            if (_doneLabel != null)
+            {
+                _doneLabel.text = SettingsText.Get("Done");
+            }
         }
 
         private void CreateChannel(RectTransform parent, int index, string labelText)

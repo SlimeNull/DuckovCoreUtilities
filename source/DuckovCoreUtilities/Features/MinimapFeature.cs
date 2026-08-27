@@ -11,9 +11,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         public enum OrientationMode
         {
-            [InspectorName("固定角度")]
+            [InspectorName("@SettingsText/MapFixedAngle")]
             FixedAngle,
-            [InspectorName("跟随玩家角度")]
+            [InspectorName("@SettingsText/MapFollowPlayer")]
             FollowPlayerHeading,
         }
 

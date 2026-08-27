@@ -75,7 +75,7 @@ namespace SlimeNull.DuckovModSettings.Core
                 .Select(snapshot => snapshot.Model)
                 .Where(model => model != null)
                 .Cast<ModSettingsModel>()
-                .OrderBy(model => model.DisplayName, StringComparer.CurrentCultureIgnoreCase)
+                .OrderBy(model => model.DisplayName, StringComparer.Create(LocalizedText.Culture, ignoreCase: true))
                 .ToArray();
             if (changed)
             {
@@ -95,6 +95,14 @@ namespace SlimeNull.DuckovModSettings.Core
                     }
                 }
             }
+        }
+
+        public void RefreshLocalization()
+        {
+            _mods = _mods
+                .OrderBy(model => model.DisplayName, StringComparer.Create(LocalizedText.Culture, ignoreCase: true))
+                .ToArray();
+            StructureChanged?.Invoke();
         }
 
         private static List<DuckovModBehaviour> GetActiveRoots()

@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="AimOpacity" xml:space="preserve"><value>Opacity while aiming</value></data>
+  <data name="BreathingPeriod" xml:space="preserve"><value>Pulse period</value></data>
+  <data name="BreathingPeriodTooltip" xml:space="preserve"><value>Seconds required for one outline brightness cycle</value></data>
+  <data name="CloseWhenHurt" xml:space="preserve"><value>Close when hurt</value></data>
+  <data name="CloseWhileMoving" xml:space="preserve"><value>Close while moving</value></data>
+  <data name="DemandPriceBaseline" xml:space="preserve"><value>Demand price comparison baseline</value></data>
+  <data name="DisplayDuration" xml:space="preserve"><value>Display duration</value></data>
+  <data name="DisplayMode" xml:space="preserve"><value>Display style</value></data>
+  <data name="DisplaySize" xml:space="preserve"><value>Display size</value></data>
+  <data name="Enabled" xml:space="preserve"><value>Enabled</value></data>
+  <data name="FadeDuration" xml:space="preserve"><value>Fade duration</value></data>
+  <data name="FeatureAutoCloseBackpack" xml:space="preserve"><value>Auto-close inventory</value></data>
+  <data name="FeatureBlackMarketPrice" xml:space="preserve"><value>Black market price comparison</value></data>
+  <data name="FeatureBossMapMarker" xml:space="preserve"><value>Show BOSS locations</value></data>
+  <data name="FeatureCrosshairColor" xml:space="preserve"><value>Ammo crosshair color</value></data>
+  <data name="FeatureDisplayPrice" xml:space="preserve"><value>Show item prices</value></data>
+  <data name="FeatureDisplayQuality" xml:space="preserve"><value>Show item quality</value></data>
+  <data name="FeatureFadeHud" xml:space="preserve"><value>Fade HUD while aiming</value></data>
+  <data name="FeatureInventorySort" xml:space="preserve"><value>Inventory sort buttons</value></data>
+  <data name="FeatureItemUsage" xml:space="preserve"><value>Show item uses</value></data>
+  <data name="FeatureKillRecord" xml:space="preserve"><value>Kill feed</value></data>
+  <data name="FeatureLootOutline" xml:space="preserve"><value>Loot outlines</value></data>
+  <data name="FeatureLowHealthShadow" xml:space="preserve"><value>Low-health screen shadow</value></data>
+  <data name="FeatureMinimap" xml:space="preserve"><value>Minimap</value></data>
+  <data name="FeatureQuickSleep" xml:space="preserve"><value>Quick sleep</value></data>
+  <data name="FeatureStorageCount" xml:space="preserve"><value>Show inventory counts</value></data>
+  <data name="FeatureUnfocused" xml:space="preserve"><value>When game loses focus</value></data>
+  <data name="FinalWarningColor" xml:space="preserve"><value>Empty magazine color</value></data>
+  <data name="FinalWarningColorTooltip" xml:space="preserve"><value>Crosshair color when the magazine is empty</value></data>
+  <data name="GroundItemBreathing" xml:space="preserve"><value>Ground item pulse</value></data>
+  <data name="Hour" xml:space="preserve"><value>Hour</value></data>
+  <data name="InitialWarningColor" xml:space="preserve"><value>Initial warning color</value></data>
+  <data name="InitialWarningColorTooltip" xml:space="preserve"><value>Crosshair color when first entering the low-ammo range</value></data>
+  <data name="ItemBasePrice" xml:space="preserve"><value>Item base price</value></data>
+  <data name="LootboxBreathing" xml:space="preserve"><value>Loot container pulse</value></data>
+  <data name="MapFixedAngle" xml:space="preserve"><value>Fixed angle</value></data>
+  <data name="MapFollowPlayer" xml:space="preserve"><value>Follow player rotation</value></data>
+  <data name="MapOrientation" xml:space="preserve"><value>Map orientation</value></data>
+  <data name="MarkerColor" xml:space="preserve"><value>Marker color</value></data>
+  <data name="MaximumEffectThreshold" xml:space="preserve"><value>Full effect below</value></data>
+  <data name="MaximumEntries" xml:space="preserve"><value>Maximum entries</value></data>
+  <data name="MerchantSellback" xml:space="preserve"><value>Merchant buyback price</value></data>
+  <data name="MinimumOpacity" xml:space="preserve"><value>Minimum opacity</value></data>
+  <data name="Minute" xml:space="preserve"><value>Minute</value></data>
+  <data name="MuteWhenUnfocused" xml:space="preserve"><value>Mute while unfocused</value></data>
+  <data name="Opacity" xml:space="preserve"><value>Opacity</value></data>
+  <data name="PauseWhenUnfocused" xml:space="preserve"><value>Pause while unfocused</value></data>
+  <data name="PositionMode" xml:space="preserve"><value>Position mode</value></data>
+  <data name="PresetTime1" xml:space="preserve"><value>Preset time button 1</value></data>
+  <data name="PresetTime2" xml:space="preserve"><value>Preset time button 2</value></data>
+  <data name="PriceBase" xml:space="preserve"><value>Base price</value></data>
+  <data name="PriceSell" xml:space="preserve"><value>Sell price</value></data>
+  <data name="PriceType" xml:space="preserve"><value>Price type</value></data>
+  <data name="QualityBackground" xml:space="preserve"><value>Background</value></data>
+  <data name="QualityBorder" xml:space="preserve"><value>Border</value></data>
+  <data name="QualityCornerBadge" xml:space="preserve"><value>Corner badge</value></data>
+  <data name="ShadowColor" xml:space="preserve"><value>Shadow color</value></data>
+  <data name="ShadowWidth" xml:space="preserve"><value>Shadow width</value></data>
+  <data name="ShowBackpackCount" xml:space="preserve"><value>Show backpack count</value></data>
+  <data name="ShowGroundItemOutline" xml:space="preserve"><value>Outline ground items</value></data>
+  <data name="ShowLootboxOutline" xml:space="preserve"><value>Outline loot containers</value></data>
+  <data name="ShowNames" xml:space="preserve"><value>Show names</value></data>
+  <data name="ShowRepositoryCount" xml:space="preserve"><value>Show storage count</value></data>
+  <data name="ShowThreshold" xml:space="preserve"><value>Start showing below</value></data>
+  <data name="TextFormat" xml:space="preserve"><value>Text format</value></data>
+  <data name="TextFormatTooltip" xml:space="preserve"><value>{0} is replaced with the target name</value></data>
+  <data name="TrackingDynamic" xml:space="preserve"><value>Dynamic</value></data>
+  <data name="TrackingStatic" xml:space="preserve"><value>Static</value></data>
+  <data name="UseQualityColor" xml:space="preserve"><value>Use item quality colors</value></data>
+  <data name="WarningThreshold" xml:space="preserve"><value>Warning threshold</value></data>
+  <data name="WarningThresholdTooltip" xml:space="preserve"><value>Start changing the crosshair color below this remaining magazine ratio</value></data>
+  <data name="Zoom" xml:space="preserve"><value>Zoom</value></data>
+  <data name="ZoomInKey" xml:space="preserve"><value>Zoom in key</value></data>
+  <data name="ZoomOutKey" xml:space="preserve"><value>Zoom out key</value></data>
+</root>
