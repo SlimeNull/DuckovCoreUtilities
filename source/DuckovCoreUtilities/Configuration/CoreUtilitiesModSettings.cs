@@ -324,6 +324,70 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             public bool Enabled = true;
         }
 
+        [Serializable]
+        private sealed class GrenadeRadiusOptions
+        {
+            [InspectorName("@SettingsText/Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("@SettingsText/ShowFuseProgress")]
+            public bool ShowFuseProgress = true;
+
+            [InspectorName("@SettingsText/ShowSmokeTimer")]
+            public bool ShowSmokeTimer = true;
+
+            [InspectorName("@SettingsText/GrenadeRadiusColor")]
+            public Color RadiusColor = new Color(1f, 0.25f, 0.25f, 0.35f);
+
+            [InspectorName("@SettingsText/GrenadeProgressColor")]
+            public Color ProgressColor = new Color(1f, 0.9f, 0.6f, 0.5f);
+
+            [InspectorName("@SettingsText/SmokeTimerColor")]
+            public Color SmokeTimerColor = Color.white;
+        }
+
+        [Serializable]
+        private sealed class RecordedItemIndicatorOptions
+        {
+            [InspectorName("@SettingsText/Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("@SettingsText/IndicatorBackgroundColor")]
+            public Color BackgroundColor = new Color(0.2f, 0.8f, 0.2f, 1f);
+
+            [InspectorName("@SettingsText/IndicatorTextColor")]
+            public Color TextColor = Color.white;
+        }
+
+        [Serializable]
+        private sealed class QuestRequirementsOptions
+        {
+            [InspectorName("@SettingsText/Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("@SettingsText/IncludeQuestRequirements")]
+            public bool IncludeQuests = true;
+
+            [InspectorName("@SettingsText/IncludePerkRequirements")]
+            public bool IncludePerks = true;
+
+            [InspectorName("@SettingsText/IncludeBuildingRequirements")]
+            public bool IncludeBuildings = true;
+        }
+
+        [Serializable]
+        private sealed class QuestFavoriteOptions
+        {
+            [InspectorName("@SettingsText/Enabled")]
+            public bool Enabled = true;
+
+            [InspectorName("@SettingsText/FavoriteMarkerStyle")]
+            public QuestFavoriteFeature.MarkerStyle MarkerStyle = QuestFavoriteFeature.MarkerStyle.Star;
+
+            [InspectorName("@SettingsText/FavoriteMarkerColor")]
+            public Color MarkerColor = new Color(1f, 0.78f, 0.12f, 1f);
+        }
+
         [SerializeField, InspectorName("@SettingsText/FeatureDisplayPrice")]
         private DisplayPriceOptions displayPrice = new DisplayPriceOptions();
 
@@ -372,6 +436,18 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [SerializeField, InspectorName("@SettingsText/FeatureItemUsage")]
         private ItemUsageOptions itemUsage = new ItemUsageOptions();
 
+        [SerializeField, InspectorName("@SettingsText/FeatureGrenadeRadius")]
+        private GrenadeRadiusOptions grenadeRadius = new GrenadeRadiusOptions();
+
+        [SerializeField, InspectorName("@SettingsText/FeatureRecordedItemIndicator")]
+        private RecordedItemIndicatorOptions recordedItemIndicator = new RecordedItemIndicatorOptions();
+
+        [SerializeField, InspectorName("@SettingsText/FeatureQuestRequirements")]
+        private QuestRequirementsOptions questRequirements = new QuestRequirementsOptions();
+
+        [SerializeField, InspectorName("@SettingsText/FeatureQuestFavorites")]
+        private QuestFavoriteOptions questFavorites = new QuestFavoriteOptions();
+
         private FeatureHost? _host;
         private DisplayPriceFeature? _displayPriceFeature;
         private BlackMarketPriceComparisonFeature? _blackMarketPriceFeature;
@@ -389,6 +465,10 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private BossMapMarkerFeature? _bossMapMarkerFeature;
         private QuickSleepFeature? _quickSleepFeature;
         private ItemUsageDisplayFeature? _itemUsageFeature;
+        private GrenadeRadiusFeature? _grenadeRadiusFeature;
+        private RecordedItemIndicatorFeature? _recordedItemIndicatorFeature;
+        private QuestItemRequirementsFeature? _questRequirementsFeature;
+        private QuestFavoriteFeature? _questFavoriteFeature;
 
         public void Initialize(
             FeatureHost host,
@@ -407,7 +487,11 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             MinimapFeature minimapFeature,
             BossMapMarkerFeature bossMapMarkerFeature,
             QuickSleepFeature quickSleepFeature,
-            ItemUsageDisplayFeature itemUsageFeature)
+            ItemUsageDisplayFeature itemUsageFeature,
+            GrenadeRadiusFeature grenadeRadiusFeature,
+            RecordedItemIndicatorFeature recordedItemIndicatorFeature,
+            QuestItemRequirementsFeature questRequirementsFeature,
+            QuestFavoriteFeature questFavoriteFeature)
         {
             _host = host;
             _displayPriceFeature = displayPriceFeature;
@@ -426,6 +510,10 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             _bossMapMarkerFeature = bossMapMarkerFeature;
             _quickSleepFeature = quickSleepFeature;
             _itemUsageFeature = itemUsageFeature;
+            _grenadeRadiusFeature = grenadeRadiusFeature;
+            _recordedItemIndicatorFeature = recordedItemIndicatorFeature;
+            _questRequirementsFeature = questRequirementsFeature;
+            _questFavoriteFeature = questFavoriteFeature;
             _minimapFeature.ZoomChangedByInput += OnMinimapZoomChanged;
             OnValidate();
         }
@@ -510,6 +598,42 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             _host.SetEnabled(_quickSleepFeature, quickSleep.Enabled);
 
             _host.SetEnabled(_itemUsageFeature!, itemUsage.Enabled);
+
+            _grenadeRadiusFeature!.RadiusColor = grenadeRadius.RadiusColor;
+            _grenadeRadiusFeature.ProgressColor = grenadeRadius.ProgressColor;
+            _grenadeRadiusFeature.SmokeTimerColor = grenadeRadius.SmokeTimerColor;
+            _grenadeRadiusFeature.ShowFuseProgress = grenadeRadius.ShowFuseProgress;
+            _grenadeRadiusFeature.ShowSmokeTimer = grenadeRadius.ShowSmokeTimer;
+            _host.SetEnabled(_grenadeRadiusFeature, grenadeRadius.Enabled);
+            if (_grenadeRadiusFeature.IsEnabled)
+            {
+                _grenadeRadiusFeature.RefreshExistingIndicators();
+            }
+
+            _recordedItemIndicatorFeature!.BackgroundColor = recordedItemIndicator.BackgroundColor;
+            _recordedItemIndicatorFeature.TextColor = recordedItemIndicator.TextColor;
+            _host.SetEnabled(_recordedItemIndicatorFeature, recordedItemIndicator.Enabled);
+            if (_recordedItemIndicatorFeature.IsEnabled)
+            {
+                _recordedItemIndicatorFeature.RefreshExistingIndicators();
+            }
+
+            _questRequirementsFeature!.ShowQuestRequirements = questRequirements.IncludeQuests;
+            _questRequirementsFeature.ShowPerkRequirements = questRequirements.IncludePerks;
+            _questRequirementsFeature.ShowBuildingRequirements = questRequirements.IncludeBuildings;
+            _host.SetEnabled(_questRequirementsFeature, questRequirements.Enabled);
+            if (_questRequirementsFeature.IsEnabled)
+            {
+                _questRequirementsFeature.RefreshCurrentDisplay();
+            }
+
+            _questFavoriteFeature!.Style = questFavorites.MarkerStyle;
+            _questFavoriteFeature.MarkerColor = questFavorites.MarkerColor;
+            _host.SetEnabled(_questFavoriteFeature, questFavorites.Enabled);
+            if (_questFavoriteFeature.IsEnabled)
+            {
+                _questFavoriteFeature.RefreshAppearanceAndSort();
+            }
         }
 
         private void DuckovModSettingsUpdated()

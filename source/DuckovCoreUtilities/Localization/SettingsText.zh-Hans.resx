@@ -24,6 +24,10 @@
   <data name="FeatureFadeHud" xml:space="preserve"><value>瞄准时淡出 HUD</value></data>
   <data name="FeatureInventorySort" xml:space="preserve"><value>仓库排序按钮</value></data>
   <data name="FeatureItemUsage" xml:space="preserve"><value>显示物品可用次数</value></data>
+  <data name="FeatureGrenadeRadius" xml:space="preserve"><value>显示手雷爆炸范围</value></data>
+  <data name="FeatureRecordedItemIndicator" xml:space="preserve"><value>更好的钥匙和蓝图标识</value></data>
+  <data name="FeatureQuestRequirements" xml:space="preserve"><value>显示任务需求道具</value></data>
+  <data name="FeatureQuestFavorites" xml:space="preserve"><value>任务收藏</value></data>
   <data name="FeatureKillRecord" xml:space="preserve"><value>击杀记录</value></data>
   <data name="FeatureLootOutline" xml:space="preserve"><value>战利品轮廓</value></data>
   <data name="FeatureLowHealthShadow" xml:space="preserve"><value>低生命值屏幕阴影</value></data>
@@ -98,4 +102,25 @@
   <data name="QuickSleepFound" xml:space="preserve"><value>睡了 {0} 天，终于等到雨天了！</value></data>
   <data name="QuickSleepExhausted" xml:space="preserve"><value>已经睡了 {0} 天，放弃寻找雨天</value></data>
   <data name="KillRecordDefaultFormat" xml:space="preserve"><value>击杀 {0}</value></data>
+  <data name="ShowFuseProgress" xml:space="preserve"><value>显示引信进度</value></data>
+  <data name="ShowSmokeTimer" xml:space="preserve"><value>显示烟雾持续时间</value></data>
+  <data name="GrenadeRadiusColor" xml:space="preserve"><value>爆炸范围颜色</value></data>
+  <data name="GrenadeProgressColor" xml:space="preserve"><value>引信进度颜色</value></data>
+  <data name="SmokeTimerColor" xml:space="preserve"><value>烟雾计时颜色</value></data>
+  <data name="IndicatorBackgroundColor" xml:space="preserve"><value>标识背景颜色</value></data>
+  <data name="IndicatorTextColor" xml:space="preserve"><value>标识文字颜色</value></data>
+  <data name="IncludeQuestRequirements" xml:space="preserve"><value>包含任务需求</value></data>
+  <data name="IncludePerkRequirements" xml:space="preserve"><value>包含天赋需求</value></data>
+  <data name="IncludeBuildingRequirements" xml:space="preserve"><value>包含建筑需求</value></data>
+  <data name="FavoriteMarkerStyle" xml:space="preserve"><value>收藏标记</value></data>
+  <data name="FavoriteMarkerColor" xml:space="preserve"><value>收藏标记颜色</value></data>
+  <data name="Star" xml:space="preserve"><value>星星</value></data>
+  <data name="Heart" xml:space="preserve"><value>心形</value></data>
+  <data name="RequirementsTotal" xml:space="preserve"><value>总数 / 总需求:</value></data>
+  <data name="RequirementsPressShift" xml:space="preserve"><value>按住 Shift 查看详情</value></data>
+  <data name="RequirementsQuestPrepare" xml:space="preserve"><value>需要准备该物品的任务:</value></data>
+  <data name="RequirementsQuestSubmit" xml:space="preserve"><value>需要提交该物品的任务:</value></data>
+  <data name="RequirementsQuestUse" xml:space="preserve"><value>需要使用该物品的任务:</value></data>
+  <data name="RequirementsPerk" xml:space="preserve"><value>需要该物品解锁的天赋:</value></data>
+  <data name="RequirementsBuilding" xml:space="preserve"><value>需要该物品解锁的建筑:</value></data>
 </root>

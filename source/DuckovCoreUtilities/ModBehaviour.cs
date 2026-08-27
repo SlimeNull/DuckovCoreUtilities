@@ -52,6 +52,10 @@ namespace SlimeNull.DuckovCoreUtilities
             var bossMapMarker = new BossMapMarkerFeature();
             var quickSleep = new QuickSleepFeature();
             var itemUsage = new ItemUsageDisplayFeature();
+            var grenadeRadius = new GrenadeRadiusFeature();
+            var recordedItemIndicator = new RecordedItemIndicatorFeature();
+            var questRequirements = new QuestItemRequirementsFeature();
+            var questFavorites = new QuestFavoriteFeature();
 
             _features.Register(displayPrice);
             _features.Register(blackMarketPrice);
@@ -69,6 +73,10 @@ namespace SlimeNull.DuckovCoreUtilities
             _features.Register(bossMapMarker);
             _features.Register(quickSleep);
             _features.Register(itemUsage);
+            _features.Register(grenadeRadius);
+            _features.Register(recordedItemIndicator);
+            _features.Register(questRequirements);
+            _features.Register(questFavorites);
 
             _settings = gameObject.GetComponent<CoreUtilitiesModSettings>() ?? gameObject.AddComponent<CoreUtilitiesModSettings>();
             _settings.Initialize(
@@ -88,7 +96,11 @@ namespace SlimeNull.DuckovCoreUtilities
                 minimap,
                 bossMapMarker,
                 quickSleep,
-                itemUsage);
+                itemUsage,
+                grenadeRadius,
+                recordedItemIndicator,
+                questRequirements,
+                questFavorites);
 
             LocalizationManager.OnSetLanguage += OnLanguageChanged;
             Debug.Log("loaded DCU");

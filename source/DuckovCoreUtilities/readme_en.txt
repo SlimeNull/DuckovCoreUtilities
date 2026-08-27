@@ -20,6 +20,8 @@ Core Utilities still runs with its defaults when Duckov Mod Settings is absent, 
 [*][b]Inventory counts[/b]: show the number of matching items in the backpack and storage.
 [*][b]Item quality[/b]: represent item quality with a border, background, or corner badge.
 [*][b]Item uses[/b]: show current and maximum uses for durability-based items, including maximum uses after durability loss when applicable.
+[*][b]Recorded key and blueprint indicator[/b]: mark registered keys, keycards, and blueprints with a configurable check indicator.
+[*][b]Quest item requirements[/b]: summarize quantities needed by unfinished quests, perks, and buildings; hold [b]Shift[/b] to see each requirement source.
 [/list]
 
 [h2]Loot and inventory[/h2]
@@ -37,6 +39,7 @@ Core Utilities still runs with its defaults when Duckov Mod Settings is absent, 
 [*][b]Ammo crosshair color[/b]: gradually change the crosshair color as the magazine enters a configurable low-ammo range.
 [*][b]Low-health screen shadow[/b]: show a configurable colored shadow around the screen as health falls.
 [*][b]Kill feed[/b]: show recent kills on the HUD with configurable text, duration, and entry count. Disabled by default.
+[*][b]Grenade radius[/b]: show the actual blast radius and fuse progress for thrown explosives, plus remaining duration for smoke zones, with configurable colors and progress options.
 [/list]
 
 [h2]Map and time[/h2]
@@ -45,6 +48,7 @@ Core Utilities still runs with its defaults when Duckov Mod Settings is absent, 
 [*][b]Minimap[/b]: add a rounded minimap below the raid time and storm information. Configure size, opacity, fixed or player-relative orientation, and keyboard zoom controls. Disabled by default.
 [*][b]BOSS locations[/b]: mark living bosses on the map with optional names and a configurable color. Static mode preserves each spawn position; dynamic mode updates live positions while the map is open.
 [*][b]Quick sleep[/b]: add two configurable time presets plus buttons for rainy weather, Storm I, Storm II, and the end of the storm. A rainy-day search can be cancelled with [b]Esc[/b].
+[*][b]Quest favorites[/b]: right-click a quest to favorite it; favorited quests show a star or heart, move to the top, and are stored per save.
 [/list]
 
 [h2]Window behavior[/h2]

@@ -94,6 +94,10 @@
       <HintPath>$(ManagedPath)\UnityEngine.ParticleSystemModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(ManagedPath)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
     <Reference Include="Unity.InputSystem">
       <HintPath>$(ManagedPath)\Unity.InputSystem.dll</HintPath>
       <Private>false</Private>
@@ -108,6 +112,10 @@
     </Reference>
     <Reference Include="FOW">
       <HintPath>$(ManagedPath)\FOW.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Sirenix.OdinInspector.Attributes">
+      <HintPath>$(ManagedPath)\Sirenix.OdinInspector.Attributes.dll</HintPath>
       <Private>false</Private>
     </Reference>
   </ItemGroup>

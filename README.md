@@ -44,6 +44,10 @@ Core Utilities 提供一组可以在 Duckov Mod Settings 界面中独立启用�
 - 低生命值时显示可配置的屏幕边缘阴影。
 - 在 HUD 中显示近期击杀记录。
 - 在关卡内的时间与风暴信息下方显示可配置的圆角小地图，支持固定方向、跟随玩家朝向、透明度和快捷键缩放。
+- 显示手雷爆炸范围、引信进度和烟雾区域剩余时间。
+- 为已录入的钥匙、钥匙卡和蓝图添加标识。
+- 汇总物品在未完成任务、天赋和建筑中的需求数量。
+- 支持右键收藏任务、显示收藏标记、按存档保存并将收藏任务置顶。
 
 ### DockovParty
 
@@ -159,6 +163,10 @@ Core Utilities provides individually configurable features through Duckov Mod Se
 - Display a configurable screen-edge shadow at low health.
 - Show recent kill records on the HUD.
 - Show a configurable rounded minimap below the time and storm information while in raid levels, with fixed or player-relative orientation, opacity, and keyboard zoom controls.
+- Show grenade blast radii, fuse progress, and remaining smoke-zone duration.
+- Mark keys, keycards, and blueprints that have already been registered.
+- Summarize item quantities required by unfinished quests, perks, and buildings.
+- Favorite quests by right-clicking them, persist favorites per save, and keep them at the top of the quest list.
 
 ### DockovParty
 
