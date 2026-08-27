@@ -9,8 +9,8 @@
 ## 界面预览 / Preview
 
 <p align="center">
-  <a href="images/hierarchy_inspector.png"><img src="images/hierarchy_inspector.png" alt="场景检视器 / Hierarchy Inspector" width="57%"></a>
-  <a href="images/mcp_bridge.png"><img src="images/mcp_bridge.png" alt="MCP Bridge" width="40%"></a>
+  <a href="images/hierarchy_inspector.jpg"><img src="images/hierarchy_inspector.jpg" alt="场景检视器 / Hierarchy Inspector" width="57%"></a>
+  <a href="images/mcp_bridge.jpg"><img src="images/mcp_bridge.jpg" alt="MCP Bridge" width="40%"></a>
 </p>
 
 ## 中文
