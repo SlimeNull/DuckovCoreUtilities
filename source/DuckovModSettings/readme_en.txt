@@ -8,6 +8,7 @@ Duckov Mod Settings adds a unified in-game settings page for Escape from Duckov 
 [*]Preserves the real object structure as collapsible nested setting groups.
 [*]Searches setting names, tooltips, and current values.
 [*]Supports toggles, numeric inputs, range sliders, strings, characters, enums, keys, and colors.
+[*]String settings with file filters can select files through the Windows or macOS system dialog.
 [*]Provides RGBA fields and HEX input in the color picker.
 [*]Provides a Restore Defaults button for resetting every option in the selected mod.
 [*]Persists values and restores them the next time each mod loads.
@@ -59,7 +60,7 @@ Static, constant, read-only, indexed, and [b]HideInInspector[/b] members are ign
 [*]nullable forms of the value types above
 [/list]
 
-[h2]Supported Unity attributes[/h2]
+[h2]Supported attributes[/h2]
 
 [list]
 [*][b]InspectorName[/b]: visible label.
@@ -67,6 +68,7 @@ Static, constant, read-only, indexed, and [b]HideInInspector[/b] members are ign
 [*][b]Header[/b]: section heading.
 [*][b]Range[/b]: constrained slider.
 [*][b]TextArea[/b]: multiline string editor.
+[*][b]System.ComponentModel.Description[/b]: provides a file filter for a string field in [b]Label|pattern[/b] form, such as [b]WAV File|*.wav[/b]. Separate multiple patterns with semicolons or append more label-pattern pairs. The UI adds a system file-picker button to the right of the text box on Windows and macOS.
 [*][b]HideInInspector[/b]: excludes a member from the page.
 [/list]
 
@@ -82,6 +84,10 @@ private sealed class NetworkOptions
 
     [InspectorName("Status color")]
     public Color StatusColor = Color.green;
+
+    [InspectorName("Alert sound")]
+    [Description("WAV File|*.wav")]
+    public string AlertSound = string.Empty;
 }
 
 [SerializeField, InspectorName("Network")]

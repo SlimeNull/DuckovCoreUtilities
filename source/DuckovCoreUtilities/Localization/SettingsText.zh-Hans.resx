@@ -143,6 +143,7 @@
   <data name="Quality4" xml:space="preserve"><value>品质 4</value></data>
   <data name="Quality5" xml:space="preserve"><value>品质 5</value></data>
   <data name="Quality6" xml:space="preserve"><value>品质 6</value></data>
-  <data name="SoundEventPath" xml:space="preserve"><value>FMOD 事件路径</value></data>
+  <data name="SoundEventPath" xml:space="preserve"><value>回退 FMOD 事件路径</value></data>
   <data name="SoundVolume" xml:space="preserve"><value>音量</value></data>
+  <data name="LocalSoundFile" xml:space="preserve"><value>本地音频文件</value></data>
 </root>

@@ -161,6 +161,7 @@ namespace SlimeNull.DuckovModSettings.Core
             Type valueType,
             ReflectionPath? accessPath,
             object? defaultValue,
+            string? fileFilter,
             SettingRange? range,
             TextAreaOptions? textArea)
         {
@@ -173,6 +174,7 @@ namespace SlimeNull.DuckovModSettings.Core
             ValueType = valueType;
             AccessPath = accessPath;
             DefaultValue = SettingValueCodec.CloneValue(defaultValue, valueType);
+            FileFilter = fileFilter;
             Range = range;
             TextArea = textArea;
             StoreKey = owner.ComponentKey + "." + memberPath;
@@ -191,6 +193,7 @@ namespace SlimeNull.DuckovModSettings.Core
         public Type ValueType { get; }
         public ReflectionPath? AccessPath { get; }
         public object? DefaultValue { get; }
+        public string? FileFilter { get; }
         public SettingRange? Range { get; }
         public TextAreaOptions? TextArea { get; }
         public IReadOnlyList<SettingNode> Children => _children;

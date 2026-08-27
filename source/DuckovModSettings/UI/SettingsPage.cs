@@ -807,9 +807,58 @@ namespace SlimeNull.DuckovModSettings.UI
 
         private void CreateStringInput(RectTransform parent, SettingNode node, bool multiline, float editorHeight)
         {
-            var input = UiFactory.Input("Value", parent, _font, node.GetValue()?.ToString() ?? string.Empty, string.Empty,
+            var hasFilePicker = !multiline && NativeFileDialog.IsValidFilter(node.FileFilter);
+            var inputParent = parent;
+            if (hasFilePicker)
+            {
+                var row = UiFactory.Rect("File Input", parent);
+                UiFactory.Stretch(row);
+                var horizontal = row.gameObject.AddComponent<HorizontalLayoutGroup>();
+                horizontal.spacing = 8f;
+                horizontal.childAlignment = TextAnchor.MiddleCenter;
+                horizontal.childControlHeight = true;
+                horizontal.childControlWidth = true;
+                horizontal.childForceExpandHeight = true;
+                horizontal.childForceExpandWidth = false;
+                inputParent = row;
+            }
+
+            var input = UiFactory.Input("Value", inputParent, _font, node.GetValue()?.ToString() ?? string.Empty, string.Empty,
                 editorHeight, multiline);
-            UiFactory.Stretch((RectTransform)input.transform);
+            if (hasFilePicker)
+            {
+                var inputLayout = input.GetComponent<LayoutElement>();
+                inputLayout.minWidth = 0f;
+                inputLayout.flexibleWidth = 1f;
+
+                var browse = UiFactory.Button(
+                    "Browse",
+                    inputParent,
+                    _font,
+                    "...",
+                    () =>
+                    {
+                        if (NativeFileDialog.TryOpen(
+                            node.FileFilter!,
+                            node.GetValue()?.ToString(),
+                            out var selectedPath))
+                        {
+                            node.TrySetValue(selectedPath, SettingChangeOrigin.User);
+                            input.SetTextWithoutNotify(node.GetValue()?.ToString() ?? string.Empty);
+                        }
+                    },
+                    editorHeight);
+                var browseLayout = browse.GetComponent<LayoutElement>();
+                browseLayout.minWidth = 48f;
+                browseLayout.preferredWidth = 48f;
+                browseLayout.flexibleWidth = 0f;
+                AttachTooltip(browse.gameObject, node.FileFilter!);
+            }
+            else
+            {
+                UiFactory.Stretch((RectTransform)input.transform);
+            }
+
             input.onEndEdit.AddListener(value =>
             {
                 node.TrySetValue(value, SettingChangeOrigin.User);

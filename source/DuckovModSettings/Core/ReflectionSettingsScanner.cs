@@ -18,6 +18,7 @@ namespace SlimeNull.DuckovModSettings.Core
         private const string RangeAttribute = "UnityEngine.RangeAttribute";
         private const string TextAreaAttribute = "UnityEngine.TextAreaAttribute";
         private const string InspectorNameAttribute = "UnityEngine.InspectorNameAttribute";
+        private const string DescriptionAttribute = "System.ComponentModel.DescriptionAttribute";
 
         public static ModSettingsModel? Scan(DuckovModBehaviour root)
         {
@@ -96,6 +97,7 @@ namespace SlimeNull.DuckovModSettings.Core
                     var displayName = GetStringAttribute(member, InspectorNameAttribute) ?? NameUtility.NicifyMemberName(member.Name);
                     var tooltip = GetStringAttribute(member, TooltipAttribute) ?? string.Empty;
                     var header = GetStringAttribute(member, HeaderAttribute);
+                    var fileFilter = GetStringAttribute(member, DescriptionAttribute);
                     var range = GetRange(member);
                     var textArea = GetTextArea(member);
 
@@ -111,6 +113,7 @@ namespace SlimeNull.DuckovModSettings.Core
                             memberType,
                             path,
                             currentValue,
+                            fileFilter,
                             range,
                             textArea));
                         continue;
@@ -135,6 +138,7 @@ namespace SlimeNull.DuckovModSettings.Core
                         memberType,
                         path,
                         currentValue,
+                        fileFilter,
                         range: null,
                         textArea: null);
                     BuildMembers(component, group.Add, containerType, path, memberPath, depth + 1, typeStack);

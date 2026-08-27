@@ -143,6 +143,7 @@
   <data name="Quality4" xml:space="preserve"><value>Quality 4</value></data>
   <data name="Quality5" xml:space="preserve"><value>Quality 5</value></data>
   <data name="Quality6" xml:space="preserve"><value>Quality 6</value></data>
-  <data name="SoundEventPath" xml:space="preserve"><value>FMOD event path</value></data>
+  <data name="SoundEventPath" xml:space="preserve"><value>Fallback FMOD event path</value></data>
   <data name="SoundVolume" xml:space="preserve"><value>Volume</value></data>
+  <data name="LocalSoundFile" xml:space="preserve"><value>Local audio file</value></data>
 </root>

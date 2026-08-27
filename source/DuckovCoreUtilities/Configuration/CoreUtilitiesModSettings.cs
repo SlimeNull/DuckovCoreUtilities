@@ -2,6 +2,7 @@ using SlimeNull.DuckovCoreUtilities.Features;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using SlimeNull.DuckovCoreUtilities.Localization;
 using System;
+using System.ComponentModel;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -77,6 +78,10 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         [Serializable]
         private sealed class QualitySoundOptions
         {
+            [InspectorName("@SettingsText/LocalSoundFile")]
+            [Description("Audio Files|*.wav;*.ogg;*.mp3;*.aif;*.aiff")]
+            public string LocalFilePath = string.Empty;
+
             [InspectorName("@SettingsText/SoundEventPath")]
             public string EventPath;
 
@@ -579,14 +584,14 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             _displayQualityFeature.Mode = displayQuality.Mode;
             _host.SetEnabled(_displayQualityFeature, displayQuality.Enabled);
 
-            _itemSearchSoundFeature!.ConfigureQuality(0, itemSearchSound.Quality0.EventPath, itemSearchSound.Quality0.Volume);
-            _itemSearchSoundFeature.ConfigureQuality(1, itemSearchSound.Quality1.EventPath, itemSearchSound.Quality1.Volume);
-            _itemSearchSoundFeature.ConfigureQuality(2, itemSearchSound.Quality2.EventPath, itemSearchSound.Quality2.Volume);
-            _itemSearchSoundFeature.ConfigureQuality(3, itemSearchSound.Quality3.EventPath, itemSearchSound.Quality3.Volume);
-            _itemSearchSoundFeature.ConfigureQuality(4, itemSearchSound.Quality4.EventPath, itemSearchSound.Quality4.Volume);
-            _itemSearchSoundFeature.ConfigureQuality(5, itemSearchSound.Quality5.EventPath, itemSearchSound.Quality5.Volume);
-            _itemSearchSoundFeature.ConfigureQuality(6, itemSearchSound.Quality6.EventPath, itemSearchSound.Quality6.Volume);
-            _host.SetEnabled(_itemSearchSoundFeature, itemSearchSound.Enabled);
+            ConfigureItemSearchSoundQuality(0, itemSearchSound.Quality0);
+            ConfigureItemSearchSoundQuality(1, itemSearchSound.Quality1);
+            ConfigureItemSearchSoundQuality(2, itemSearchSound.Quality2);
+            ConfigureItemSearchSoundQuality(3, itemSearchSound.Quality3);
+            ConfigureItemSearchSoundQuality(4, itemSearchSound.Quality4);
+            ConfigureItemSearchSoundQuality(5, itemSearchSound.Quality5);
+            ConfigureItemSearchSoundQuality(6, itemSearchSound.Quality6);
+            _host.SetEnabled(_itemSearchSoundFeature!, itemSearchSound.Enabled);
 
             _lootOutlineFeature!.EnableLootboxOutline = lootOutline.Lootboxes;
             _lootOutlineFeature.EnableGroundItemOutline = lootOutline.GroundItems;
@@ -688,6 +693,15 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private void DuckovModSettingsUpdated()
         {
             OnValidate();
+        }
+
+        private void ConfigureItemSearchSoundQuality(int quality, QualitySoundOptions options)
+        {
+            _itemSearchSoundFeature!.ConfigureQuality(
+                quality,
+                options.LocalFilePath,
+                options.EventPath,
+                options.Volume);
         }
 
         internal void RefreshLocalization(string previousDefaultFormat)

@@ -1,9 +1,11 @@
+using Duckov;
 using Duckov.UI;
 using FMODUnity;
 using HarmonyLib;
 using ItemStatsSystem;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using System;
+using System.IO;
 using UnityEngine;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
@@ -17,7 +19,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private Item? _lastPlayedItem;
         private int _lastPlayedFrame = -1;
+        private AudioObject? _localAudioObject;
 
+        private readonly string[] _localFilePaths = new string[QualityCount];
         private readonly string[] _eventPaths =
         {
             "event:/UI/level_up",
@@ -33,19 +37,23 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         public override string Name => "Item search sounds";
 
-        public void ConfigureQuality(int quality, string? eventPath, float volume)
+        public void ConfigureQuality(int quality, string? localFilePath, string? eventPath, float volume)
         {
             if (quality < 0 || quality >= QualityCount)
             {
                 throw new ArgumentOutOfRangeException(nameof(quality));
             }
 
+            _localFilePaths[quality] = localFilePath ?? string.Empty;
             _eventPaths[quality] = eventPath?.Trim() ?? string.Empty;
             _volumes[quality] = Mathf.Max(0f, volume);
         }
 
         protected override void OnEnable()
         {
+            var audioObject = new GameObject("DCU_ItemSearchSoundPlayer");
+            audioObject.transform.SetParent(Context.HostObject.transform, false);
+            _localAudioObject = audioObject.AddComponent<AudioObject>();
             _active = this;
             Context.Harmony.PatchCategory(HarmonyCategory);
         }
@@ -54,6 +62,13 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             Context.Harmony.UnpatchCategory(HarmonyCategory);
             _active = null;
+            if (_localAudioObject != null)
+            {
+                UnityEngine.Object.Destroy(_localAudioObject.gameObject);
+                _localAudioObject = null;
+            }
+            _lastPlayedItem = null;
+            _lastPlayedFrame = -1;
         }
 
         private void Play(Item item)
@@ -66,8 +81,74 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _lastPlayedItem = item;
             _lastPlayedFrame = Time.frameCount;
 
-            var quality = item.Quality;
-            quality = Mathf.Clamp(quality, 0, QualityCount - 1);
+            var quality = Mathf.Clamp(item.Quality, 0, QualityCount - 1);
+            if (TryPlayLocal(_localFilePaths[quality], _volumes[quality]))
+            {
+                return;
+            }
+
+            PlayFmod(quality);
+        }
+
+        private bool TryPlayLocal(string path, float volume)
+        {
+            if (_localAudioObject == null || string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            string fullPath;
+            try
+            {
+                fullPath = Path.GetFullPath(path);
+            }
+            catch
+            {
+                return false;
+            }
+
+            if (!File.Exists(fullPath) || !IsSupportedAudioFile(fullPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                var instance = _localAudioObject.PostCustomSFX(fullPath, doRelease: false);
+                if (!instance.HasValue || !instance.Value.isValid())
+                {
+                    return false;
+                }
+
+                var eventInstance = instance.Value;
+                eventInstance.setVolume(Mathf.Max(0f, volume));
+                eventInstance.release();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Debug.LogWarning($"[CoreUtilities] Failed to play local item search sound '{fullPath}': {ex.Message}");
+                return false;
+            }
+        }
+
+        private static bool IsSupportedAudioFile(string path)
+        {
+            switch (Path.GetExtension(path).ToLowerInvariant())
+            {
+                case ".wav":
+                case ".ogg":
+                case ".mp3":
+                case ".aif":
+                case ".aiff":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private void PlayFmod(int quality)
+        {
             var eventPath = _eventPaths[quality];
             if (string.IsNullOrWhiteSpace(eventPath))
             {
