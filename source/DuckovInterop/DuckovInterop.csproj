@@ -16,6 +16,18 @@
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces" Version="8.0.0" GeneratePathProperty="true" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Shared\Localization\ModLanguage.cs" Link="Localization\ModLanguage.cs" />
+    <EmbeddedResource Update="Localization\SettingsText.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SettingsText.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <Compile Update="Localization\SettingsText.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SettingsText.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
     <Reference Include="Newtonsoft.Json">
       <HintPath>$(ManagedPath)\Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>

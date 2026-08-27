@@ -3,6 +3,7 @@ using Duckov.Scenes;
 using Eflatun.SceneReference;
 using ItemStatsSystem;
 using SlimeNull.DockovParty.Networking.Protocol;
+using SlimeNull.DockovParty.Localization;
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -124,7 +125,7 @@ namespace SlimeNull.DockovParty.Game
             {
                 if (string.Equals(_pendingLoad.SceneKey, request.SceneKey, StringComparison.Ordinal))
                 {
-                    PartyRuntime.NotifyUser("正在等待另一名玩家选择场景");
+                    PartyRuntime.NotifyUser(SettingsText.WaitingForScene);
                     return;
                 }
 
@@ -144,7 +145,7 @@ namespace SlimeNull.DockovParty.Game
                 _runtime.Send(ready);
             }
 
-            PartyRuntime.NotifyUser("已准备，等待另一名玩家...");
+            PartyRuntime.NotifyUser(SettingsText.ReadyWaiting);
 
             SceneCommitMessage commit;
             try
@@ -245,8 +246,8 @@ namespace SlimeNull.DockovParty.Game
                 }
                 else
                 {
-                    _runtime.Send(new NoticeMessage { Text = "双方选择的目的地不同，请选择同一场景。" });
-                    PartyRuntime.NotifyUser("双方选择的目的地不同");
+                    _runtime.Send(new NoticeMessage { Text = SettingsText.DestinationMismatchRemote });
+                    PartyRuntime.NotifyUser(SettingsText.DestinationMismatchLocal);
                     return;
                 }
             }
@@ -354,7 +355,7 @@ namespace SlimeNull.DockovParty.Game
             {
                 _initialClientLoadStarted = false;
                 Debug.LogError($"[DockovParty] 加载服主场景失败: {ex}");
-                PartyRuntime.NotifyUser("无法进入服主当前场景");
+                PartyRuntime.NotifyUser(SettingsText.HostSceneLoadFailed);
             }
         }
 

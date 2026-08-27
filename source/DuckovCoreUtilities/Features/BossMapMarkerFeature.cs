@@ -5,7 +5,6 @@ using Duckov.UI;
 using Duckov.Utilities;
 using HarmonyLib;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
-using SodaCraft.Localizations;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -92,7 +91,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             Current = this;
             LevelManager.OnAfterLevelInitialized += OnAfterLevelInitialized;
             Health.OnDead += OnHealthDead;
-            LocalizationManager.OnSetLanguage += OnLanguageChanged;
             Context.Harmony.PatchCategory(HarmonyCategory);
             TrackExistingBosses();
         }
@@ -100,7 +98,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         protected override void OnDisable()
         {
             Context.Harmony.UnpatchCategory(HarmonyCategory);
-            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
             Health.OnDead -= OnHealthDead;
             LevelManager.OnAfterLevelInitialized -= OnAfterLevelInitialized;
             if (ReferenceEquals(Current, this))
@@ -149,7 +146,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
         }
 
-        private void OnLanguageChanged(SystemLanguage _)
+        public override void RefreshLocalization()
         {
             RefreshMarkerVisuals();
         }

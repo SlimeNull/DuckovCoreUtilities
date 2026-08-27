@@ -4,7 +4,7 @@ using Duckov.Economy;
 using HarmonyLib;
 using ItemStatsSystem;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
-using SodaCraft.Localizations;
+using SlimeNull.DuckovCoreUtilities.Localization;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -58,14 +58,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         protected override void OnEnable()
         {
             Current = this;
-            LocalizationManager.OnSetLanguage += OnLanguageChanged;
             Context.Harmony.PatchCategory(HarmonyCategory);
         }
 
         protected override void OnDisable()
         {
             Context.Harmony.UnpatchCategory(HarmonyCategory);
-            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
             if (ReferenceEquals(Current, this))
             {
                 Current = null;
@@ -84,7 +82,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _stockShopLookupFrame = -1;
         }
 
-        private void OnLanguageChanged(SystemLanguage _)
+        public override void RefreshLocalization()
         {
             RefreshDisplays();
         }
@@ -359,66 +357,51 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             var difference = marketPrice - comparisonPrice;
             var percentage = Mathf.RoundToInt(((float)marketPrice / comparisonPrice - 1f) * 100f);
-            var isChinese = IsChinese(LocalizationManager.CurrentLanguage);
-            var perTransaction = FormatDifference(percentage, difference, isDemand, isChinese);
+            var perTransaction = FormatDifference(percentage, difference, isDemand);
             if (quantity <= 1)
             {
                 return perTransaction;
             }
 
             var totalDifference = difference * quantity;
-            var total = FormatAbsoluteDifference(totalDifference, isDemand, isChinese);
-            return isChinese
-                ? $"{perTransaction} / 总计(×{quantity}): {total}"
-                : $"{perTransaction} / Total (x{quantity}): {total}";
+            var total = FormatAbsoluteDifference(totalDifference, isDemand);
+            return string.Format(
+                SettingsText.Culture,
+                SettingsText.BlackMarketTotalFormat,
+                perTransaction,
+                quantity,
+                total);
         }
 
-        private static string FormatDifference(int percentage, int difference, bool isDemand, bool isChinese)
+        private static string FormatDifference(int percentage, int difference, bool isDemand)
         {
             if (difference == 0)
             {
-                return isChinese
-                    ? "<color=#F2D36B>价格持平</color>"
-                    : "<color=#F2D36B>Same price</color>";
+                return $"<color=#F2D36B>{SettingsText.BlackMarketSamePrice}</color>";
             }
 
             var favorable = isDemand ? difference > 0 : difference < 0;
             var color = favorable ? "#72D58A" : "#FF7770";
             var sign = percentage > 0 ? "+" : string.Empty;
-            var absolute = FormatAbsoluteDifference(difference, isDemand, isChinese);
+            var absolute = FormatAbsoluteDifference(difference, isDemand);
             return $"<color={color}>{sign}{percentage}% ({absolute})</color>";
         }
 
-        private static string FormatAbsoluteDifference(int difference, bool isDemand, bool isChinese)
+        private static string FormatAbsoluteDifference(int difference, bool isDemand)
         {
             if (difference == 0)
             {
-                return isChinese ? "持平" : "same";
+                return SettingsText.BlackMarketSame;
             }
 
-            if (isChinese)
-            {
-                if (isDemand)
-                {
-                    return difference > 0 ? $"多卖 {difference}" : $"少卖 {-difference}";
-                }
-
-                return difference > 0 ? $"贵 {difference}" : $"便宜 {-difference}";
-            }
-
-            if (isDemand)
-            {
-                return difference > 0 ? $"gain {difference}" : $"lose {-difference}";
-            }
-
-            return difference > 0 ? $"costs {difference} more" : $"save {-difference}";
-        }
-
-        private static bool IsChinese(SystemLanguage language)
-        {
-            return language == SystemLanguage.Chinese ||
-                language == SystemLanguage.ChineseSimplified ||
-                language == SystemLanguage.ChineseTraditional;
+            var format = isDemand
+                ? difference > 0
+                    ? SettingsText.BlackMarketDemandGain
+                    : SettingsText.BlackMarketDemandLoss
+                : difference > 0
+                    ? SettingsText.BlackMarketSupplyMore
+                    : SettingsText.BlackMarketSupplySave;
+            return string.Format(SettingsText.Culture, format, Mathf.Abs(difference));
         }
 
         private sealed class PriceComparisonDisplay : MonoBehaviour

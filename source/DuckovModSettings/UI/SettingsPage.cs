@@ -94,8 +94,8 @@ namespace SlimeNull.DuckovModSettings.UI
             }
 
             _emptyState.text = total > 0
-                ? string.Format(LocalizedText.Culture, SettingsText.Get("LoadingProgress"), processed, total)
-                : SettingsText.Get("Loading");
+                ? string.Format(SettingsText.Culture, SettingsText.LoadingProgress, processed, total)
+                : SettingsText.Loading;
         }
 
         internal void CompleteLoading()
@@ -133,20 +133,20 @@ namespace SlimeNull.DuckovModSettings.UI
         {
             if (_search?.placeholder is TMP_Text placeholder)
             {
-                placeholder.text = SettingsText.Get("SearchSettings");
+                placeholder.text = SettingsText.SearchSettings;
             }
             if (_resetButton != null)
             {
                 var label = _resetButton.GetComponentInChildren<TMP_Text>(includeInactive: true);
                 if (label != null)
                 {
-                    label.text = SettingsText.Get("RestoreDefaults");
+                    label.text = SettingsText.RestoreDefaults;
                 }
             }
 
             if (_loading && _emptyState != null)
             {
-                _emptyState.text = SettingsText.Get("Loading");
+                _emptyState.text = SettingsText.Loading;
             }
             else if (_menuOpen)
             {
@@ -301,7 +301,7 @@ namespace SlimeNull.DuckovModSettings.UI
             }
             if (_emptyState != null)
             {
-                _emptyState.text = SettingsText.Get("Loading");
+                _emptyState.text = SettingsText.Loading;
                 _emptyState.gameObject.SetActive(true);
             }
         }
@@ -339,7 +339,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 navigation,
                 _font,
                 string.Empty,
-                SettingsText.Get("SearchSettings"),
+                SettingsText.SearchSettings,
                 36f);
             _search.onValueChanged.AddListener(_ => RebuildSettings());
 
@@ -347,7 +347,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 "Reset",
                 navigation,
                 _font,
-                SettingsText.Get("RestoreDefaults"),
+                SettingsText.RestoreDefaults,
                 ResetSelectedMod,
                 36f,
                 UiFactory.SecondaryAccent,
@@ -370,7 +370,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 "Empty",
                 main,
                 _font,
-                SettingsText.Get("NoEditableSettings"),
+                SettingsText.NoEditableSettings,
                 20f,
                 UiFactory.TextSecondary,
                 TextAlignmentOptions.Center);
@@ -476,10 +476,10 @@ namespace SlimeNull.DuckovModSettings.UI
             {
                 _emptyState.gameObject.SetActive(rendered == 0);
                 _emptyState.text = _selectedMod == null
-                    ? SettingsText.Get("NoEditableModSettings")
+                    ? SettingsText.NoEditableModSettings
                     : string.IsNullOrEmpty(query)
-                        ? SettingsText.Get("NoEditableSettings")
-                        : SettingsText.Get("NoMatchingSettings");
+                        ? SettingsText.NoEditableSettings
+                        : SettingsText.NoMatchingSettings;
             }
             if (_settingsScroll != null)
             {

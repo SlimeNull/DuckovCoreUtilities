@@ -10,6 +10,8 @@ namespace SlimeNull.DuckovCoreUtilities.Features.Abstraction
     public abstract class ItemInfoDisplayFeature : FeatureBase
     {
         private TextMeshProUGUI? _text;
+        private ItemHoveringUI? _currentUi;
+        private Item? _currentItem;
 
         protected override void OnEnable()
         {
@@ -27,10 +29,14 @@ namespace SlimeNull.DuckovCoreUtilities.Features.Abstraction
                 UnityEngine.Object.Destroy(_text.gameObject);
                 _text = null;
             }
+            _currentUi = null;
+            _currentItem = null;
         }
 
         private void OnSetupMeta(ItemHoveringUI _, ItemMetaData __)
         {
+            _currentUi = null;
+            _currentItem = null;
             SetVisible(false);
         }
 
@@ -38,11 +44,36 @@ namespace SlimeNull.DuckovCoreUtilities.Features.Abstraction
         {
             if (item == null || !ShouldDisplay(uiInstance, item))
             {
+                _currentUi = null;
+                _currentItem = null;
                 SetVisible(false);
                 return;
             }
 
-            var textToDisplay = GetText(uiInstance, item);
+            _currentUi = uiInstance;
+            _currentItem = item;
+            ShowText(uiInstance, item);
+        }
+
+        public override void RefreshLocalization()
+        {
+            if (_text == null || !_text.gameObject.activeSelf ||
+                _currentUi == null || _currentItem == null)
+            {
+                return;
+            }
+
+            if (!ShouldDisplay(_currentUi, _currentItem))
+            {
+                SetVisible(false);
+                return;
+            }
+
+            ShowText(_currentUi, _currentItem);
+        }
+
+        private void ShowText(ItemHoveringUI uiInstance, Item item)
+        {
             if (_text == null ||
                 _text.gameObject == null)
             {
@@ -52,7 +83,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features.Abstraction
             _text.gameObject.SetActive(true);
             _text.transform.SetParent(uiInstance.LayoutParent, false);
             _text.transform.localScale = Vector3.one;
-            _text.text = textToDisplay;
+            _text.text = GetText(uiInstance, item);
             _text.fontSize = 20f;
         }
 

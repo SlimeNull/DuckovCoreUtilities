@@ -1,4 +1,5 @@
 using Cysharp.Threading.Tasks;
+using SlimeNull.DockovParty.Localization;
 using SlimeNull.DockovParty.Networking.Protocol;
 using System;
 
@@ -97,7 +98,7 @@ namespace SlimeNull.DockovParty.Game
             }
 
             Active = true;
-            PartyRuntime.NotifyUser("你已阵亡，正在观战另一名玩家");
+            PartyRuntime.NotifyUser(SettingsText.PlayerDiedSpectating);
             Tick();
             await _returnCompletion.Task;
             Active = false;

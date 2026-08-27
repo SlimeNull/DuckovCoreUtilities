@@ -62,3 +62,14 @@ Core Utilities 是《逃离鸭科夫》的综合实用功能模组，集中提�
 遇到问题时，请在评论区留言，或到 [url=https://github.com/SlimeNull/DuckovMods]GitHub 仓库[/url]提交 Issue。
 
 模组仍在持续维护。如果你会写代码，也欢迎提交 Pull Request。
+
+[h1]贡献翻译[/h1]
+
+欢迎为此模组补充其他语言：
+
+[olist]
+[*]复制项目中的 [b]Localization/SettingsText.resx[/b]，也可以从已有翻译文件开始。
+[*]将副本命名为 [b]SettingsText.<语言标识>.resx[/b]。请使用不带地区的语言标识，例如 [b]ja[/b]、[b]ko[/b]、[b]ru[/b]；中文请分别使用脚本标识 [b]zh-Hans[/b]（简体）或 [b]zh-Hant[/b]（繁体）。
+[*]只翻译每个资源项的值，保留所有键名以及 [b]{0}[/b]、[b]{1}[/b] 等占位符。
+[*]完成后向 [url=https://github.com/SlimeNull/DuckovMods]GitHub 仓库[/url]提交 Pull Request。
+[/olist]

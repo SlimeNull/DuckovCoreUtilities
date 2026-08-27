@@ -57,3 +57,14 @@ DuckovInterop 没有身份验证和传输加密，并且能够执行反射方法
 [h1]反馈与源码[/h1]
 
 遇到问题时，请在评论区留言，或到 [url=https://github.com/SlimeNull/DuckovMods]GitHub 仓库[/url]提交 Issue。
+
+[h1]贡献翻译[/h1]
+
+欢迎为此模组补充其他语言：
+
+[olist]
+[*]复制项目中的 [b]Localization/SettingsText.resx[/b]，也可以从已有翻译文件开始。
+[*]将副本命名为 [b]SettingsText.<语言标识>.resx[/b]。请使用不带地区的语言标识，例如 [b]ja[/b]、[b]ko[/b]、[b]ru[/b]；中文请分别使用脚本标识 [b]zh-Hans[/b]（简体）或 [b]zh-Hant[/b]（繁体）。
+[*]只翻译每个资源项的值，保留所有键名以及 [b]{0}[/b]、[b]{1}[/b] 等占位符。
+[*]完成后向 [url=https://github.com/SlimeNull/DuckovMods]GitHub 仓库[/url]提交 Pull Request。
+[/olist]

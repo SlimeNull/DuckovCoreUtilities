@@ -1,5 +1,6 @@
 using SlimeNull.DuckovCoreUtilities.Features;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovCoreUtilities.Localization;
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -231,7 +232,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             [InspectorName("@SettingsText/TextFormat")]
             [Tooltip("@SettingsText/TextFormatTooltip")]
             [FormerlySerializedAs("KillRecord.Format")]
-            public string Format = "击杀 {0}";
+            public string Format = SettingsText.KillRecordDefaultFormat;
         }
 
         [Serializable]
@@ -516,6 +517,20 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             OnValidate();
         }
 
+        internal void RefreshLocalization(string previousDefaultFormat)
+        {
+            if (!string.Equals(killRecord.Format, previousDefaultFormat, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            killRecord.Format = SettingsText.KillRecordDefaultFormat;
+            if (_killRecordFeature != null)
+            {
+                _killRecordFeature.RecordFormat = killRecord.Format;
+            }
+        }
+
         private void OnDestroy()
         {
             if (_minimapFeature != null)
@@ -545,7 +560,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             killRecord.MaxCount = Mathf.Clamp(killRecord.MaxCount, 1, 20);
             if (!IsValidRecordFormat(killRecord.Format))
             {
-                killRecord.Format = "击杀 {0}";
+                killRecord.Format = SettingsText.KillRecordDefaultFormat;
             }
             minimap.DisplaySize = Mathf.Clamp(minimap.DisplaySize, 100f, 600f);
             minimap.Zoom = Mathf.Clamp(minimap.Zoom, MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom);

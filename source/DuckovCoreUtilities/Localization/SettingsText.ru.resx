@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="QuickSleepToTime" xml:space="preserve"><value>До {0}</value></data>
+  <data name="QuickSleepUntilRainy" xml:space="preserve"><value>До дождя</value></data>
+  <data name="QuickSleepToStormI" xml:space="preserve"><value>До шторма I</value></data>
+  <data name="QuickSleepToStormII" xml:space="preserve"><value>До шторма II</value></data>
+  <data name="QuickSleepStormEnd" xml:space="preserve"><value>После шторма</value></data>
+  <data name="QuickSleepCancelHint" xml:space="preserve"><value>Нажмите ESC для отмены</value></data>
+  <data name="QuickSleepCancelled" xml:space="preserve"><value>Поиск дождливого дня отменён</value></data>
+  <data name="QuickSleepFound" xml:space="preserve"><value>Дождь начался спустя дней: {0}!</value></data>
+  <data name="QuickSleepExhausted" xml:space="preserve"><value>Дождь не найден за дней: {0}</value></data>
+</root>

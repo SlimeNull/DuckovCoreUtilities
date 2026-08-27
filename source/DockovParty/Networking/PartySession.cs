@@ -1,4 +1,5 @@
 using SlimeNull.DockovParty.Networking.Protocol;
+using SlimeNull.DockovParty.Localization;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -345,7 +346,7 @@ namespace SlimeNull.DockovParty.Networking
                     new ErrorMessage
                     {
                         Code = "party-full",
-                        Description = "该游戏已有两名玩家。",
+                        Description = SettingsText.PartyFull,
                     },
                     cancellationToken).ConfigureAwait(false);
             }

@@ -3,6 +3,9 @@ using Jint;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using SlimeNull.DuckovInterop.Configuration;
+using SlimeNull.DuckovInterop.Localization;
+using SlimeNull.Mods.Localization;
+using SodaCraft.Localizations;
 using System;
 using System.Collections;
 using System.Collections.Concurrent;
@@ -42,6 +45,11 @@ namespace SlimeNull.DuckovInterop
         {
             try
             {
+                var language = LocalizationManager.Initialized
+                    ? LocalizationManager.CurrentLanguage
+                    : Application.systemLanguage;
+                SettingsText.Culture = ModLanguage.GetCulture(language);
+                LocalizationManager.OnSetLanguage += OnLanguageChanged;
                 _jsEngine = new Engine((Options cfg) => cfg.AllowClr());
                 _settings = gameObject.GetComponent<InteropSettings>() ?? gameObject.AddComponent<InteropSettings>();
                 _settings.Initialize(this);
@@ -52,12 +60,14 @@ namespace SlimeNull.DuckovInterop
             }
             catch (Exception ex)
             {
+                LocalizationManager.OnSetLanguage -= OnLanguageChanged;
                 Debug.LogError(ex);
             }
         }
 
         protected override void OnBeforeDeactivate()
         {
+            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
             StopServer();
 
             if (_settings != null)
@@ -68,6 +78,11 @@ namespace SlimeNull.DuckovInterop
 
             _jsEngine?.Dispose();
             _jsEngine = null;
+        }
+
+        private static void OnLanguageChanged(SystemLanguage language)
+        {
+            SettingsText.Culture = ModLanguage.GetCulture(language);
         }
 
         internal void ApplySettings(InteropSettings settings)

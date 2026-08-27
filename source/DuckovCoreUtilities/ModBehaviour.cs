@@ -1,6 +1,9 @@
 using SlimeNull.DuckovCoreUtilities.Configuration;
 using SlimeNull.DuckovCoreUtilities.Features;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovCoreUtilities.Localization;
+using SlimeNull.Mods.Localization;
+using SodaCraft.Localizations;
 using UnityEngine;
 
 namespace SlimeNull.DuckovCoreUtilities
@@ -18,6 +21,11 @@ namespace SlimeNull.DuckovCoreUtilities
             }
 
             Debug.Log("loading DCU");
+
+            var language = LocalizationManager.Initialized
+                ? LocalizationManager.CurrentLanguage
+                : Application.systemLanguage;
+            SettingsText.Culture = ModLanguage.GetCulture(language);
 
             _features = new FeatureHost(gameObject);
             var displayPrice = new DisplayPriceFeature();
@@ -80,12 +88,14 @@ namespace SlimeNull.DuckovCoreUtilities
                 quickSleep,
                 itemUsage);
 
+            LocalizationManager.OnSetLanguage += OnLanguageChanged;
             Debug.Log("loaded DCU");
         }
 
         protected override void OnBeforeDeactivate()
         {
             Debug.Log("deactivating DCU");
+            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
             if (_settings != null)
             {
                 Destroy(_settings);
@@ -103,6 +113,14 @@ namespace SlimeNull.DuckovCoreUtilities
         private void OnGUI()
         {
             _features?.OnGUI();
+        }
+
+        private void OnLanguageChanged(SystemLanguage language)
+        {
+            var previousDefaultFormat = SettingsText.KillRecordDefaultFormat;
+            SettingsText.Culture = ModLanguage.GetCulture(language);
+            _settings?.RefreshLocalization(previousDefaultFormat);
+            _features?.RefreshLocalization();
         }
     }
 }

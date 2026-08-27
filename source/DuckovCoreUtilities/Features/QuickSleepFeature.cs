@@ -4,7 +4,7 @@ using Duckov.UI.DialogueBubbles;
 using Duckov.Weathers;
 using HarmonyLib;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
-using SodaCraft.Localizations;
+using SlimeNull.DuckovCoreUtilities.Localization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -82,7 +82,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         protected override void OnEnable()
         {
             Current = this;
-            LocalizationManager.OnSetLanguage += OnLanguageChanged;
             _runtime = Context.HostObject.GetComponent<QuickSleepRuntime>()
                 ?? Context.HostObject.AddComponent<QuickSleepRuntime>();
             _runtime.Initialize(this);
@@ -98,7 +97,6 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         protected override void OnDisable()
         {
             Context.Harmony.UnpatchCategory(HarmonyCategory);
-            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
             if (ReferenceEquals(Current, this))
             {
                 Current = null;
@@ -116,7 +114,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _buttonGroups.Clear();
         }
 
-        private void OnLanguageChanged(SystemLanguage _)
+        public override void RefreshLocalization()
         {
             RefreshButtons();
         }
@@ -258,7 +256,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 titleRect.sizeDelta = new Vector2(150f, 42f);
             }
 
-            var localizer = title?.GetComponent<TextLocalizor>();
+            var localizer = title?.GetComponent<SodaCraft.Localizations.TextLocalizor>();
             if (localizer != null)
             {
                 localizer.enabled = false;
@@ -319,19 +317,14 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             var first = $"{FirstHour:00}:{FirstMinute:00}";
             var second = $"{SecondHour:00}:{SecondMinute:00}";
-            return LocalizationManager.CurrentLanguage switch
+            return new[]
             {
-                SystemLanguage.Chinese or SystemLanguage.ChineseSimplified =>
-                    new[] { $"睡到 {first}", $"睡到 {second}", "睡到雨天", "睡到风暴 I", "睡到风暴 II", "睡到风暴结束" },
-                SystemLanguage.ChineseTraditional =>
-                    new[] { $"睡到 {first}", $"睡到 {second}", "睡到雨天", "睡到風暴 I", "睡到風暴 II", "睡到風暴結束" },
-                SystemLanguage.Japanese =>
-                    new[] { $"{first} まで", $"{second} まで", "雨の日まで", "嵐 I まで", "嵐 II まで", "嵐終了まで" },
-                SystemLanguage.Korean =>
-                    new[] { $"{first} 까지", $"{second} 까지", "비 오는 날", "폭풍 1단계", "폭풍 2단계", "폭풍 종료" },
-                SystemLanguage.Russian =>
-                    new[] { $"До {first}", $"До {second}", "До дождя", "До шторма I", "До шторма II", "После шторма" },
-                _ => new[] { $"To {first}", $"To {second}", "Until Rainy", "To Storm I", "To Storm II", "Storm End" },
+                string.Format(SettingsText.Culture, SettingsText.QuickSleepToTime, first),
+                string.Format(SettingsText.Culture, SettingsText.QuickSleepToTime, second),
+                SettingsText.QuickSleepUntilRainy,
+                SettingsText.QuickSleepToStormI,
+                SettingsText.QuickSleepToStormII,
+                SettingsText.QuickSleepStormEnd,
             };
         }
 
@@ -475,22 +468,12 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private static string GetMessage(MessageKind kind, int count = 0)
         {
-            var language = LocalizationManager.CurrentLanguage;
-            var chinese = language == SystemLanguage.Chinese || language == SystemLanguage.ChineseSimplified;
-            var traditional = language == SystemLanguage.ChineseTraditional;
             return kind switch
             {
-                MessageKind.Hint when chinese || traditional => "按 ESC 可取消",
-                MessageKind.Cancelled when chinese => "已取消寻找雨天",
-                MessageKind.Cancelled when traditional => "已取消尋找雨天",
-                MessageKind.Found when chinese => $"睡了 {count} 天，终于等到雨天了！",
-                MessageKind.Found when traditional => $"睡了 {count} 天，終於等到雨天了！",
-                MessageKind.Exhausted when chinese => $"已经睡了 {count} 天，放弃寻找雨天",
-                MessageKind.Exhausted when traditional => $"已經睡了 {count} 天，放棄尋找雨天",
-                MessageKind.Hint => "Press ESC to cancel",
-                MessageKind.Cancelled => "Cancelled searching for a rainy day",
-                MessageKind.Found => $"It is finally raining after {count} day(s)!",
-                _ => $"No rainy day found after {count} day(s)",
+                MessageKind.Hint => SettingsText.QuickSleepCancelHint,
+                MessageKind.Cancelled => SettingsText.QuickSleepCancelled,
+                MessageKind.Found => string.Format(SettingsText.Culture, SettingsText.QuickSleepFound, count),
+                _ => string.Format(SettingsText.Culture, SettingsText.QuickSleepExhausted, count),
             };
         }
 

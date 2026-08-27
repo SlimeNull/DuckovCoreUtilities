@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="DiagnosticLogging" xml:space="preserve"><value>診斷日誌</value></data>
+  <data name="DiagnosticLoggingTooltip" xml:space="preserve"><value>將連線協定收發資訊寫入遊戲日誌</value></data>
+  <data name="InterpolationDelay" xml:space="preserve"><value>插值延遲</value></data>
+  <data name="InterpolationDelayTooltip" xml:space="preserve"><value>遠端玩家移動的插值緩衝時間（秒）</value></data>
+  <data name="JoinAddress" xml:space="preserve"><value>加入遊戲位址</value></data>
+  <data name="ListenAddress" xml:space="preserve"><value>服主監聽位址</value></data>
+  <data name="ListenAddressTooltip" xml:space="preserve"><value>下次開服時生效</value></data>
+  <data name="NetworkGroup" xml:space="preserve"><value>網路</value></data>
+  <data name="PlayerGroup" xml:space="preserve"><value>玩家</value></data>
+  <data name="PlayerName" xml:space="preserve"><value>連線暱稱</value></data>
+  <data name="PlayerNameTooltip" xml:space="preserve"><value>其他玩家在連線遊戲中看到的名稱</value></data>
+  <data name="Port" xml:space="preserve"><value>連接埠</value></data>
+  <data name="StateRate" xml:space="preserve"><value>狀態同步頻率</value></data>
+  <data name="StateRateTooltip" xml:space="preserve"><value>每秒傳送的玩家狀態數量</value></data>
+  <data name="DefaultPlayerName" xml:space="preserve"><value>玩家</value></data>
+  <data name="JoinGame" xml:space="preserve"><value>加入遊戲</value></data>
+  <data name="Connecting" xml:space="preserve"><value>連線中...</value></data>
+  <data name="Connected" xml:space="preserve"><value>已連線</value></data>
+  <data name="InvalidListenAddress" xml:space="preserve"><value>無效監聽位址: {0}</value></data>
+  <data name="ConnectionTimedOut" xml:space="preserve"><value>連線逾時。</value></data>
+  <data name="ConnectionFailed" xml:space="preserve"><value>連線失敗。</value></data>
+  <data name="PlayerJoining" xml:space="preserve"><value>玩家正在加入...</value></data>
+  <data name="MultiplayerErrorFormat" xml:space="preserve"><value>連線錯誤: {0}</value></data>
+  <data name="PlayerJoinedFormat" xml:space="preserve"><value>{0} 已加入遊戲</value></data>
+  <data name="HostRejectedConnection" xml:space="preserve"><value>服主拒絕了連線。</value></data>
+  <data name="ConnectedToGameFormat" xml:space="preserve"><value>已連線到 {0} 的遊戲</value></data>
+  <data name="ProtocolVersionMismatch" xml:space="preserve"><value>協定版本不一致（服主 {0}，客戶端 {1}）。</value></data>
+  <data name="InvalidClientPlayerId" xml:space="preserve"><value>客戶端沒有有效玩家識別碼。</value></data>
+  <data name="SameSteamAccount" xml:space="preserve"><value>不能使用同一個 Steam 帳號加入自己的遊戲。</value></data>
+  <data name="GameVersionMismatch" xml:space="preserve"><value>遊戲版本不一致（服主 {0}，客戶端 {1}）。</value></data>
+  <data name="OtherPlayerDisconnected" xml:space="preserve"><value>另一名玩家已斷線</value></data>
+  <data name="HostDisconnected" xml:space="preserve"><value>與服主的連線已中斷</value></data>
+  <data name="MultiplayerFailedFormat" xml:space="preserve"><value>連線失敗: {0}</value></data>
+  <data name="PlayerDiedSpectating" xml:space="preserve"><value>你已陣亡，正在觀戰另一名玩家</value></data>
+  <data name="WaitingForScene" xml:space="preserve"><value>正在等待另一名玩家選擇場景</value></data>
+  <data name="ReadyWaiting" xml:space="preserve"><value>已準備，等待另一名玩家...</value></data>
+  <data name="DestinationMismatchRemote" xml:space="preserve"><value>雙方選擇的目的地不同，請選擇同一場景。</value></data>
+  <data name="DestinationMismatchLocal" xml:space="preserve"><value>雙方選擇的目的地不同</value></data>
+  <data name="HostSceneLoadFailed" xml:space="preserve"><value>無法進入服主目前場景</value></data>
+  <data name="ContainerInUse" xml:space="preserve"><value>該容器正在被另一名玩家使用</value></data>
+  <data name="ContainerSyncInProgress" xml:space="preserve"><value>正在同步另一個容器</value></data>
+  <data name="ContainerNotLoaded" xml:space="preserve"><value>服主尚未完成該容器的載入</value></data>
+  <data name="ContainerLeaseEnded" xml:space="preserve"><value>租約已結束</value></data>
+  <data name="ContainerVersionUpdated" xml:space="preserve"><value>容器版本已更新</value></data>
+  <data name="ContainerOpenFailed" xml:space="preserve"><value>無法開啟該容器</value></data>
+  <data name="GroundItemTakenByOther" xml:space="preserve"><value>物品已被其他玩家取走</value></data>
+  <data name="NoInventorySpace" xml:space="preserve"><value>背包沒有可用空間</value></data>
+  <data name="GroundItemTaken" xml:space="preserve"><value>物品已被取走</value></data>
+  <data name="PartyFull" xml:space="preserve"><value>該遊戲已有兩名玩家。</value></data>
+</root>

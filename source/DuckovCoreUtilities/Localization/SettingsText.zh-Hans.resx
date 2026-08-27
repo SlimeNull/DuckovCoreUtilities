@@ -78,4 +78,24 @@
   <data name="Zoom" xml:space="preserve"><value>缩放系数</value></data>
   <data name="ZoomInKey" xml:space="preserve"><value>放大按键</value></data>
   <data name="ZoomOutKey" xml:space="preserve"><value>缩小按键</value></data>
+  <data name="StorageCarry" xml:space="preserve"><value>携带</value></data>
+  <data name="StorageRepository" xml:space="preserve"><value>库存</value></data>
+  <data name="ItemUsageAvailable" xml:space="preserve"><value>可用</value></data>
+  <data name="BlackMarketSamePrice" xml:space="preserve"><value>价格持平</value></data>
+  <data name="BlackMarketTotalFormat" xml:space="preserve"><value>{0} / 总计(×{1}): {2}</value></data>
+  <data name="BlackMarketSame" xml:space="preserve"><value>持平</value></data>
+  <data name="BlackMarketDemandGain" xml:space="preserve"><value>多卖 {0}</value></data>
+  <data name="BlackMarketDemandLoss" xml:space="preserve"><value>少卖 {0}</value></data>
+  <data name="BlackMarketSupplyMore" xml:space="preserve"><value>贵 {0}</value></data>
+  <data name="BlackMarketSupplySave" xml:space="preserve"><value>便宜 {0}</value></data>
+  <data name="QuickSleepToTime" xml:space="preserve"><value>睡到 {0}</value></data>
+  <data name="QuickSleepUntilRainy" xml:space="preserve"><value>睡到雨天</value></data>
+  <data name="QuickSleepToStormI" xml:space="preserve"><value>睡到风暴 I</value></data>
+  <data name="QuickSleepToStormII" xml:space="preserve"><value>睡到风暴 II</value></data>
+  <data name="QuickSleepStormEnd" xml:space="preserve"><value>睡到风暴结束</value></data>
+  <data name="QuickSleepCancelHint" xml:space="preserve"><value>按 ESC 可取消</value></data>
+  <data name="QuickSleepCancelled" xml:space="preserve"><value>已取消寻找雨天</value></data>
+  <data name="QuickSleepFound" xml:space="preserve"><value>睡了 {0} 天，终于等到雨天了！</value></data>
+  <data name="QuickSleepExhausted" xml:space="preserve"><value>已经睡了 {0} 天，放弃寻找雨天</value></data>
+  <data name="KillRecordDefaultFormat" xml:space="preserve"><value>击杀 {0}</value></data>
 </root>

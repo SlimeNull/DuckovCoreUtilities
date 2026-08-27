@@ -2,6 +2,7 @@ using Cysharp.Threading.Tasks;
 using ItemStatsSystem;
 using ItemStatsSystem.Data;
 using SlimeNull.DockovParty.Networking.Protocol;
+using SlimeNull.DockovParty.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -366,7 +367,7 @@ namespace SlimeNull.DockovParty.Game
         private void HandleHostPickupRequest(GroundPickupRequestMessage request)
         {
             var accepted = false;
-            var reason = "物品已被其他玩家取走";
+            var reason = SettingsText.GroundItemTakenByOther;
             if (_hostItems.TryGetValue(request.GroundId, out var pickup) && pickup != null &&
                 pickup.ItemAgent?.Item != null && pickup.ItemAgent.Item.TypeID == request.ItemTypeId &&
                 _runtime.RemoteCharacter != null && _runtime.RemotePlayerAlive)
@@ -399,7 +400,7 @@ namespace SlimeNull.DockovParty.Game
                 }
                 else
                 {
-                    reason = "背包没有可用空间";
+                    reason = SettingsText.NoInventorySpace;
                 }
             }
 
@@ -423,7 +424,7 @@ namespace SlimeNull.DockovParty.Game
             if (!result.Accepted || pending.Item == null || pending.Character == null)
             {
                 PartyRuntime.NotifyUser(string.IsNullOrWhiteSpace(result.Reason) ?
-                    "物品已被取走" : result.Reason);
+                    SettingsText.GroundItemTaken : result.Reason);
                 return;
             }
 

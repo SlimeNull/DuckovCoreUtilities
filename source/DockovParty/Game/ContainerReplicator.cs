@@ -4,6 +4,7 @@ using ItemStatsSystem;
 using ItemStatsSystem.Data;
 using Saves;
 using SlimeNull.DockovParty.Networking.Protocol;
+using SlimeNull.DockovParty.Localization;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -146,7 +147,7 @@ namespace SlimeNull.DockovParty.Game
             {
                 if (existing.RemoteOwned)
                 {
-                    DenyCurrentView(lootbox, "该容器正在被另一名玩家使用");
+                    DenyCurrentView(lootbox, SettingsText.ContainerInUse);
                 }
 
                 return;
@@ -164,7 +165,7 @@ namespace SlimeNull.DockovParty.Game
         {
             if (_clientLease != null || _pendingClientLeases.Count > 0)
             {
-                DenyCurrentView(lootbox, "正在同步另一个容器");
+                DenyCurrentView(lootbox, SettingsText.ContainerSyncInProgress);
                 return;
             }
 
@@ -207,7 +208,7 @@ namespace SlimeNull.DockovParty.Game
         {
             if (_hostLeases.ContainsKey(request.ContainerId))
             {
-                SendLeaseResult(request, null, granted: false, "该容器正在被另一名玩家使用");
+                SendLeaseResult(request, null, granted: false, SettingsText.ContainerInUse);
                 return;
             }
 
@@ -215,7 +216,7 @@ namespace SlimeNull.DockovParty.Game
             var inventory = target?.Inventory;
             if (target == null || inventory == null || inventory.Loading)
             {
-                SendLeaseResult(request, null, granted: false, "服主尚未完成该容器的加载");
+                SendLeaseResult(request, null, granted: false, SettingsText.ContainerNotLoaded);
                 return;
             }
 
@@ -412,7 +413,7 @@ namespace SlimeNull.DockovParty.Game
                 SendHostReleaseResult(
                     release.ContainerId,
                     accepted: true,
-                    reason: "租约已结束",
+                    reason: SettingsText.ContainerLeaseEnded,
                     GetVersion(release.ContainerId),
                     string.Empty);
                 return;
@@ -431,7 +432,7 @@ namespace SlimeNull.DockovParty.Game
                 SendHostReleaseResult(
                     lease.ContainerId,
                     accepted: false,
-                    reason: "容器版本已更新",
+                    reason: SettingsText.ContainerVersionUpdated,
                     lease.Version,
                     SerializeInventory(lease.Inventory));
                 return;
@@ -683,7 +684,7 @@ namespace SlimeNull.DockovParty.Game
                 _closingDeniedView = false;
             }
 
-            PartyRuntime.NotifyUser(string.IsNullOrWhiteSpace(reason) ? "无法打开该容器" : reason);
+            PartyRuntime.NotifyUser(string.IsNullOrWhiteSpace(reason) ? SettingsText.ContainerOpenFailed : reason);
         }
 
         private InteractableLootbox? FindContainer(string containerId)

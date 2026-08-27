@@ -1,4 +1,5 @@
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
+using SlimeNull.DuckovCoreUtilities.Localization;
 using System;
 using System.Collections.Generic;
 using TMPro;
@@ -37,7 +38,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         public float RecordDuration { get; set; } = 5f;
         public int MaxRecordCount { get; set; } = 5;
-        public string RecordFormat { get; set; } = "击杀 {0}";
+        public string RecordFormat { get; set; } = SettingsText.KillRecordDefaultFormat;
 
         protected override void OnEnable()
         {

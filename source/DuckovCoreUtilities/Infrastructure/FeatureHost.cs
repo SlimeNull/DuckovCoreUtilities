@@ -121,5 +121,23 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
                 }
             }
         }
+
+        public void RefreshLocalization()
+        {
+            foreach (var feature in _features)
+            {
+                try
+                {
+                    if (feature.IsEnabled)
+                    {
+                        feature.RefreshLocalization();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"localization refresh failed in {feature.Name}, {ex}");
+                }
+            }
+        }
     }
 }

@@ -83,7 +83,7 @@ namespace SlimeNull.DuckovModSettings.UI
                     var label = attachment.Button.GetComponentInChildren<TMP_Text>(includeInactive: true);
                     if (label != null)
                     {
-                        label.text = SettingsText.Get("ModSettings");
+                        label.text = SettingsText.ModSettings;
                     }
                 }
                 if (attachment.Page != null)
@@ -170,7 +170,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 var tabLabel = buttonObject.GetComponentInChildren<TMP_Text>(includeInactive: true);
                 if (tabLabel != null)
                 {
-                    tabLabel.text = SettingsText.Get("ModSettings");
+                    tabLabel.text = SettingsText.ModSettings;
                 }
 
                 pageObject = new GameObject("DuckovModSettings_Content", typeof(RectTransform));

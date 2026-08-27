@@ -5,6 +5,7 @@ using HarmonyLib;
 using ItemStatsSystem.Data;
 using ItemStatsSystem;
 using SlimeNull.DockovParty.Configuration;
+using SlimeNull.DockovParty.Localization;
 using SlimeNull.DockovParty.Networking;
 using SlimeNull.DockovParty.Networking.Protocol;
 using System;
@@ -24,7 +25,6 @@ namespace SlimeNull.DockovParty.Game
     internal sealed class PartyRuntime : MonoBehaviour
     {
         private const string JoinButtonObjectName = "DockovParty_JoinGame";
-        private const string JoinButtonText = "加入游戏";
         private const string ClientSavePrefix = "DockovParty/Players/";
         private const string ClientHealthSuffix = "/Health";
 
@@ -33,6 +33,8 @@ namespace SlimeNull.DockovParty.Game
         private PartySettings? _settings;
         private Button? _joinButton;
         private TextMeshProUGUI? _joinButtonLabel;
+        private JoinButtonState _joinButtonState;
+        private bool _joinButtonInteractable = true;
         private bool _needsJoinButton;
         private bool _handshakeComplete;
         private string _sessionId = string.Empty;
@@ -116,7 +118,10 @@ namespace SlimeNull.DockovParty.Game
                 _lastFailure = string.Empty;
                 if (!IPAddress.TryParse(_settings.ListenAddress, out var address))
                 {
-                    throw new InvalidOperationException($"无效监听地址: {_settings.ListenAddress}");
+                    throw new InvalidOperationException(string.Format(
+                        SettingsText.Culture,
+                        SettingsText.InvalidListenAddress,
+                        _settings.ListenAddress));
                 }
 
                 _sessionId = Guid.NewGuid().ToString("N");
@@ -143,7 +148,12 @@ namespace SlimeNull.DockovParty.Game
             InitialHostSceneName = string.Empty;
             RemotePlayerAlive = true;
             _session.Stop();
-            SetJoinButtonState(JoinButtonText, interactable: true);
+            SetJoinButtonState(JoinButtonState.Ready, interactable: true);
+        }
+
+        public void RefreshLocalization()
+        {
+            ApplyJoinButtonState();
         }
 
         public void Send(PartyMessage message)
@@ -260,6 +270,7 @@ namespace SlimeNull.DockovParty.Game
                 _joinButton = existing.GetComponentInChildren<Button>(true);
                 _joinButtonLabel = existing.GetComponentInChildren<TextMeshProUGUI>(true);
                 _needsJoinButton = false;
+                ApplyJoinButtonState();
                 return;
             }
 
@@ -284,7 +295,7 @@ namespace SlimeNull.DockovParty.Game
 
             _joinButton.onClick.RemoveAllListeners();
             _joinButton.onClick.AddListener(JoinConfiguredHost);
-            _joinButtonLabel.text = JoinButtonText;
+            ApplyJoinButtonState();
 
             var clonedContinue = clone.GetComponent<ContinueButton>();
             if (clonedContinue != null)
@@ -302,7 +313,7 @@ namespace SlimeNull.DockovParty.Game
                 return;
             }
 
-            SetJoinButtonState("连接中...", interactable: false);
+            SetJoinButtonState(JoinButtonState.Connecting, interactable: false);
             _lastFailure = string.Empty;
             var hello = CreateHelloMessage();
             var connector = new TcpStreamConnector(_settings.JoinAddress, _settings.Port);
@@ -314,8 +325,8 @@ namespace SlimeNull.DockovParty.Game
                 if (!task.IsCompletedSuccessfully)
                 {
                     var failure = task.IsCanceled ?
-                        new TimeoutException("连接超时。") :
-                        task.Exception?.GetBaseException() ?? new InvalidOperationException("连接失败。");
+                        new TimeoutException(SettingsText.ConnectionTimedOut) :
+                        task.Exception?.GetBaseException() ?? new InvalidOperationException(SettingsText.ConnectionFailed);
                     Enqueue(() =>
                     {
                         StopSession();
@@ -347,7 +358,7 @@ namespace SlimeNull.DockovParty.Game
                 ModVersion = typeof(PartyRuntime).Assembly.GetName().Version?.ToString() ?? "0.0.0.0",
                 GameVersion = GameMetaData.Instance.Version.ToString(),
                 PlayerId = _localPlayerId,
-                PlayerName = _settings?.PlayerName ?? "玩家",
+                PlayerName = _settings?.PlayerName ?? SettingsText.DefaultPlayerName,
             };
         }
 
@@ -356,7 +367,7 @@ namespace SlimeNull.DockovParty.Game
             Debug.Log($"[DockovParty] Stream 长连接已建立: {endpoint}");
             if (IsHost)
             {
-                NotifyUser("玩家正在加入...");
+                NotifyUser(SettingsText.PlayerJoining);
             }
         }
 
@@ -372,7 +383,10 @@ namespace SlimeNull.DockovParty.Game
                     HandleWelcome(welcome);
                     break;
                 case ErrorMessage error:
-                    NotifyUser($"联机错误: {error.Description}");
+                    NotifyUser(string.Format(
+                        SettingsText.Culture,
+                        SettingsText.MultiplayerErrorFormat,
+                        error.Description));
                     Debug.LogError($"[DockovParty/{error.Code}] {error.Description}");
                     if (IsClient)
                     {
@@ -417,7 +431,7 @@ namespace SlimeNull.DockovParty.Game
                 Accepted = true,
                 SessionId = _sessionId,
                 HostPlayerId = _localPlayerId,
-                HostPlayerName = _settings?.PlayerName ?? "玩家",
+                HostPlayerName = _settings?.PlayerName ?? SettingsText.DefaultPlayerName,
                 SceneId = scene.SceneId,
                 SceneName = scene.SceneName,
                 HostAlive = CharacterMainControl.Main == null || !CharacterMainControl.Main.Health.IsDead,
@@ -428,7 +442,10 @@ namespace SlimeNull.DockovParty.Game
             });
 
             _handshakeComplete = true;
-            NotifyUser($"{_remotePlayerName} 已加入游戏");
+            NotifyUser(string.Format(
+                SettingsText.Culture,
+                SettingsText.PlayerJoinedFormat,
+                _remotePlayerName));
             HandshakeCompleted?.Invoke();
         }
 
@@ -436,8 +453,10 @@ namespace SlimeNull.DockovParty.Game
         {
             if (!welcome.Accepted)
             {
-                var reason = string.IsNullOrWhiteSpace(welcome.Reason) ? "服主拒绝了连接。" : welcome.Reason;
-                SetJoinButtonState(JoinButtonText, interactable: true);
+                var reason = string.IsNullOrWhiteSpace(welcome.Reason)
+                    ? SettingsText.HostRejectedConnection
+                    : welcome.Reason;
+                SetJoinButtonState(JoinButtonState.Ready, interactable: true);
                 NotifyUser(reason);
                 StopSession();
                 return;
@@ -454,8 +473,11 @@ namespace SlimeNull.DockovParty.Game
             RemotePlayerAlive = welcome.HostAlive;
             _suppressClientSave = true;
             _handshakeComplete = true;
-            SetJoinButtonState("已连接", interactable: false);
-            NotifyUser($"已连接到 {_remotePlayerName} 的游戏");
+            SetJoinButtonState(JoinButtonState.Connected, interactable: false);
+            NotifyUser(string.Format(
+                SettingsText.Culture,
+                SettingsText.ConnectedToGameFormat,
+                _remotePlayerName));
             HandshakeCompleted?.Invoke();
         }
 
@@ -463,23 +485,31 @@ namespace SlimeNull.DockovParty.Game
         {
             if (hello.ProtocolVersion != PartyWireCodec.ProtocolVersion)
             {
-                return $"协议版本不一致（服主 {PartyWireCodec.ProtocolVersion}，客户端 {hello.ProtocolVersion}）。";
+                return string.Format(
+                    SettingsText.Culture,
+                    SettingsText.ProtocolVersionMismatch,
+                    PartyWireCodec.ProtocolVersion,
+                    hello.ProtocolVersion);
             }
 
             if (string.IsNullOrWhiteSpace(hello.PlayerId))
             {
-                return "客户端没有有效玩家标识。";
+                return SettingsText.InvalidClientPlayerId;
             }
 
             if (hello.PlayerId == _localPlayerId)
             {
-                return "不能使用同一个 Steam 账号加入自己的游戏。";
+                return SettingsText.SameSteamAccount;
             }
 
             var gameVersion = GameMetaData.Instance.Version.ToString();
             if (!string.Equals(gameVersion, hello.GameVersion, StringComparison.Ordinal))
             {
-                return $"游戏版本不一致（服主 {gameVersion}，客户端 {hello.GameVersion}）。";
+                return string.Format(
+                    SettingsText.Culture,
+                    SettingsText.GameVersionMismatch,
+                    gameVersion,
+                    hello.GameVersion);
             }
 
             return null;
@@ -496,7 +526,7 @@ namespace SlimeNull.DockovParty.Game
 
             if (wasConnected)
             {
-                NotifyUser(IsHost ? "另一名玩家已断开" : "与服主的连接已断开");
+                NotifyUser(IsHost ? SettingsText.OtherPlayerDisconnected : SettingsText.HostDisconnected);
             }
 
             if (wasConnected && _suppressClientSave && !IsMainMenuLoaded())
@@ -504,7 +534,7 @@ namespace SlimeNull.DockovParty.Game
                 _returnClientToMainMenu = true;
             }
 
-            SetJoinButtonState(JoinButtonText, interactable: true);
+            SetJoinButtonState(JoinButtonState.Ready, interactable: true);
 
             Disconnected?.Invoke();
             _remotePlayerId = string.Empty;
@@ -521,10 +551,10 @@ namespace SlimeNull.DockovParty.Game
 
             _lastFailure = message;
             Debug.LogError($"[DockovParty] 网络错误: {failure}");
-            NotifyUser($"联机失败: {message}");
+            NotifyUser(string.Format(SettingsText.Culture, SettingsText.MultiplayerFailedFormat, message));
             if (IsClient)
             {
-                SetJoinButtonState(JoinButtonText, interactable: true);
+                SetJoinButtonState(JoinButtonState.Ready, interactable: true);
             }
         }
 
@@ -622,16 +652,28 @@ namespace SlimeNull.DockovParty.Game
             return (sceneId, sceneName ?? active.name ?? string.Empty);
         }
 
-        private void SetJoinButtonState(string text, bool interactable)
+        private void SetJoinButtonState(JoinButtonState state, bool interactable)
+        {
+            _joinButtonState = state;
+            _joinButtonInteractable = interactable;
+            ApplyJoinButtonState();
+        }
+
+        private void ApplyJoinButtonState()
         {
             if (_joinButtonLabel != null)
             {
-                _joinButtonLabel.text = text;
+                _joinButtonLabel.text = _joinButtonState switch
+                {
+                    JoinButtonState.Connecting => SettingsText.Connecting,
+                    JoinButtonState.Connected => SettingsText.Connected,
+                    _ => SettingsText.JoinGame,
+                };
             }
 
             if (_joinButton != null)
             {
-                _joinButton.interactable = interactable;
+                _joinButton.interactable = _joinButtonInteractable;
             }
         }
 
@@ -676,6 +718,13 @@ namespace SlimeNull.DockovParty.Game
             }
 
             Debug.Log($"[DockovParty] {direction} {message.Kind}");
+        }
+
+        private enum JoinButtonState
+        {
+            Ready,
+            Connecting,
+            Connected,
         }
     }
 }

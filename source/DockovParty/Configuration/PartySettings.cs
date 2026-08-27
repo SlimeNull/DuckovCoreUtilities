@@ -1,5 +1,6 @@
 using System;
 using System.Net;
+using SlimeNull.DockovParty.Localization;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -13,7 +14,7 @@ namespace SlimeNull.DockovParty.Configuration
             [InspectorName("@SettingsText/PlayerName")]
             [Tooltip("@SettingsText/PlayerNameTooltip")]
             [FormerlySerializedAs("Identity.PlayerName")]
-            public string PlayerName = "玩家";
+            public string PlayerName = SettingsText.DefaultPlayerName;
         }
 
         [Serializable]
@@ -86,7 +87,7 @@ namespace SlimeNull.DockovParty.Configuration
 
         private static string NormalizePlayerName(string? value)
         {
-            return string.IsNullOrWhiteSpace(value) ? "玩家" : value.Trim();
+            return string.IsNullOrWhiteSpace(value) ? SettingsText.DefaultPlayerName : value.Trim();
         }
 
         private static string NormalizeListenAddress(string? value)

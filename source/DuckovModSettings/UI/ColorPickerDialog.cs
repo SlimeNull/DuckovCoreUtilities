@@ -138,7 +138,7 @@ namespace SlimeNull.DuckovModSettings.UI
                 "Done",
                 panel,
                 _font,
-                SettingsText.Get("Done"),
+                SettingsText.Done,
                 Close,
                 44f,
                 new Color(0.12f, 0.36f, 0.27f, 1f));
@@ -154,7 +154,7 @@ namespace SlimeNull.DuckovModSettings.UI
             }
             if (_doneLabel != null)
             {
-                _doneLabel.text = SettingsText.Get("Done");
+                _doneLabel.text = SettingsText.Done;
             }
         }
 

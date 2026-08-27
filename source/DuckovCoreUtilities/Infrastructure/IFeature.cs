@@ -45,6 +45,10 @@ namespace SlimeNull.DuckovCoreUtilities.Infrastructure
         {
         }
 
+        public virtual void RefreshLocalization()
+        {
+        }
+
         protected virtual void OnEnable()
         {
         }

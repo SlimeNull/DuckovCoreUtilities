@@ -1,6 +1,9 @@
 using HarmonyLib;
 using SlimeNull.DockovParty.Configuration;
 using SlimeNull.DockovParty.Game;
+using SlimeNull.DockovParty.Localization;
+using SlimeNull.Mods.Localization;
+using SodaCraft.Localizations;
 using System;
 using UnityEngine;
 
@@ -17,6 +20,11 @@ namespace SlimeNull.DockovParty
         {
             try
             {
+                var language = LocalizationManager.Initialized
+                    ? LocalizationManager.CurrentLanguage
+                    : Application.systemLanguage;
+                SettingsText.Culture = ModLanguage.GetCulture(language);
+                LocalizationManager.OnSetLanguage += OnLanguageChanged;
                 _settings = gameObject.GetComponent<PartySettings>() ?? gameObject.AddComponent<PartySettings>();
 
                 _runtime = gameObject.AddComponent<PartyRuntime>();
@@ -28,6 +36,7 @@ namespace SlimeNull.DockovParty
             }
             catch (Exception ex)
             {
+                LocalizationManager.OnSetLanguage -= OnLanguageChanged;
                 Debug.LogError($"[DockovParty] 初始化失败: {ex}");
                 _harmony?.UnpatchAll(HarmonyId);
                 if (_runtime != null)
@@ -48,6 +57,7 @@ namespace SlimeNull.DockovParty
 
         protected override void OnBeforeDeactivate()
         {
+            LocalizationManager.OnSetLanguage -= OnLanguageChanged;
             _runtime?.StopSession();
             _harmony?.UnpatchAll(HarmonyId);
             if (_runtime != null)
@@ -63,6 +73,12 @@ namespace SlimeNull.DockovParty
             _runtime = null;
             _settings = null;
             _harmony = null;
+        }
+
+        private void OnLanguageChanged(SystemLanguage language)
+        {
+            SettingsText.Culture = ModLanguage.GetCulture(language);
+            _runtime?.RefreshLocalization();
         }
     }
 }

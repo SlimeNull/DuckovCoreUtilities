@@ -4,7 +4,6 @@ using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Resources;
-using UnityEngine;
 
 namespace SlimeNull.DuckovModSettings.Core
 {
@@ -33,77 +32,12 @@ namespace SlimeNull.DuckovModSettings.Core
             return resources.Resolve(text);
         }
 
-        public static void SetLanguage(SystemLanguage language)
-        {
-            SetCulture(GetCulture(language));
-        }
-
-        private static void SetCulture(CultureInfo culture)
+        public static void SetCulture(CultureInfo culture)
         {
             _culture = culture;
             foreach (var resources in ResourcesByAssembly.Values)
             {
                 resources.SetCulture(culture);
-            }
-        }
-
-        private static CultureInfo GetCulture(SystemLanguage language)
-        {
-            var cultureName = language switch
-            {
-                SystemLanguage.Afrikaans => "af-ZA",
-                SystemLanguage.Arabic => "ar-SA",
-                SystemLanguage.Basque => "eu-ES",
-                SystemLanguage.Belarusian => "be-BY",
-                SystemLanguage.Bulgarian => "bg-BG",
-                SystemLanguage.Catalan => "ca-ES",
-                SystemLanguage.Chinese => "zh-CN",
-                SystemLanguage.ChineseSimplified => "zh-CN",
-                SystemLanguage.ChineseTraditional => "zh-TW",
-                SystemLanguage.Czech => "cs-CZ",
-                SystemLanguage.Danish => "da-DK",
-                SystemLanguage.Dutch => "nl-NL",
-                SystemLanguage.English => "en-US",
-                SystemLanguage.Estonian => "et-EE",
-                SystemLanguage.Faroese => "fo-FO",
-                SystemLanguage.Finnish => "fi-FI",
-                SystemLanguage.French => "fr-FR",
-                SystemLanguage.German => "de-DE",
-                SystemLanguage.Greek => "el-GR",
-                SystemLanguage.Hebrew => "he-IL",
-                SystemLanguage.Hindi => "hi-IN",
-                SystemLanguage.Hungarian => "hu-HU",
-                SystemLanguage.Icelandic => "is-IS",
-                SystemLanguage.Indonesian => "id-ID",
-                SystemLanguage.Italian => "it-IT",
-                SystemLanguage.Japanese => "ja-JP",
-                SystemLanguage.Korean => "ko-KR",
-                SystemLanguage.Latvian => "lv-LV",
-                SystemLanguage.Lithuanian => "lt-LT",
-                SystemLanguage.Norwegian => "nb-NO",
-                SystemLanguage.Polish => "pl-PL",
-                SystemLanguage.Portuguese => "pt-BR",
-                SystemLanguage.Romanian => "ro-RO",
-                SystemLanguage.Russian => "ru-RU",
-                SystemLanguage.SerboCroatian => "sr-Latn",
-                SystemLanguage.Slovak => "sk-SK",
-                SystemLanguage.Slovenian => "sl-SI",
-                SystemLanguage.Spanish => "es-ES",
-                SystemLanguage.Swedish => "sv-SE",
-                SystemLanguage.Thai => "th-TH",
-                SystemLanguage.Turkish => "tr-TR",
-                SystemLanguage.Ukrainian => "uk-UA",
-                SystemLanguage.Vietnamese => "vi-VN",
-                _ => CultureInfo.CurrentUICulture.Name,
-            };
-
-            try
-            {
-                return CultureInfo.GetCultureInfo(cultureName);
-            }
-            catch (CultureNotFoundException)
-            {
-                return CultureInfo.InvariantCulture;
             }
         }
 
