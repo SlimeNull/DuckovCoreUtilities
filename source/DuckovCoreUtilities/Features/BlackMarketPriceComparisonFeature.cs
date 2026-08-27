@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace SlimeNull.DuckovCoreUtilities.Features
 {
@@ -26,6 +27,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
         private const string HarmonyCategory = nameof(BlackMarketPriceComparisonFeature);
         private const string DisplayName = "DCU_BlackMarketPriceComparison";
+        private const float DisplayHeight = 20f;
         private static readonly FieldInfo? BatchCountField =
             AccessTools.Field(typeof(BlackMarket.DemandSupplyEntry), "batchCount");
 
@@ -94,7 +96,10 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return;
             }
 
-            var anchor = FindPriceText(entry.transform, "Content/Items/Money/MoneyText", target.TotalPrice);
+            var anchor = FindPriceText(
+                entry.transform,
+                "Content/DealButton/Graphics/Cost/Money/MoneyText",
+                target.TotalPrice);
             SetupDisplay(anchor, target, isDemand: true);
         }
 
@@ -119,13 +124,19 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 return;
             }
 
-            var parent = anchor.transform.parent;
-            if (parent == null)
+            if (!TryGetDisplayLayout(
+                anchor,
+                out var layoutParent,
+                out var priceContainer,
+                out var moneyRow))
             {
                 return;
             }
 
-            var displayTransform = parent.Find(DisplayName) ?? anchor.transform.Find(DisplayName);
+            var displayTransform = layoutParent.Find(DisplayName) ??
+                priceContainer.Find(DisplayName) ??
+                moneyRow.Find(DisplayName) ??
+                anchor.transform.Find(DisplayName);
             var display = displayTransform != null
                 ? displayTransform.GetComponent<PriceComparisonDisplay>()
                 : null;
@@ -135,7 +146,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             }
             else
             {
-                ConfigureDisplayLayout(display, anchor);
+                ConfigureDisplayLayout(display, anchor, layoutParent, priceContainer);
             }
 
             display.Target = target;
@@ -151,6 +162,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 typeof(RectTransform),
                 typeof(CanvasRenderer),
                 typeof(TextMeshProUGUI),
+                typeof(LayoutElement),
                 typeof(PriceComparisonDisplay));
             gameObject.layer = anchor.gameObject.layer;
 
@@ -170,36 +182,60 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             var display = gameObject.GetComponent<PriceComparisonDisplay>();
             display.Text = text;
-            ConfigureDisplayLayout(display, anchor);
+            if (TryGetDisplayLayout(
+                anchor,
+                out var layoutParent,
+                out var priceContainer,
+                out _))
+            {
+                ConfigureDisplayLayout(display, anchor, layoutParent, priceContainer);
+            }
             return display;
         }
 
         private static void ConfigureDisplayLayout(
             PriceComparisonDisplay display,
-            TextMeshProUGUI anchor)
+            TextMeshProUGUI anchor,
+            Transform layoutParent,
+            Transform priceContainer)
         {
-            var parent = anchor.transform.parent;
-            if (parent == null)
-            {
-                return;
-            }
-
             var displayTransform = display.transform;
-            if (displayTransform.parent != parent)
+            if (displayTransform.parent != layoutParent)
             {
-                displayTransform.SetParent(parent, false);
+                displayTransform.SetParent(layoutParent, false);
             }
 
-            displayTransform.SetSiblingIndex(anchor.transform.GetSiblingIndex() + 1);
+            displayTransform.SetSiblingIndex(priceContainer.GetSiblingIndex() + 1);
 
-            var anchorRect = anchor.rectTransform;
-            var displayRect = (RectTransform)displayTransform;
-            displayRect.anchorMin = anchorRect.anchorMin;
-            displayRect.anchorMax = anchorRect.anchorMax;
-            displayRect.pivot = anchorRect.pivot;
-            displayRect.sizeDelta = new Vector2(anchorRect.sizeDelta.x, 20f);
-            displayRect.anchoredPosition = anchorRect.anchoredPosition + new Vector2(0f, -25f);
+            var layout = display.GetComponent<LayoutElement>() ?? display.gameObject.AddComponent<LayoutElement>();
+            layout.minHeight = DisplayHeight;
+            layout.preferredHeight = DisplayHeight;
+            layout.flexibleHeight = 0f;
+            layout.minWidth = -1f;
+            layout.preferredWidth = -1f;
+            layout.flexibleWidth = 1f;
+            layout.ignoreLayout = false;
             display.Text.alignment = anchor.alignment;
+
+            if (layoutParent is RectTransform layoutParentRect)
+            {
+                LayoutRebuilder.MarkLayoutForRebuild(layoutParentRect);
+            }
+        }
+
+        private static bool TryGetDisplayLayout(
+            TextMeshProUGUI anchor,
+            out Transform layoutParent,
+            out Transform priceContainer,
+            out Transform moneyRow)
+        {
+            moneyRow = anchor.transform.parent;
+            priceContainer = moneyRow != null ? moneyRow.parent : null!;
+            layoutParent = priceContainer != null ? priceContainer.parent : null!;
+            return moneyRow != null &&
+                priceContainer != null &&
+                layoutParent != null &&
+                layoutParent.GetComponent<VerticalLayoutGroup>() != null;
         }
 
         private static TextMeshProUGUI? FindPriceText(Transform root, string path, int expectedPrice)
