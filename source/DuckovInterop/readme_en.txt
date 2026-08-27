@@ -58,6 +58,8 @@ DuckovInterop provides no authentication or transport encryption and exposes ref
 
 If you encounter a problem, leave a comment below or open an Issue in the [url=https://github.com/SlimeNull/DuckovMods]GitHub repository[/url].
 
+This module uses GPT 5.6 Sol to assist in development and generate documentation.
+
 [h1]Contributing a translation[/h1]
 
 To add another language:

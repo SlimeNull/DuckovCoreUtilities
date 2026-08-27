@@ -120,6 +120,8 @@ public int Port = 37620;[/code]
 
 遇到问题时，请在评论区留言，或到 [url=https://github.com/SlimeNull/DuckovMods]GitHub 仓库[/url]提交 Issue。
 
+此模组有使用 GPT 5.6 Sol 辅助开发及生成文档.
+
 [h1]贡献翻译[/h1]
 
 欢迎为此模组补充其他语言：
