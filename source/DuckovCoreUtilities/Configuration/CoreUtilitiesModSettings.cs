@@ -298,7 +298,7 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/PositionMode")]
-            public BossMapMarkerFeature.TrackingMode Mode = BossMapMarkerFeature.TrackingMode.Static;
+            public BossMapMarkerFeature.TrackingMode Mode = BossMapMarkerFeature.TrackingMode.Dynamic;
 
             [InspectorName("@SettingsText/ShowNames")]
             public bool ShowNames = true;
