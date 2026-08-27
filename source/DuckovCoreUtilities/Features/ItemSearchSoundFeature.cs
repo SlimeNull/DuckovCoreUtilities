@@ -1,10 +1,10 @@
-using Duckov;
 using Duckov.UI;
 using FMODUnity;
 using HarmonyLib;
 using ItemStatsSystem;
 using SlimeNull.DuckovCoreUtilities.Infrastructure;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -14,14 +14,29 @@ namespace SlimeNull.DuckovCoreUtilities.Features
     {
         private const string HarmonyCategory = nameof(ItemSearchSoundFeature);
         private const int QualityCount = 7;
+        private const string LocalSoundBusPath = "bus:/Master/SFX";
+
+        private sealed class LocalPlayback
+        {
+            public int Quality { get; }
+            public FMOD.Channel Channel { get; }
+
+            public LocalPlayback(int quality, FMOD.Channel channel)
+            {
+                Quality = quality;
+                Channel = channel;
+            }
+        }
 
         private static ItemSearchSoundFeature? _active;
 
         private Item? _lastPlayedItem;
         private int _lastPlayedFrame = -1;
-        private AudioObject? _localAudioObject;
 
         private readonly string[] _localFilePaths = new string[QualityCount];
+        private readonly string[] _loadedLocalFilePaths = new string[QualityCount];
+        private readonly FMOD.Sound[] _localSounds = new FMOD.Sound[QualityCount];
+        private readonly List<LocalPlayback> _localPlaybacks = new List<LocalPlayback>();
         private readonly string[] _eventPaths =
         {
             "event:/UI/level_up",
@@ -44,16 +59,19 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 throw new ArgumentOutOfRangeException(nameof(quality));
             }
 
-            _localFilePaths[quality] = localFilePath ?? string.Empty;
+            var nextLocalFilePath = localFilePath ?? string.Empty;
+            if (!string.Equals(_localFilePaths[quality], nextLocalFilePath, StringComparison.Ordinal))
+            {
+                ReleaseLocalSound(quality);
+                _localFilePaths[quality] = nextLocalFilePath;
+            }
+
             _eventPaths[quality] = eventPath?.Trim() ?? string.Empty;
             _volumes[quality] = Mathf.Max(0f, volume);
         }
 
         protected override void OnEnable()
         {
-            var audioObject = new GameObject("DCU_ItemSearchSoundPlayer");
-            audioObject.transform.SetParent(Context.HostObject.transform, false);
-            _localAudioObject = audioObject.AddComponent<AudioObject>();
             _active = this;
             Context.Harmony.PatchCategory(HarmonyCategory);
         }
@@ -62,13 +80,22 @@ namespace SlimeNull.DuckovCoreUtilities.Features
         {
             Context.Harmony.UnpatchCategory(HarmonyCategory);
             _active = null;
-            if (_localAudioObject != null)
-            {
-                UnityEngine.Object.Destroy(_localAudioObject.gameObject);
-                _localAudioObject = null;
-            }
+            ReleaseAllLocalSounds();
             _lastPlayedItem = null;
             _lastPlayedFrame = -1;
+        }
+
+        public override void Tick()
+        {
+            for (var index = _localPlaybacks.Count - 1; index >= 0; index--)
+            {
+                var channel = _localPlaybacks[index].Channel;
+                var result = channel.isPlaying(out var isPlaying);
+                if (result != FMOD.RESULT.OK || !isPlaying)
+                {
+                    _localPlaybacks.RemoveAt(index);
+                }
+            }
         }
 
         private void Play(Item item)
@@ -82,7 +109,7 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             _lastPlayedFrame = Time.frameCount;
 
             var quality = Mathf.Clamp(item.Quality, 0, QualityCount - 1);
-            if (TryPlayLocal(_localFilePaths[quality], _volumes[quality]))
+            if (TryPlayLocal(quality, _localFilePaths[quality], _volumes[quality]))
             {
                 return;
             }
@@ -90,9 +117,9 @@ namespace SlimeNull.DuckovCoreUtilities.Features
             PlayFmod(quality);
         }
 
-        private bool TryPlayLocal(string path, float volume)
+        private bool TryPlayLocal(int quality, string path, float volume)
         {
-            if (_localAudioObject == null || string.IsNullOrWhiteSpace(path))
+            if (string.IsNullOrWhiteSpace(path))
             {
                 return false;
             }
@@ -114,15 +141,48 @@ namespace SlimeNull.DuckovCoreUtilities.Features
 
             try
             {
-                var instance = _localAudioObject.PostCustomSFX(fullPath, doRelease: false);
-                if (!instance.HasValue || !instance.Value.isValid())
+                if (!TryGetLocalSound(quality, fullPath, out var sound))
                 {
                     return false;
                 }
 
-                var eventInstance = instance.Value;
-                eventInstance.setVolume(Mathf.Max(0f, volume));
-                eventInstance.release();
+                var bus = RuntimeManager.GetBus(LocalSoundBusPath);
+                var result = bus.getChannelGroup(out var channelGroup);
+                if (!CheckFmodResult(result, "get the SFX channel group", fullPath))
+                {
+                    return false;
+                }
+
+                var coreSystem = RuntimeManager.CoreSystem;
+                result = coreSystem.playSound(sound, channelGroup, paused: true, out var channel);
+                if (!CheckFmodResult(result, "create a playback channel", fullPath))
+                {
+                    return false;
+                }
+
+                result = channel.setVolume(Mathf.Max(0f, volume));
+                if (!CheckFmodResult(result, "set playback volume", fullPath))
+                {
+                    channel.stop();
+                    return false;
+                }
+
+                result = channel.setPaused(paused: false);
+                if (!CheckFmodResult(result, "start playback", fullPath))
+                {
+                    channel.stop();
+                    return false;
+                }
+
+                result = channel.isPlaying(out var isPlaying);
+                if (!CheckFmodResult(result, "verify playback", fullPath) || !isPlaying)
+                {
+                    channel.stop();
+                    Debug.LogWarning($"[CoreUtilities] FMOD did not start local item search sound '{fullPath}'.");
+                    return false;
+                }
+
+                _localPlaybacks.Add(new LocalPlayback(quality, channel));
                 return true;
             }
             catch (Exception ex)
@@ -130,6 +190,88 @@ namespace SlimeNull.DuckovCoreUtilities.Features
                 Debug.LogWarning($"[CoreUtilities] Failed to play local item search sound '{fullPath}': {ex.Message}");
                 return false;
             }
+        }
+
+        private bool TryGetLocalSound(int quality, string fullPath, out FMOD.Sound sound)
+        {
+            sound = _localSounds[quality];
+            if (sound.hasHandle() &&
+                string.Equals(_loadedLocalFilePaths[quality], fullPath, StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            ReleaseLocalSound(quality);
+
+            var coreSystem = RuntimeManager.CoreSystem;
+            var result = coreSystem.createSound(
+                fullPath,
+                FMOD.MODE.LOOP_OFF | FMOD.MODE._2D,
+                out sound);
+            if (!CheckFmodResult(result, "load the audio file", fullPath) || !sound.hasHandle())
+            {
+                sound = default;
+                return false;
+            }
+
+            _localSounds[quality] = sound;
+            _loadedLocalFilePaths[quality] = fullPath;
+            return true;
+        }
+
+        private void ReleaseLocalSound(int quality)
+        {
+            var sound = _localSounds[quality];
+            if (!sound.hasHandle())
+            {
+                _loadedLocalFilePaths[quality] = string.Empty;
+                return;
+            }
+
+            for (var index = _localPlaybacks.Count - 1; index >= 0; index--)
+            {
+                if (_localPlaybacks[index].Quality != quality)
+                {
+                    continue;
+                }
+
+                _localPlaybacks[index].Channel.stop();
+                _localPlaybacks.RemoveAt(index);
+            }
+
+            var result = sound.release();
+            if (result != FMOD.RESULT.OK && result != FMOD.RESULT.ERR_INVALID_HANDLE)
+            {
+                Debug.LogWarning(
+                    $"[CoreUtilities] Failed to release local item search sound " +
+                    $"'{_loadedLocalFilePaths[quality]}': {result} ({FMOD.Error.String(result)})");
+            }
+
+            _localSounds[quality] = default;
+            _loadedLocalFilePaths[quality] = string.Empty;
+        }
+
+        private void ReleaseAllLocalSounds()
+        {
+            for (var quality = 0; quality < QualityCount; quality++)
+            {
+                ReleaseLocalSound(quality);
+            }
+
+            _localPlaybacks.Clear();
+        }
+
+        private static bool CheckFmodResult(FMOD.RESULT result, string operation, string fullPath)
+        {
+            if (result == FMOD.RESULT.OK)
+            {
+                return true;
+            }
+
+            Debug.LogWarning(
+                $"[CoreUtilities] Failed to {operation} for local item search sound '{fullPath}': " +
+                $"{result} ({FMOD.Error.String(result)})");
+            return false;
         }
 
         private static bool IsSupportedAudioFile(string path)
