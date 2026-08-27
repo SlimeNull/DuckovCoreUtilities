@@ -18,7 +18,7 @@ Settings are stored at:
 
 [code]Application.persistentDataPath/DuckovModSettings/settings.json[/code]
 
-Writes use a temporary file and .bak backup. Values from the legacy ModSetting/ModSetting.json file are imported when possible.
+Writes use a temporary file and .bak backup.
 
 [h1]Subscription[/h1]
 
@@ -67,7 +67,6 @@ Static, constant, read-only, indexed, and [b]HideInInspector[/b] members are ign
 [*][b]Header[/b]: section heading.
 [*][b]Range[/b]: constrained slider.
 [*][b]TextArea[/b]: multiline string editor.
-[*][b]FormerlySerializedAs[/b]: aliases for importing renamed setting keys.
 [*][b]HideInInspector[/b]: excludes a member from the page.
 [/list]
 
@@ -79,7 +78,6 @@ private sealed class NetworkOptions
     [InspectorName("Port")]
     [Tooltip("Applied after restarting the service")]
     [Range(1024, 65535)]
-    [FormerlySerializedAs("Network.Port")]
     public int Port = 37622;
 
     [InspectorName("Status color")]

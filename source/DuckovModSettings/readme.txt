@@ -18,7 +18,7 @@ Duckov Mod Settings 为《逃离鸭科夫》添加统一的游戏内模组设置
 
 [code]Application.persistentDataPath/DuckovModSettings/settings.json[/code]
 
-保存时会使用临时文件和 .bak 备份；旧版 ModSetting/ModSetting.json 中的设置会尝试自动迁移。
+保存时会使用临时文件和 .bak 备份。
 
 [h1]订阅[/h1]
 
@@ -67,7 +67,6 @@ Duckov Mod Settings 会检查每个已加载的 Duckov.Modding.ModBehaviour 根�
 [*][b]Header[/b]：插入分区标题。
 [*][b]Range[/b]：使用滑块并约束数值范围。
 [*][b]TextArea[/b]：使用多行字符串编辑器。
-[*][b]FormerlySerializedAs[/b]：迁移重命名前的设置键。
 [*][b]HideInInspector[/b]：从设置页面隐藏成员。
 [/list]
 
@@ -79,7 +78,6 @@ private sealed class NetworkOptions
     [InspectorName("端口")]
     [Tooltip("重新启动服务后生效")]
     [Range(1024, 65535)]
-    [FormerlySerializedAs("Network.Port")]
     public int Port = 37622;
 
     [InspectorName("状态颜色")]

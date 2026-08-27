@@ -2,7 +2,6 @@ using System;
 using System.Net;
 using SlimeNull.DockovParty.Localization;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace SlimeNull.DockovParty.Configuration
 {
@@ -13,7 +12,6 @@ namespace SlimeNull.DockovParty.Configuration
         {
             [InspectorName("@SettingsText/PlayerName")]
             [Tooltip("@SettingsText/PlayerNameTooltip")]
-            [FormerlySerializedAs("Identity.PlayerName")]
             public string PlayerName = SettingsText.DefaultPlayerName;
         }
 
@@ -22,33 +20,27 @@ namespace SlimeNull.DockovParty.Configuration
         {
             [InspectorName("@SettingsText/ListenAddress")]
             [Tooltip("@SettingsText/ListenAddressTooltip")]
-            [FormerlySerializedAs("Network.ListenAddress")]
             public string ListenAddress = "0.0.0.0";
 
             [InspectorName("@SettingsText/JoinAddress")]
-            [FormerlySerializedAs("Network.JoinAddress")]
             public string JoinAddress = "127.0.0.1";
 
             [InspectorName("@SettingsText/Port")]
             [Range(1024, 65535)]
-            [FormerlySerializedAs("Network.Port")]
             public int Port = 37622;
 
             [InspectorName("@SettingsText/StateRate")]
             [Tooltip("@SettingsText/StateRateTooltip")]
             [Range(5, 30)]
-            [FormerlySerializedAs("Network.StateRate")]
             public int StateRate = 15;
 
             [InspectorName("@SettingsText/InterpolationDelay")]
             [Tooltip("@SettingsText/InterpolationDelayTooltip")]
             [Range(0.03f, 0.3f)]
-            [FormerlySerializedAs("Network.InterpolationDelay")]
             public float InterpolationDelay = 0.1f;
 
             [InspectorName("@SettingsText/DiagnosticLogging")]
             [Tooltip("@SettingsText/DiagnosticLoggingTooltip")]
-            [FormerlySerializedAs("Network.DiagnosticLogging")]
             public bool DiagnosticLogging = false;
         }
 

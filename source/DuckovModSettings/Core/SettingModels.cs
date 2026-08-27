@@ -161,7 +161,6 @@ namespace SlimeNull.DuckovModSettings.Core
             Type valueType,
             ReflectionPath? accessPath,
             object? defaultValue,
-            IEnumerable<string>? formerKeys,
             SettingRange? range,
             TextAreaOptions? textArea)
         {
@@ -174,7 +173,6 @@ namespace SlimeNull.DuckovModSettings.Core
             ValueType = valueType;
             AccessPath = accessPath;
             DefaultValue = SettingValueCodec.CloneValue(defaultValue, valueType);
-            FormerKeys = (formerKeys ?? Array.Empty<string>()).Distinct(StringComparer.Ordinal).ToArray();
             Range = range;
             TextArea = textArea;
             StoreKey = owner.ComponentKey + "." + memberPath;
@@ -193,7 +191,6 @@ namespace SlimeNull.DuckovModSettings.Core
         public Type ValueType { get; }
         public ReflectionPath? AccessPath { get; }
         public object? DefaultValue { get; }
-        public IReadOnlyList<string> FormerKeys { get; }
         public SettingRange? Range { get; }
         public TextAreaOptions? TextArea { get; }
         public IReadOnlyList<SettingNode> Children => _children;

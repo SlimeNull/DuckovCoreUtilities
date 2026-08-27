@@ -153,7 +153,7 @@ namespace SlimeNull.DuckovModSettings.Core
                 foreach (var node in component.Leaves)
                 {
                     node.ValueChanged += HandleValueChanged;
-                    if (SettingsStore.TryGet(mod.Info, node.StoreKey, node.FormerKeys, node.ValueType, out var value) &&
+                    if (SettingsStore.TryGet(mod.Info, node.StoreKey, node.ValueType, out var value) &&
                         node.TrySetValue(value, SettingChangeOrigin.Load))
                     {
                         loadedAny = true;

@@ -18,7 +18,6 @@ namespace SlimeNull.DuckovModSettings.Core
         private const string RangeAttribute = "UnityEngine.RangeAttribute";
         private const string TextAreaAttribute = "UnityEngine.TextAreaAttribute";
         private const string InspectorNameAttribute = "UnityEngine.InspectorNameAttribute";
-        private const string FormerlySerializedAsAttribute = "UnityEngine.Serialization.FormerlySerializedAsAttribute";
 
         public static ModSettingsModel? Scan(DuckovModBehaviour root)
         {
@@ -99,7 +98,6 @@ namespace SlimeNull.DuckovModSettings.Core
                     var header = GetStringAttribute(member, HeaderAttribute);
                     var range = GetRange(member);
                     var textArea = GetTextArea(member);
-                    var formerKeys = GetFormerKeys(member, component.ComponentKey, parentMemberPath, memberPath);
 
                     if (SettingValueCodec.IsSupportedLeaf(memberType))
                     {
@@ -113,7 +111,6 @@ namespace SlimeNull.DuckovModSettings.Core
                             memberType,
                             path,
                             currentValue,
-                            formerKeys,
                             range,
                             textArea));
                         continue;
@@ -138,7 +135,6 @@ namespace SlimeNull.DuckovModSettings.Core
                         memberType,
                         path,
                         currentValue,
-                        formerKeys,
                         range: null,
                         textArea: null);
                     BuildMembers(component, group.Add, containerType, path, memberPath, depth + 1, typeStack);
@@ -219,36 +215,6 @@ namespace SlimeNull.DuckovModSettings.Core
             }
 
             return type.IsDefined(typeof(SerializableAttribute), inherit: false);
-        }
-
-        private static IEnumerable<string> GetFormerKeys(
-            MemberInfo member,
-            string componentKey,
-            string parentMemberPath,
-            string memberPath)
-        {
-            var keys = new HashSet<string>(StringComparer.Ordinal)
-            {
-                memberPath,
-            };
-
-            foreach (var oldName in GetStringAttributes(member, FormerlySerializedAsAttribute))
-            {
-                if (string.IsNullOrWhiteSpace(oldName))
-                {
-                    continue;
-                }
-
-                keys.Add(oldName);
-                keys.Add(componentKey + "." + oldName);
-                if (!string.IsNullOrEmpty(parentMemberPath) && oldName.IndexOf('.') < 0)
-                {
-                    var siblingPath = parentMemberPath + "." + oldName;
-                    keys.Add(siblingPath);
-                    keys.Add(componentKey + "." + siblingPath);
-                }
-            }
-            return keys;
         }
 
         private static SettingRange? GetRange(MemberInfo member)

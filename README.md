@@ -95,7 +95,7 @@ DuckovInterop 不限定于 MCP。它在游戏进程内运行一个本地 TCP JSO
 
 安装 DuckovModSettings 后，主菜单和游戏内设置面板会出现“模组”标签页。它会自动读取模组根对象上同程序集 MonoBehaviour 的公开字段、公开可读写属性，以及带 `[SerializeField]` 的非公开字段；其他模组不需要引用或调用设置 API。未安装 DuckovModSettings 时，Core Utilities、DockovParty 和 DuckovInterop 仍会按默认配置运行。
 
-设置支持 Unity 的 `[HideInInspector]`、`[Header]`、`[Tooltip]`、`[Range]`、`[TextArea]`、`[InspectorName]` 和 `[FormerlySerializedAs]` 特性。用户修改设置并关闭页面后，设置组件所在对象会收到 `DuckovModSettingsUpdated` Unity 消息。
+设置支持 Unity 的 `[HideInInspector]`、`[Header]`、`[Tooltip]`、`[Range]`、`[TextArea]` 和 `[InspectorName]` 特性。用户修改设置并关闭页面后，设置组件所在对象会收到 `DuckovModSettingsUpdated` Unity 消息。
 
 `[InspectorName]`、`[Header]` 和 `[Tooltip]` 的文本可以使用资源键：`@TextKey` 会从设置所属程序集发现的第一个 `ResourceManager` 中读取，`@ResourceType/TextKey` 会先按简单名称或全限定名称找到资源类型，再通过该类型读取资源。枚举项的 `[InspectorName]` 同样支持此语法。Duckov 切换语言时，DuckovModSettings 会同步资源类型的 `Culture` 并刷新已打开的页面；找不到资源或键时保留原始 `@...` 文本以便诊断。
 
@@ -215,7 +215,7 @@ The service listens on `127.0.0.1:37620` by default. DuckovInterop exposes refle
 
 With DuckovModSettings installed, a Mods tab is added to both the main-menu and in-game options panels. It automatically reads public fields, public read/write properties, and non-public `[SerializeField]` fields from same-assembly MonoBehaviours on each mod root; other mods do not reference or call a settings API. Core Utilities, DockovParty, and DuckovInterop still run with defaults when DuckovModSettings is absent.
 
-The UI understands Unity's `[HideInInspector]`, `[Header]`, `[Tooltip]`, `[Range]`, `[TextArea]`, `[InspectorName]`, and `[FormerlySerializedAs]` attributes. After edited settings are closed, the owning GameObject receives the `DuckovModSettingsUpdated` Unity message.
+The UI understands Unity's `[HideInInspector]`, `[Header]`, `[Tooltip]`, `[Range]`, `[TextArea]`, and `[InspectorName]` attributes. After edited settings are closed, the owning GameObject receives the `DuckovModSettingsUpdated` Unity message.
 
 Text in `[InspectorName]`, `[Header]`, and `[Tooltip]` may reference assembly resources. `@TextKey` uses the first `ResourceManager` discovered in the settings assembly; `@ResourceType/TextKey` first resolves the resource type by simple or fully qualified name. Enum-value `[InspectorName]` attributes use the same syntax. DuckovModSettings synchronizes the resource type's `Culture` and refreshes open pages when Duckov changes language. An unresolved resource or key remains visible as its original `@...` expression for diagnostics.
 

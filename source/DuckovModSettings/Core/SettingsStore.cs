@@ -16,12 +16,8 @@ namespace SlimeNull.DuckovModSettings.Core
         private const int CurrentVersion = 2;
         private const string FolderName = "DuckovModSettings";
         private const string FileName = "settings.json";
-        private const string LegacyFolderName = "ModSetting";
-        private const string LegacyFileName = "ModSetting.json";
 
         private static readonly Dictionary<string, Dictionary<string, JToken>> Values =
-            new Dictionary<string, Dictionary<string, JToken>>(StringComparer.Ordinal);
-        private static readonly Dictionary<string, Dictionary<string, JToken>> LegacyValues =
             new Dictionary<string, Dictionary<string, JToken>>(StringComparer.Ordinal);
 
         private static bool _loaded;
@@ -36,33 +32,14 @@ namespace SlimeNull.DuckovModSettings.Core
         public static bool TryGet(
             ModInfo info,
             string key,
-            IEnumerable<string> aliases,
             Type valueType,
             out object? value)
         {
             EnsureLoaded();
-            var candidates = new[] { key }.Concat(aliases ?? Array.Empty<string>()).Distinct(StringComparer.Ordinal);
-            foreach (var candidate in candidates)
+            if (TryFindToken(Values, info, key, out var token) &&
+                SettingValueCodec.TryFromToken(token, valueType, out value))
             {
-                if (TryFindToken(Values, info, candidate, out var token) &&
-                    SettingValueCodec.TryFromToken(token, valueType, out value))
-                {
-                    if (!string.Equals(candidate, key, StringComparison.Ordinal))
-                    {
-                        Set(info, key, value, valueType);
-                    }
-                    return true;
-                }
-            }
-
-            foreach (var candidate in candidates)
-            {
-                if (TryFindToken(LegacyValues, info, candidate, out var token) &&
-                    SettingValueCodec.TryFromToken(token, valueType, out value))
-                {
-                    Set(info, key, value, valueType);
-                    return true;
-                }
+                return true;
             }
 
             value = null;
@@ -214,7 +191,6 @@ namespace SlimeNull.DuckovModSettings.Core
 
             _loaded = true;
             LoadCurrent();
-            LoadLegacy();
         }
 
         private static void LoadCurrent()
@@ -262,55 +238,6 @@ namespace SlimeNull.DuckovModSettings.Core
             {
                 Debug.LogWarning($"[DuckovModSettings] Could not read '{path}': {ex.Message}");
                 return false;
-            }
-        }
-
-        private static void LoadLegacy()
-        {
-            var path = Path.Combine(GetPersistentRoot(), LegacyFolderName, LegacyFileName);
-            if (!File.Exists(path))
-            {
-                return;
-            }
-
-            try
-            {
-                var root = JObject.Parse(File.ReadAllText(path));
-                if (root["configDatas"] is not JArray mods)
-                {
-                    return;
-                }
-
-                foreach (var modToken in mods.OfType<JObject>())
-                {
-                    var modId = modToken.Value<string>("modId");
-                    if (string.IsNullOrWhiteSpace(modId) || modToken["allConfigDatas"] is not JArray settingsArray)
-                    {
-                        continue;
-                    }
-
-                    var settings = new Dictionary<string, JToken>(StringComparer.Ordinal);
-                    foreach (var setting in settingsArray.OfType<JObject>())
-                    {
-                        var settingKey = setting.Value<string>("Key");
-                        if (string.IsNullOrWhiteSpace(settingKey))
-                        {
-                            continue;
-                        }
-
-                        var settingValue = setting["Enable"] ?? setting["Value"] ?? setting["KeyCode"];
-                        if (settingValue != null)
-                        {
-                            settings[settingKey] = settingValue.DeepClone();
-                        }
-                    }
-
-                    LegacyValues[modId] = settings;
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogWarning($"[DuckovModSettings] Could not import legacy settings: {ex.Message}");
             }
         }
 

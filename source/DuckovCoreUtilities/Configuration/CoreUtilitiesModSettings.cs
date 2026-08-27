@@ -4,7 +4,6 @@ using SlimeNull.DuckovCoreUtilities.Localization;
 using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.Serialization;
 
 namespace SlimeNull.DuckovCoreUtilities.Configuration
 {
@@ -14,11 +13,9 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class DisplayPriceOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("DisplayPrice.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/PriceType")]
-            [FormerlySerializedAs("DisplayPrice.Mode")]
             public DisplayPriceFeature.DisplayMode Mode = DisplayPriceFeature.DisplayMode.SellPrice;
         }
 
@@ -37,15 +34,12 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class StorageCountOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("DisplayStorageCount.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/ShowBackpackCount")]
-            [FormerlySerializedAs("DisplayStorageCount.Backpack")]
             public bool Backpack = true;
 
             [InspectorName("@SettingsText/ShowRepositoryCount")]
-            [FormerlySerializedAs("DisplayStorageCount.Repository")]
             public bool Repository = true;
         }
 
@@ -53,7 +47,6 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class DisplayQualityOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("DisplayQuality.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/DisplayMode")]
@@ -130,38 +123,30 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class LootOutlineOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("LootOutline.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/ShowLootboxOutline")]
-            [FormerlySerializedAs("LootOutline.Lootboxes")]
             public bool Lootboxes = true;
 
             [InspectorName("@SettingsText/ShowGroundItemOutline")]
-            [FormerlySerializedAs("LootOutline.GroundItems")]
             public bool GroundItems = true;
 
             [InspectorName("@SettingsText/UseQualityColor")]
-            [FormerlySerializedAs("LootOutline.QualityColor")]
             public bool QualityColor = true;
 
             [InspectorName("@SettingsText/LootboxBreathing")]
-            [FormerlySerializedAs("LootOutline.LootboxBreathing")]
             public bool LootboxBreathing = true;
 
             [InspectorName("@SettingsText/GroundItemBreathing")]
-            [FormerlySerializedAs("LootOutline.GroundItemBreathing")]
             public bool GroundItemBreathing = true;
 
             [InspectorName("@SettingsText/BreathingPeriod")]
             [Tooltip("@SettingsText/BreathingPeriodTooltip")]
             [Range(0.1f, 5f)]
-            [FormerlySerializedAs("LootOutline.BreathingPeriod")]
             public float BreathingPeriod = 1.5f;
 
             [InspectorName("@SettingsText/MinimumOpacity")]
             [Range(0f, 1f)]
-            [FormerlySerializedAs("LootOutline.BreathingMinAlpha")]
             public float BreathingMinAlpha = 0.35f;
         }
 
@@ -169,7 +154,6 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class InventorySortOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("InventorySort.Enabled")]
             public bool Enabled = true;
         }
 
@@ -177,15 +161,12 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class AutoCloseOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("AutoCloseBackpack.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/CloseWhileMoving")]
-            [FormerlySerializedAs("AutoCloseBackpack.WhenMove")]
             public bool WhenMove = true;
 
             [InspectorName("@SettingsText/CloseWhenHurt")]
-            [FormerlySerializedAs("AutoCloseBackpack.WhenHurt")]
             public bool WhenHurt = true;
         }
 
@@ -193,17 +174,14 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class FadeHudOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("FadeHud.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/AimOpacity")]
             [Range(0f, 1f)]
-            [FormerlySerializedAs("FadeHud.TargetAlpha")]
             public float TargetAlpha = 0.3f;
 
             [InspectorName("@SettingsText/FadeDuration")]
             [Range(0.01f, 1f)]
-            [FormerlySerializedAs("FadeHud.SmoothTime")]
             public float SmoothTime = 0.1f;
         }
 
@@ -211,23 +189,19 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class CrosshairColorOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("CrosshairColor.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/WarningThreshold")]
             [Tooltip("@SettingsText/WarningThresholdTooltip")]
             [Range(0f, 1f)]
-            [FormerlySerializedAs("CrosshairColor.WarnRatio")]
             public float WarnRatio = 0.5f;
 
             [InspectorName("@SettingsText/FinalWarningColor")]
             [Tooltip("@SettingsText/FinalWarningColorTooltip")]
-            [FormerlySerializedAs("CrosshairColor.FinalWarningColor")]
             public Color FinalWarningColor = Color.red;
 
             [InspectorName("@SettingsText/InitialWarningColor")]
             [Tooltip("@SettingsText/InitialWarningColorTooltip")]
-            [FormerlySerializedAs("CrosshairColor.StartWarningColor")]
             public Color StartWarningColor = Color.yellow;
         }
 
@@ -235,15 +209,12 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class UnfocusedOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("Unfocused.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/MuteWhenUnfocused")]
-            [FormerlySerializedAs("Unfocused.Mute")]
             public bool Mute = true;
 
             [InspectorName("@SettingsText/PauseWhenUnfocused")]
-            [FormerlySerializedAs("Unfocused.Pause")]
 #if DEBUG
             public bool Pause = false;
 #else
@@ -255,26 +226,21 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class LowHealthShadowOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("LowHealthShadow.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/ShadowColor")]
-            [FormerlySerializedAs("LowHealthShadow.Color")]
             public Color Color = new Color(1f, 0f, 0f, 0.5f);
 
             [InspectorName("@SettingsText/ShadowWidth")]
             [Range(0f, 400f)]
-            [FormerlySerializedAs("LowHealthShadow.Distance")]
             public float Distance = 150f;
 
             [InspectorName("@SettingsText/ShowThreshold")]
             [Range(0f, 1f)]
-            [FormerlySerializedAs("LowHealthShadow.UpperThreshold")]
             public float UpperThreshold = 0.6f;
 
             [InspectorName("@SettingsText/MaximumEffectThreshold")]
             [Range(0f, 1f)]
-            [FormerlySerializedAs("LowHealthShadow.LowerThreshold")]
             public float LowerThreshold = 0.2f;
         }
 
@@ -282,22 +248,18 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class KillRecordOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("KillRecord.Enabled")]
             public bool Enabled = false;
 
             [InspectorName("@SettingsText/DisplayDuration")]
             [Range(1f, 30f)]
-            [FormerlySerializedAs("KillRecord.Duration")]
             public float Duration = 5f;
 
             [InspectorName("@SettingsText/MaximumEntries")]
             [Range(1, 20)]
-            [FormerlySerializedAs("KillRecord.MaxCount")]
             public int MaxCount = 5;
 
             [InspectorName("@SettingsText/TextFormat")]
             [Tooltip("@SettingsText/TextFormatTooltip")]
-            [FormerlySerializedAs("KillRecord.Format")]
             public string Format = SettingsText.KillRecordDefaultFormat;
         }
 
@@ -305,34 +267,27 @@ namespace SlimeNull.DuckovCoreUtilities.Configuration
         private sealed class MinimapOptions
         {
             [InspectorName("@SettingsText/Enabled")]
-            [FormerlySerializedAs("Minimap.Enabled")]
             public bool Enabled = false;
 
             [InspectorName("@SettingsText/DisplaySize")]
             [Range(100f, 600f)]
-            [FormerlySerializedAs("Minimap.DisplaySize")]
             public float DisplaySize = 260f;
 
             [InspectorName("@SettingsText/Zoom")]
             [Range(MinimapFeature.MinimumZoom, MinimapFeature.MaximumZoom)]
-            [FormerlySerializedAs("Minimap.Zoom")]
             public float Zoom = 1f;
 
             [InspectorName("@SettingsText/MapOrientation")]
-            [FormerlySerializedAs("Minimap.Mode")]
             public MinimapFeature.OrientationMode Mode = MinimapFeature.OrientationMode.FixedAngle;
 
             [InspectorName("@SettingsText/ZoomOutKey")]
-            [FormerlySerializedAs("Minimap.ZoomOutKey")]
             public Key ZoomOutKey = MinimapFeature.DefaultZoomOutKey;
 
             [InspectorName("@SettingsText/ZoomInKey")]
-            [FormerlySerializedAs("Minimap.ZoomInKey")]
             public Key ZoomInKey = MinimapFeature.DefaultZoomInKey;
 
             [InspectorName("@SettingsText/Opacity")]
             [Range(0f, 1f)]
-            [FormerlySerializedAs("Minimap.Opacity")]
             public float Opacity = 0.7f;
         }
 

@@ -2,7 +2,6 @@ using SlimeNull.DuckovInterop;
 using System;
 using System.Net;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace SlimeNull.DuckovInterop.Configuration
 {
@@ -13,23 +12,19 @@ namespace SlimeNull.DuckovInterop.Configuration
         {
             [InspectorName("@SettingsText/ServerEnabled")]
             [Tooltip("@SettingsText/ServerEnabledTooltip")]
-            [FormerlySerializedAs("Server.Enabled")]
             public bool Enabled = true;
 
             [InspectorName("@SettingsText/ListenAddress")]
             [Tooltip("@SettingsText/RestartServiceTooltip")]
-            [FormerlySerializedAs("Server.Host")]
             public string Host = HierarchyInspectorRpcEndpoint.Host;
 
             [InspectorName("@SettingsText/ListenPort")]
             [Tooltip("@SettingsText/RestartServiceTooltip")]
             [Range(1024, 65535)]
-            [FormerlySerializedAs("Server.Port")]
             public int Port = HierarchyInspectorRpcEndpoint.Port;
 
             [InspectorName("@SettingsText/DiagnosticLogging")]
             [Tooltip("@SettingsText/DiagnosticLoggingTooltip")]
-            [FormerlySerializedAs("Server.DiagnosticLogging")]
             public bool DiagnosticLogging = false;
         }
 
