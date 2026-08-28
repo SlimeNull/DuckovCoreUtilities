@@ -15,11 +15,12 @@
 
 ## 中文
 
-本仓库包含四个游戏模组，以及配套的 Windows 场景检视器和互操作库：
+本仓库包含五个游戏模组，以及配套的 Windows 场景检视器和互操作库：
 
 | 项目 | 说明 |
 | --- | --- |
 | **DuckovCoreUtilities** | 面向日常游玩的综合实用功能模组。 |
+| **DuckovCustomDeath** | 自定义死亡后的物品掉落与墓碑保留规则。 |
 | **DuckovModSettings** | 自动发现 MonoBehaviour 设置并提供分层设置界面。 |
 | **DockovParty** | 为游戏添加服主权威的双人合作联机。 |
 | **DuckovInterop** | 在游戏内提供本地 JSON RPC 服务，让外部程序可以读取和操作游戏状态。 |
@@ -49,6 +50,12 @@ Core Utilities 提供一组可以在 Duckov Mod Settings 界面中独立启用�
 - 为已录入的钥匙、钥匙卡和蓝图添加标识。
 - 汇总物品在未完成任务、天赋和建筑中的需求数量。
 - 支持右键收藏任务、显示收藏标记、按存档保存并将收藏任务置顶。
+
+### DuckovCustomDeath
+
+DuckovCustomDeath 控制玩家死亡后的物品损失和旧墓碑清理方式。死亡掉落可设为原版规则、仅掉落背包内品质 0-2 的物品、仅掉落全部背包物品或完全不掉落；后面三种模式都会保留已装备物品。墓碑可按原版只保留一个，也可保留两个、三个或全部记录。
+
+所有选项均可由 Duckov Mod Settings 自动发现。模组未配置或未安装设置界面时默认保持原版行为。降低墓碑保留上限后，较旧记录会在下一次死亡时按游戏原有流程清理。
 
 ### DockovParty
 
@@ -93,7 +100,7 @@ DuckovInterop 不限定于 MCP。它在游戏进程内运行一个本地 TCP JSO
 
 ### 安装与配置
 
-安装 DuckovModSettings 后，主菜单和游戏内设置面板会出现“模组”标签页。它会自动读取模组根对象上同程序集 MonoBehaviour 的公开字段、公开可读写属性，以及带 `[SerializeField]` 的非公开字段；其他模组不需要引用或调用设置 API。未安装 DuckovModSettings 时，Core Utilities、DockovParty 和 DuckovInterop 仍会按默认配置运行。
+安装 DuckovModSettings 后，主菜单和游戏内设置面板会出现“模组”标签页。它会自动读取模组根对象上同程序集 MonoBehaviour 的公开字段、公开可读写属性，以及带 `[SerializeField]` 的非公开字段；其他模组不需要引用或调用设置 API。未安装 DuckovModSettings 时，Core Utilities、DuckovCustomDeath、DockovParty 和 DuckovInterop 仍会按默认配置运行。
 
 设置支持 Unity 的 `[HideInInspector]`、`[Header]`、`[Tooltip]`、`[Range]`、`[TextArea]` 和 `[InspectorName]` 特性。`System.IO.FileInfo` 成员会显示文件路径编辑器和系统文件选择按钮；可通过 `System.ComponentModel.Description` 提供 `说明|通配符` 格式的可选 Filter，例如 `WAV File|*.wav`。用户修改设置并关闭页面后，设置组件所在对象会收到 `DuckovModSettingsUpdated` Unity 消息。
 
@@ -121,6 +128,7 @@ dotnet build .\source\DuckovCoreUtilities.slnx
 
 ```powershell
 dotnet build .\source\DuckovCoreUtilities\DuckovCoreUtilities.csproj
+dotnet build .\source\DuckovCustomDeath\DuckovCustomDeath.csproj
 dotnet build .\source\DuckovModSettings\DuckovModSettings.csproj
 dotnet build .\source\DockovParty\DockovParty.csproj
 dotnet build .\source\DuckovInterop\DuckovInterop.csproj
@@ -135,11 +143,12 @@ dotnet test .\source\DockovParty.Tests\DockovParty.Tests.csproj
 
 ## English
 
-This repository contains four *Escape from Duckov* mods, a companion Windows hierarchy inspector, and the libraries used for external interoperability.
+This repository contains five *Escape from Duckov* mods, a companion Windows hierarchy inspector, and the libraries used for external interoperability.
 
 | Project | Description |
 | --- | --- |
 | **DuckovCoreUtilities** | A configurable collection of quality-of-life features for regular gameplay. |
+| **DuckovCustomDeath** | Customizes item loss and tomb retention after death. |
 | **DuckovModSettings** | Automatically discovers MonoBehaviour settings and presents a hierarchical settings UI. |
 | **DockovParty** | Adds host-authoritative two-player cooperative multiplayer. |
 | **DuckovInterop** | Hosts a local JSON RPC service inside the game so external applications can inspect and modify game state. |
@@ -169,6 +178,12 @@ Core Utilities provides individually configurable features through Duckov Mod Se
 - Mark keys, keycards, and blueprints that have already been registered.
 - Summarize item quantities required by unfinished quests, perks, and buildings.
 - Favorite quests by right-clicking them, persist favorites per save, and keep them at the top of the quest list.
+
+### DuckovCustomDeath
+
+DuckovCustomDeath controls player item loss and cleanup of older tombs. Death drops can follow the original rules, include only quality 0-2 backpack items, include every backpack item, or include nothing; the three custom modes retain equipped items. Tomb retention can use the original one-tomb limit or keep two, three, or every recorded tomb.
+
+Duckov Mod Settings discovers both options automatically. Defaults remain identical to the base game when the mod is not configured or the settings UI is absent. After lowering the retention limit, older records are removed through the game's normal flow on the next death.
 
 ### DockovParty
 
@@ -213,7 +228,7 @@ The service listens on `127.0.0.1:37620` by default. DuckovInterop exposes refle
 
 ### Installation and configuration
 
-With DuckovModSettings installed, a Mods tab is added to both the main-menu and in-game options panels. It automatically reads public fields, public read/write properties, and non-public `[SerializeField]` fields from same-assembly MonoBehaviours on each mod root; other mods do not reference or call a settings API. Core Utilities, DockovParty, and DuckovInterop still run with defaults when DuckovModSettings is absent.
+With DuckovModSettings installed, a Mods tab is added to both the main-menu and in-game options panels. It automatically reads public fields, public read/write properties, and non-public `[SerializeField]` fields from same-assembly MonoBehaviours on each mod root; other mods do not reference or call a settings API. Core Utilities, DuckovCustomDeath, DockovParty, and DuckovInterop still run with defaults when DuckovModSettings is absent.
 
 The UI understands Unity's `[HideInInspector]`, `[Header]`, `[Tooltip]`, `[Range]`, `[TextArea]`, and `[InspectorName]` attributes. `System.IO.FileInfo` members use a path editor with a system file-picker button; `System.ComponentModel.Description` may provide an optional `Label|pattern` filter such as `WAV File|*.wav`. After edited settings are closed, the owning GameObject receives the `DuckovModSettingsUpdated` Unity message.
 
@@ -241,6 +256,7 @@ Or build individual projects:
 
 ```powershell
 dotnet build .\source\DuckovCoreUtilities\DuckovCoreUtilities.csproj
+dotnet build .\source\DuckovCustomDeath\DuckovCustomDeath.csproj
 dotnet build .\source\DuckovModSettings\DuckovModSettings.csproj
 dotnet build .\source\DockovParty\DockovParty.csproj
 dotnet build .\source\DuckovInterop\DuckovInterop.csproj

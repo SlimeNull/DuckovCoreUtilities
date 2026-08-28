@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Duckov Custom Death</title>
+  <defs>
+    <linearGradient id="death-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#718078"/>
+      <stop offset="0.5" stop-color="#495b55"/>
+      <stop offset="1" stop-color="#293735"/>
+    </linearGradient>
+    <radialGradient id="death-well" cx="42%" cy="34%" r="72%">
+      <stop offset="0" stop-color="#52675f"/>
+      <stop offset="1" stop-color="#23312f"/>
+    </radialGradient>
+    <linearGradient id="death-stone" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#e0ded7"/>
+      <stop offset="0.48" stop-color="#aaa9a3"/>
+      <stop offset="1" stop-color="#777b79"/>
+    </linearGradient>
+    <linearGradient id="death-stone-side" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a4a6a1"/>
+      <stop offset="1" stop-color="#686e6b"/>
+    </linearGradient>
+    <linearGradient id="death-pack" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c69a59"/>
+      <stop offset="0.52" stop-color="#9a6d3d"/>
+      <stop offset="1" stop-color="#674629"/>
+    </linearGradient>
+    <linearGradient id="death-pack-light" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#dfb978"/>
+      <stop offset="1" stop-color="#a97842"/>
+    </linearGradient>
+    <filter id="death-object-shadow" x="-40%" y="-40%" width="180%" height="195%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#101817" flood-opacity="0.72"/>
+    </filter>
+  </defs>
+
+  <rect width="256" height="256" fill="url(#death-bg)"/>
+
+  <circle cx="128" cy="125" r="88" fill="url(#death-well)" stroke="#1f2d2b" stroke-width="5"/>
+  <circle cx="128" cy="125" r="80" fill="none" stroke="#a6b7ad" stroke-opacity="0.32" stroke-width="2"/>
+  <path d="M128 44V207M47 125H209M70 67L186 183M186 67L70 183" fill="none" stroke="#b6c3bb" stroke-opacity="0.1" stroke-width="2"/>
+  <g fill="#c9a86e" stroke="#283834" stroke-width="2">
+    <circle cx="128" cy="43" r="6"/>
+    <circle cx="210" cy="125" r="6"/>
+    <circle cx="128" cy="207" r="6"/>
+    <circle cx="46" cy="125" r="6"/>
+  </g>
+
+  <g filter="url(#death-object-shadow)">
+    <g opacity="0.58">
+      <path d="M36 165V113C36 98 47 87 61 87C75 87 86 98 86 113V165Z" fill="url(#death-stone-side)" stroke="#343d3a" stroke-width="3"/>
+      <path d="M170 165V108C170 94 181 83 195 83C209 83 220 94 220 108V165Z" fill="url(#death-stone-side)" stroke="#343d3a" stroke-width="3"/>
+      <path d="M29 165H93V176H29ZM163 165H227V176H163Z" fill="#707773" stroke="#343d3a" stroke-width="3" stroke-linejoin="round"/>
+    </g>
+
+    <path d="M72 166V94C72 63 97 43 128 43C159 43 184 63 184 94V166Z" fill="url(#death-stone)" stroke="#414846" stroke-width="4"/>
+    <path d="M80 161V96C80 70 101 52 128 52C151 52 169 65 175 85" fill="none" stroke="#ffffff" stroke-opacity="0.33" stroke-width="3" stroke-linecap="round"/>
+    <path d="M112 76L104 93L115 101L108 119" fill="none" stroke="#686d6a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M128 76V121M113 106L128 122L143 106" fill="none" stroke="#4f5955" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M128 76V119M114 105L128 120L142 105" fill="none" stroke="#f0eee8" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M62 163H194V178H62Z" fill="url(#death-stone-side)" stroke="#414846" stroke-width="4" stroke-linejoin="round"/>
+    <path d="M53 177H203V190H53Z" fill="#737976" stroke="#414846" stroke-width="4" stroke-linejoin="round"/>
+
+    <g>
+      <path d="M87 155V143C87 130 96 120 109 120H147C160 120 169 130 169 143V155" fill="none" stroke="#4c3522" stroke-width="9" stroke-linecap="round"/>
+      <path d="M72 146C72 135 81 126 92 126H164C175 126 184 135 184 146V207C170 220 86 220 72 207Z" fill="url(#death-pack)" stroke="#493520" stroke-width="4"/>
+      <path d="M82 145C88 134 98 130 111 130H145C158 130 168 134 174 145L164 165H92Z" fill="url(#death-pack-light)" stroke="#5d4227" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M79 177H177V205C158 213 98 213 79 205Z" fill="#7c5531" stroke="#4d3723" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M87 180V203M169 180V203" fill="none" stroke="#d8aa68" stroke-opacity="0.42" stroke-width="3"/>
+      <rect x="117" y="157" width="22" height="28" rx="5" fill="#d2b177" stroke="#4d3b28" stroke-width="3"/>
+      <path d="M123 169H133" fill="none" stroke="#6a5031" stroke-width="3" stroke-linecap="round"/>
+      <path d="M83 151Q128 165 173 151" fill="none" stroke="#f3d49f" stroke-opacity="0.35" stroke-width="2"/>
+    </g>
+
+    <g stroke="#303b38" stroke-width="2.5">
+      <path d="M94 126V111H108V130Z" fill="#91bf78"/>
+      <path d="M113 128V105H128V131Z" fill="#77a8cf"/>
+      <path d="M134 130V109H149V130Z" fill="#b88ac7"/>
+      <path d="M153 131V115H166V135Z" fill="#d7a24f"/>
+    </g>
+  </g>
+</svg>

@@ -3,6 +3,7 @@
     <File Path="Global.props" />
   </Folder>
   <Project Path="DuckovCoreUtilities/DuckovCoreUtilities.csproj" />
+  <Project Path="DuckovCustomDeath/DuckovCustomDeath.csproj" />
   <Project Path="DuckovModSettings/DuckovModSettings.csproj" />
   <Project Path="DockovInterop.HierarchyInspector/DockovInterop.HierarchyInspector.csproj" />
   <Project Path="DockovParty/DockovParty.csproj" />

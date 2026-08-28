@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="DeathDropMode" xml:space="preserve"><value>Items dropped on death</value></data>
+  <data name="DeathDropModeTooltip" xml:space="preserve"><value>Controls which equipped and backpack items are moved into the tomb. Low quality means quality 0-2.</value></data>
+  <data name="DropModeNormal" xml:space="preserve"><value>Normal drops</value></data>
+  <data name="DropModeLowQualityBackpack" xml:space="preserve"><value>Low-quality backpack items only</value></data>
+  <data name="DropModeBackpack" xml:space="preserve"><value>Backpack items only</value></data>
+  <data name="DropModeNone" xml:space="preserve"><value>Drop nothing</value></data>
+  <data name="TombRetentionMode" xml:space="preserve"><value>Tomb retention</value></data>
+  <data name="TombRetentionModeTooltip" xml:space="preserve"><value>Controls how many untouched tombs remain in the save. Changing to a lower limit removes older tombs on the next death.</value></data>
+  <data name="TombRetentionNormal" xml:space="preserve"><value>Normal (keep one)</value></data>
+  <data name="TombRetentionTwo" xml:space="preserve"><value>Keep two</value></data>
+  <data name="TombRetentionThree" xml:space="preserve"><value>Keep three</value></data>
+  <data name="TombRetentionUnlimited" xml:space="preserve"><value>Keep all</value></data>
+</root>

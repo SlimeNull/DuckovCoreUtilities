@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value></resheader>
+  <data name="DeathDropMode" xml:space="preserve"><value>死亡掉落</value></data>
+  <data name="DeathDropModeTooltip" xml:space="preserve"><value>控制死亡时哪些装备和背包物品会进入墓碑。低品质指品质 0-2。</value></data>
+  <data name="DropModeNormal" xml:space="preserve"><value>正常掉落</value></data>
+  <data name="DropModeLowQualityBackpack" xml:space="preserve"><value>仅掉落背包内低品质物品</value></data>
+  <data name="DropModeBackpack" xml:space="preserve"><value>仅掉落背包内物品</value></data>
+  <data name="DropModeNone" xml:space="preserve"><value>不掉落</value></data>
+  <data name="TombRetentionMode" xml:space="preserve"><value>墓碑消失</value></data>
+  <data name="TombRetentionModeTooltip" xml:space="preserve"><value>控制存档中可保留多少个尚未拾取的墓碑。改为更低上限后，会在下一次死亡时清理较旧墓碑。</value></data>
+  <data name="TombRetentionNormal" xml:space="preserve"><value>正常消失（保留一个）</value></data>
+  <data name="TombRetentionTwo" xml:space="preserve"><value>保留两个</value></data>
+  <data name="TombRetentionThree" xml:space="preserve"><value>保留三个</value></data>
+  <data name="TombRetentionUnlimited" xml:space="preserve"><value>全部保留</value></data>
+</root>
