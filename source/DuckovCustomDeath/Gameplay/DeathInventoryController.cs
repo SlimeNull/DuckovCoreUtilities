@@ -8,6 +8,8 @@ namespace SlimeNull.DuckovCustomDeath.Gameplay
 {
     internal static class DeathInventoryController
     {
+        private const string DropAllMarker = "SlimeNull.DuckovCustomDeath.DropAll";
+
         private sealed class InventoryEntry
         {
             public InventoryEntry(Item item, int position)
@@ -38,15 +40,19 @@ namespace SlimeNull.DuckovCustomDeath.Gameplay
         {
             public PendingDeath(
                 CharacterMainControl character,
+                DeathDropMode dropMode,
                 List<InventoryEntry> inventoryEntries,
                 List<SlotEntry> slotEntries)
             {
                 Character = character;
+                DropMode = dropMode;
                 InventoryEntries = inventoryEntries;
                 SlotEntries = slotEntries;
             }
 
             public CharacterMainControl Character { get; }
+
+            public DeathDropMode DropMode { get; }
 
             public List<InventoryEntry> InventoryEntries { get; }
 
@@ -85,7 +91,7 @@ namespace SlimeNull.DuckovCustomDeath.Gameplay
                 }
             }
 
-            if (characterItem.Slots != null)
+            if (mode != DeathDropMode.All && characterItem.Slots != null)
             {
                 foreach (var slot in characterItem.Slots)
                 {
@@ -96,9 +102,14 @@ namespace SlimeNull.DuckovCustomDeath.Gameplay
                 }
             }
 
-            _pending = new PendingDeath(character, retainedInventory, retainedSlots);
+            _pending = new PendingDeath(character, mode, retainedInventory, retainedSlots);
             try
             {
+                if (mode == DeathDropMode.All)
+                {
+                    characterItem.SetBool(DropAllMarker, value: true);
+                }
+
                 // Remove inventory contents before equipment because backpacks can change capacity.
                 foreach (var entry in retainedInventory)
                 {
@@ -135,6 +146,27 @@ namespace SlimeNull.DuckovCustomDeath.Gameplay
             }
         }
 
+        public static bool ShouldSuppressTomb(Item? characterItem)
+        {
+            return _pending != null &&
+                _pending.DropMode == DeathDropMode.None &&
+                characterItem != null &&
+                _pending.Character.CharacterItem == characterItem;
+        }
+
+        public static bool ShouldSuppressDeathRecord(CharacterMainControl? character)
+        {
+            return _pending != null &&
+                _pending.DropMode == DeathDropMode.None &&
+                character != null &&
+                _pending.Character == character;
+        }
+
+        public static bool ShouldForceAllDrops(Item? characterItem)
+        {
+            return characterItem != null && characterItem.GetBool(DropAllMarker);
+        }
+
         public static void RestoreBeforeSave(CharacterMainControl? character)
         {
             if (_pending == null ||
@@ -165,6 +197,11 @@ namespace SlimeNull.DuckovCustomDeath.Gameplay
             }
 
             var characterItem = character.CharacterItem;
+            if (pending.DropMode == DeathDropMode.All)
+            {
+                RemoveDropAllMarker(characterItem);
+            }
+
             // Restore equipment first so inventory-capacity modifiers are active again.
             foreach (var entry in pending.SlotEntries)
             {
@@ -224,6 +261,15 @@ namespace SlimeNull.DuckovCustomDeath.Gameplay
 
             Debug.LogError($"[DuckovCustomDeath] 无法将暂存物品 {item.DisplayName} 放回背包，已放置到角色脚下。");
             item.Drop(character.transform.position, createRigidbody: true, Vector3.forward, 360f);
+        }
+
+        private static void RemoveDropAllMarker(Item characterItem)
+        {
+            var marker = characterItem.Variables.GetEntry(DropAllMarker);
+            if (marker != null)
+            {
+                characterItem.Variables.Remove(marker);
+            }
         }
     }
 }

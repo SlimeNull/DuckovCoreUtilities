@@ -13,6 +13,7 @@ namespace SlimeNull.DuckovCustomDeath.Gameplay
                 case DeathDropMode.LowQualityBackpackOnly:
                     return quality <= LowQualityMaximum;
                 case DeathDropMode.BackpackOnly:
+                case DeathDropMode.All:
                     return true;
                 case DeathDropMode.None:
                     return false;

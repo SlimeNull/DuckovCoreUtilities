@@ -53,7 +53,7 @@ Core Utilities 提供一组可以在 Duckov Mod Settings 界面中独立启用�
 
 ### DuckovCustomDeath
 
-DuckovCustomDeath 控制玩家死亡后的物品损失和旧墓碑清理方式。死亡掉落可设为原版规则、仅掉落背包内品质 0-2 的物品、仅掉落全部背包物品或完全不掉落；后面三种模式都会保留已装备物品。墓碑可按原版只保留一个，也可保留两个、三个或全部记录。
+DuckovCustomDeath 控制玩家死亡后的物品损失和旧墓碑清理方式。死亡掉落可设为原版规则、仅掉落背包内品质 0-2 的物品、仅掉落全部背包物品、完全不掉落或全部掉落。全部掉落会包含原版保护的图腾和近战武器；完全不掉落时不会生成墓碑。墓碑可选择不保留、按原版只保留一个，也可保留两个、三个或全部记录。
 
 所有选项均可由 Duckov Mod Settings 自动发现。模组未配置或未安装设置界面时默认保持原版行为。降低墓碑保留上限后，较旧记录会在下一次死亡时按游戏原有流程清理。
 
@@ -181,7 +181,7 @@ Core Utilities provides individually configurable features through Duckov Mod Se
 
 ### DuckovCustomDeath
 
-DuckovCustomDeath controls player item loss and cleanup of older tombs. Death drops can follow the original rules, include only quality 0-2 backpack items, include every backpack item, or include nothing; the three custom modes retain equipped items. Tomb retention can use the original one-tomb limit or keep two, three, or every recorded tomb.
+DuckovCustomDeath controls player item loss and cleanup of older tombs. Death drops can follow the original rules, include only quality 0-2 backpack items, include every backpack item, include nothing, or include everything. Drop all includes protected equipment such as the totem and melee weapon; no-drop deaths do not create tombs. Tombs can be discarded, use the original one-tomb limit, or retain two, three, or every recorded tomb.
 
 Duckov Mod Settings discovers both options automatically. Defaults remain identical to the base game when the mod is not configured or the settings UI is absent. After lowering the retention limit, older records are removed through the game's normal flow on the next death.
 

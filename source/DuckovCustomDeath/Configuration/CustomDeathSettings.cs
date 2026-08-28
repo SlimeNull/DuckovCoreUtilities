@@ -16,6 +16,9 @@ namespace SlimeNull.DuckovCustomDeath.Configuration
 
         [InspectorName("@SettingsText/DropModeNone")]
         None,
+
+        [InspectorName("@SettingsText/DropModeAll")]
+        All,
     }
 
     internal enum TombRetentionMode
@@ -31,6 +34,9 @@ namespace SlimeNull.DuckovCustomDeath.Configuration
 
         [InspectorName("@SettingsText/TombRetentionUnlimited")]
         KeepAll,
+
+        [InspectorName("@SettingsText/TombRetentionNone")]
+        DoNotKeep,
     }
 
     internal static class CustomDeathOptions
